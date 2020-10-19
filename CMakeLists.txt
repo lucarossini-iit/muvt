@@ -39,12 +39,13 @@ include_directories(
 
 add_library(environment SHARED 
             src/environment/obstacle.cpp 
-            src/environment/se3.cpp)
+            src/environment/se3.cpp
+            src/environment/vertex_se3.cpp)
             
 target_link_libraries(environment ${catkin_LIBRARIES})
 
 add_executable(main_test src/nodes/test.cpp)
-target_link_libraries(main_test ${catkin_LIBRARIES} ${teb_local_planner_LIBRARIES} ${g2o_LIBRARIES})
+target_link_libraries(main_test environment ${catkin_LIBRARIES} ${g2o_LIBRARIES})
 
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

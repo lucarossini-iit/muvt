@@ -6,10 +6,11 @@
 
 #include <Eigen/Geometry>
 
+namespace XBot { namespace Obstacle {
 class Obstacle
 {
 public:
-    Obstacle(Eigen::Affine3d pose, std::string name);
+    Obstacle(Eigen::Affine3d pose, std::string name, ros::NodeHandle nh);
     
     void setName(std::string name);
     std::string getName() const;
@@ -23,5 +24,5 @@ private:
     std::string _name;
     
     visualization_msgs::Marker _m;
-};
+}; } }
 
