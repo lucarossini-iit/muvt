@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(teb_test)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
@@ -33,18 +33,23 @@ catkin_package(
     )
 
 include_directories(
-    include
+    include    
+    ${g2o_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     )
 
 add_library(environment SHARED 
             src/environment/obstacle.cpp 
-            src/environment/se3.cpp)
-            
+            src/environment/se3.cpp)            
 target_link_libraries(environment ${catkin_LIBRARIES})
 
+add_library(simulator SHARED
+            src/simulator/simulator.cpp)
+target_link_libraries(simulator environment ${g2o_LIBRARIES} ${catkin_LIBRARIES})
+
 add_executable(main_test src/nodes/test.cpp)
-target_link_libraries(main_test ${catkin_LIBRARIES} ${teb_local_planner_LIBRARIES} ${g2o_LIBRARIES})
+target_link_libraries(main_test ${g2o_LIBRARIES} ${catkin_LIBRARIES})
 
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -55,5 +60,9 @@ install(TARGETS environment
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
+        
+install(TARGETS simulator
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
