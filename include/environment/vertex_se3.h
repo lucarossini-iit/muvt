@@ -8,7 +8,7 @@ namespace XBot { namespace Vertex {
     
     class Vertex_SE3 : public g2o::BaseVertex<7, XBot::Vertex::SE3> {
     public:
-        EIGEN_ALIGNED_OPERATOR_NEW;
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         
         Vertex_SE3();
         
@@ -19,7 +19,7 @@ namespace XBot { namespace Vertex {
         
         virtual void oplusImpl (double* update)
         {
-            SE3 up(Eigen::Vector3d(v[0], v[1], v[2]), Eigen::Quaternion<double>(v[3], v[4], v[5], v[6]));
+            SE3 up(Eigen::Vector3d(update[0], update[1], update[2]), Eigen::Quaternion<double>(update[3], update[4], update[5], update[6]));
             
             _estimate = _estimate * up;
         }

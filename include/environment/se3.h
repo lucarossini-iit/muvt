@@ -9,12 +9,12 @@ namespace XBot { namespace Vertex {
     
     class SE3 {
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         
-        SE3() : _t(0, 0, 0), _q(Eigen::Quaternion<double>::Identity()) {};  
+        SE3() : _t(0, 0, 0), _q(Eigen::Quaternion<double>::Identity()) {}
         SE3(Eigen::Affine3d pose) : _t(pose.translation()), _q(Eigen::Quaternion<double>(pose.linear())) {}
-        SE3(Eigen::Vector3d t, Eigen::Matrix3d R) : _t(t), _q(Eigen::Quaternion<double>(R)) {};
-        SE3(Eigen::Vector3d t, Eigen::Quaternion<double> q) : _t(t), _q(q) {};
+        SE3(Eigen::Vector3d t, Eigen::Matrix3d R) : _t(t), _q(Eigen::Quaternion<double>(R)) {}
+        SE3(Eigen::Vector3d t, Eigen::Quaternion<double> q) : _t(t), _q(q) {}
         
         // Copy Constructor
         SE3(const SE3& obj);
@@ -26,8 +26,8 @@ namespace XBot { namespace Vertex {
         SE3 operator* (const SE3& obj) const;
                 
         // Setter
-        void setRotation(Eigen::Quaternion<double> q) {_q = q;};
-        void setTranslation(Eigen::Vector3d t) {_t = t;};
+        void setRotation(Eigen::Quaternion<double> q) { _q = q; }
+        void setTranslation(Eigen::Vector3d t) { _t = t; }
         
         // Getter
         Eigen::Vector3d translation() const;

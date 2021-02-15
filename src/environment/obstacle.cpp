@@ -1,8 +1,10 @@
 #include <environment/obstacle.h>
 
-Obstacle::Obstacle(Eigen::Affine3d pose, std::string name):
+using namespace XBot::Obstacle;
+
+Obstacle::Obstacle(Eigen::Affine3d pose, std::string name, ros::NodeHandle nh):
     _name(name),
-    _nh()
+    _nh(nh)
 {
     _pub = _nh.advertise<visualization_msgs::Marker>(name + "_marker", 100, true);
     
