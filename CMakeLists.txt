@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1.0)
 project(teb_test)
 
 add_compile_options(-std=c++14)
@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning_interface
     visualization_msgs
     )
-
+    
 find_package(Eigen3 REQUIRED)
 
 find_package(cartesian_interface REQUIRED)
@@ -40,16 +40,15 @@ include_directories(
     )
 
 add_library(environment SHARED 
-            src/environment/obstacle.cpp 
-            src/environment/se3.cpp)            
+            src/environment/edge_xyz.cpp)            
 target_link_libraries(environment ${catkin_LIBRARIES})
 
 add_library(simulator SHARED
             src/simulator/simulator.cpp)
-target_link_libraries(simulator environment ${g2o_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(simulator g2o::core g2o::types_slam3d ${catkin_LIBRARIES})
 
 add_executable(main_test src/nodes/test.cpp)
-target_link_libraries(main_test ${g2o_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
