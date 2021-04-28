@@ -11,6 +11,8 @@
 #include "g2o/core/factory.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
 #include <g2o/core/optimization_algorithm_levenberg.h>
+#include "g2o/core/optimization_algorithm_factory.h"
+
 
 #include <environment/edge_xyz.h>
 #include <simulator/simulator.h>
@@ -20,28 +22,30 @@ using namespace XBot::TEB;
 using namespace g2o;
 
 // It seems that all the new types must be defined in g2o namespace!
-G2O_USE_TYPE_GROUP(slam3d);
-G2O_USE_TYPE_GROUP(planning);
 
 int main(int argc, char** argv)
 {    
     std::cout << "starting!" << std::endl;
-    Simulator simulator(100, 2.0);
+    Simulator simulator(100, 1.0);
     SparseOptimizer optimizer;
+    
     auto linearSolver = g2o::make_unique<LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>>();
     auto blockSolver = g2o::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
-    g2o::OptimizationAlgorithm *algorithm =
-        new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver));
-
-    optimizer.setVerbose(true);
-    optimizer.setAlgorithm(algorithm);
+    g2o::OptimizationAlgorithm *algorithm = new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver));
+    
     optimizer.setVerbose(true);
     
-    std::cout << "adding obstacles..." << std::endl;
-    Eigen::Vector3d obs;
-    obs << 0.5, 0.0, 0.0;
-    simulator.addObstacle(obs);
-    std::cout << "added obstacles!" << std::endl;
+//     g2o::OptimizationAlgorithmProperty solverProperty;
+//     optimizer.setAlgorithm(
+//       g2o::OptimizationAlgorithmFactory::instance()->construct("lm_dense", solverProperty));
+    
+    optimizer.setAlgorithm(algorithm);
+    
+//     std::cout << "adding obstacles..." << std::endl;
+//     Eigen::Vector3d obs;
+//     obs << 0.5, 0.1, 0.0;
+//     simulator.addObstacle(obs);
+//     std::cout << "added obstacles!" << std::endl;
     
     std::cout << "adding vertices to optimizer..." << std::endl;
     PointGrid points = simulator.getVertices();   
@@ -56,30 +60,43 @@ int main(int argc, char** argv)
     }
     std::cout << "done!" << std::endl;
     
-    std::cout << "adding obstacles to optimizer..." << std::endl;
-    ObstacleGrid obstacles = simulator.getObstacles();
-    for (int i = 0; i < obstacles.size(); i++)
-    {
-        auto v = new VertexPointXYZ;
-        v->setEstimate(obstacles[i].position);
-        v->setId(points.size()+i);
-        v->setFixed(true);
-        optimizer.addVertex(v);
-    }
-    std::cout << "done!" << std::endl;
+//     std::cout << "adding obstacles to optimizer..." << std::endl;
+//     ObstacleGrid obstacles = simulator.getObstacles();
+//     for (int i = 0; i < obstacles.size(); i++)
+//     {
+//         auto v = new VertexPointXYZ;
+//         v->setEstimate(obstacles[i].position);
+//         v->setId(points.size()+i);
+//         v->setFixed(true);
+//         optimizer.addVertex(v);
+//     }
+//     std::cout << "done!" << std::endl;
+    
+//     std::cout << "adding edges to optimizer..." << std::endl;
+//     for (int j = points.size(); j < points.size() + obstacles.size(); j++)
+//     {
+//         for (int i = 0; i < points.size(); i++)
+//         {
+//             auto edge = new EdgeScalarXYZ;
+//             edge->vertices()[0] = optimizer.vertex(i);
+//             edge->vertices()[1] = optimizer.vertex(j);
+//             optimizer.addEdge(edge);
+//         }
+//     }   
+//     std::cout << "done" << std::endl;
     
     std::cout << "adding edges to optimizer..." << std::endl;
-    for (int j = points.size(); j < points.size() + obstacles.size(); j++)
+    Eigen::Vector3d obs;
+    obs << 0.5, 0.0, 0.0;
+    for (int i = 0; i < points.size(); i ++)
     {
-        for (int i = 0; i < points.size(); i++)
-        {
-            auto edge = new EdgeScalarXYZ;
-            edge->vertices()[0] = optimizer.vertex(i);
-            edge->vertices()[1] = optimizer.vertex(j);
-            optimizer.addEdge(edge);
-        }
-    }   
-    std::cout << "done" << std::endl;
+        auto e = new EdgeScalarXYZ;
+        e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+        e->vertices()[0] = optimizer.vertex(i);
+        e->setObstacle(obs);
+        optimizer.addEdge(e);
+    }
+    std::cout << "done!" << std::endl;
 
     optimizer.initializeOptimization();
     optimizer.optimize(100);
