@@ -46,7 +46,18 @@ namespace g2o {
         
     private:
         Eigen::Vector3d _obstacle;
-};
+    };
+
+    class EdgeDistance : public BaseBinaryEdge<1, double, VertexPointXYZ, VertexPointXYZ>{
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        EdgeDistance();
+
+        virtual bool read(std::istream& is);
+        virtual bool write(std::ostream& os) const;
+
+        void computeError();
+    };
     
 } 
     

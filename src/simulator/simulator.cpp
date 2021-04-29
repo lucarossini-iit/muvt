@@ -1,6 +1,6 @@
 #include <simulator/simulator.h>
 
-using namespace XBot::TEB;
+using namespace XBot::HyperGraph;
 using namespace g2o;
 
 Simulator::Simulator (int n, double distance):

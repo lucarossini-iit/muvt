@@ -1,6 +1,6 @@
 #include <g2o/types/slam3d/vertex_pointxyz.h>
 #include <environment/edge_xyz.h>
-namespace XBot { namespace TEB {
+namespace XBot { namespace HyperGraph {
     
     struct Point {
         g2o::Vector3 point;
@@ -15,6 +15,7 @@ namespace XBot { namespace TEB {
     
     class Simulator {
     public:
+        typedef std::shared_ptr<Simulator> Ptr;
         Simulator(int n, double distance);
         
         bool addObstacle(Eigen::Vector3d position);

@@ -44,7 +44,8 @@ add_library(environment SHARED
 target_link_libraries(environment ${catkin_LIBRARIES})
 
 add_library(simulator SHARED
-            src/simulator/simulator.cpp)
+            src/simulator/simulator.cpp
+            src/simulator/optimizer.cpp)
 target_link_libraries(simulator g2o::core g2o::types_slam3d ${catkin_LIBRARIES})
 
 add_executable(main_test src/nodes/test.cpp)

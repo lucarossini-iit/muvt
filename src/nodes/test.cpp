@@ -18,7 +18,7 @@
 #include <simulator/simulator.h>
 #include <environment/types_planning.h>
 
-using namespace XBot::TEB;
+using namespace XBot::HyperGraph;
 using namespace g2o;
 
 // It seems that all the new types must be defined in g2o namespace!
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
         auto v = new VertexPointXYZ;
         v->setEstimate(points[i].point);
         v->setId(i);
-        if (i == 0 || i == 99)
+        if (i == 0 || i == points.size() - 1)
             v->setFixed(true);
         optimizer.addVertex(v);
     }
@@ -87,8 +87,8 @@ int main(int argc, char** argv)
     
     std::cout << "adding edges to optimizer..." << std::endl;
     Eigen::Vector3d obs;
-    obs << 0.5, 0.0, 0.0;
-    for (int i = 0; i < points.size(); i ++)
+    obs << 0.5, 0.1, 0.0;
+    for (int i = 0; i < points.size(); i++)
     {
         auto e = new EdgeScalarXYZ;
         e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
@@ -97,6 +97,16 @@ int main(int argc, char** argv)
         optimizer.addEdge(e);
     }
     std::cout << "done!" << std::endl;
+
+    std::cout << "adding binary edges to optimizer" << std::endl;
+    for (int i = 0; i < points.size() - 1; i++)
+    {
+        auto e = new EdgeDistance;
+        e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+        e->vertices()[0] = optimizer.vertex(i);
+        e->vertices()[1] = optimizer.vertex(i+1);
+        optimizer.addEdge(e);
+    }
 
     optimizer.initializeOptimization();
     optimizer.optimize(100);
