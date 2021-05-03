@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning
     moveit_ros_planning_interface
     visualization_msgs
+    geometry_msgs
     )
     
 find_package(Eigen3 REQUIRED)
@@ -25,13 +26,22 @@ find_package(cartesian_interface REQUIRED)
 
 find_package(g2o REQUIRED)
 
+add_service_files(
+    FILES
+    SetObstacle.srv)
+    
+generate_messages(
+    DEPENDENCIES
+    std_msgs geometry_msgs# Or other packages containing msgs
+    )
+    
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES teb_test
-    CATKIN_DEPENDS roscpp message_runtime
+    CATKIN_DEPENDS roscpp message_runtime geometry_msgs
     DEPENDS
     )
-
+    
 include_directories(
     include    
     ${g2o_INCLUDE_DIRS}
@@ -51,6 +61,9 @@ target_link_libraries(simulator g2o::core g2o::types_slam3d ${catkin_LIBRARIES})
 add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
+add_executable(optimizer_node src/nodes/optimizer_node.cpp)
+target_link_libraries(optimizer_node simulator ${catkin_LIBRARIES})
+
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -62,6 +75,11 @@ install(TARGETS environment
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
         
 install(TARGETS simulator
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+        
+install(TARGETS optimizer_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
