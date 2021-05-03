@@ -5,6 +5,9 @@
 #include <ros/service.h>
 
 #include <tf/transform_broadcaster.h>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+#include <eigen_conversions/eigen_msg.h>
 
 #include <g2o/config.h>
 #include "g2o/core/sparse_optimizer.h"

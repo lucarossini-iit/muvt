@@ -12,10 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
     tf tf_conversions
     visualization_msgs
     geometry_msgs
+    eigen_conversions
     )
     
-find_package(Eigen3 REQUIRED)
-
 find_package(cartesian_interface REQUIRED)
 
 find_package(g2o REQUIRED)
@@ -39,7 +38,6 @@ catkin_package(
 include_directories(
     include    
     ${g2o_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     )
 
@@ -56,7 +54,7 @@ add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
 add_executable(optimizer src/nodes/optimizer_node.cpp src/simulator/optimizer.cpp)
-target_link_libraries(optimizer simulator ${catkin_LIBRARIES})
+target_link_libraries(optimizer simulator ${catkin_LIBRARIES} ${Eigen3_LIBRARIES})
 
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

@@ -220,13 +220,21 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     visualization_msgs::InteractiveMarkerControl obs_control;
     obs_control.always_visible = true;
     obs_control.markers.push_back(m);
-
     int_marker.controls.push_back(obs_control);
 
     visualization_msgs::InteractiveMarkerControl move_control;
-    move_control.name = "move_xyz";
-    move_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_3D;
+    move_control.name = "move_x";
+    move_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
     int_marker.controls.push_back(move_control);
+
+    visualization_msgs::InteractiveMarkerControl move_control_y;
+    move_control_y.name = "move_y";
+    Eigen::Matrix3d R;
+    R << cos(M_PI/2), -sin(M_PI/2), 0, sin(M_PI/2), cos(M_PI/2), 0, 0, 0, 1;
+    Eigen::Quaternion<double> quat(R);
+    tf::quaternionEigenToMsg(quat, move_control_y.orientation);
+    move_control_y.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_y);
 
     _server->insert(int_marker);
     _server->setCallback(int_marker.name, &interactive_markers_feedback);
