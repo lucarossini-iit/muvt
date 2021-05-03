@@ -3,13 +3,6 @@
 using namespace XBot::HyperGraph;
 using namespace g2o;
 
-void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
-{
-    ROS_INFO_STREAM( feedback->marker_name << " is now at "
-          << feedback->pose.position.x << ", " << feedback->pose.position.y
-          << ", " << feedback->pose.position.z );
-}
-
 Optimizer::Optimizer():
 _nhpr("~"),
 _nh()
@@ -52,8 +45,8 @@ void Optimizer::publish()
         _trajectory.clear();
     if (ma.markers.size() > 0)
         ma.markers.clear();
-    if (ma_obs.markers.size() > 0)
-        ma_obs.markers.clear();
+//     if (ma_obs.markers.size() > 0)
+//         ma_obs.markers.clear();
     
     auto vertex_map = _optimizer.vertices();
     for (auto v : vertex_map)
@@ -82,28 +75,28 @@ void Optimizer::publish()
         ma.markers.push_back(m);
     }
     
-    for (int i = 0; i < _obstacles.size(); i++)
-    {
-        m.header.frame_id = "world";
-        m.header.stamp = ros::Time::now();
-        m.id = i;
-        
-        m.action = visualization_msgs::Marker::ADD;
-        m.type = visualization_msgs::Marker::CUBE;
-        m.pose.position.x = _obstacles[i](0);
-        m.pose.position.y = _obstacles[i](1);
-        m.pose.position.z = _obstacles[i](2);
-        m.pose.orientation.x = 0;
-        m.pose.orientation.y = 0;
-        m.pose.orientation.z = 0;
-        m.pose.orientation.w = 1;
-        m.scale.x = 0.2; m.scale.y = 0.2; m.scale.z = 0.2;
-        m.color.r = 1; m.color.g = 0; m.color.b = 0; m.color.a = 1;
-        ma_obs.markers.push_back(m);
-    }
+//     for (int i = 0; i < _obstacles.size(); i++)
+//     {
+//         m.header.frame_id = "world";
+//         m.header.stamp = ros::Time::now();
+//         m.id = i;
+//         
+//         m.action = visualization_msgs::Marker::ADD;
+//         m.type = visualization_msgs::Marker::CUBE;
+//         m.pose.position.x = _obstacles[i](0);
+//         m.pose.position.y = _obstacles[i](1);
+//         m.pose.position.z = _obstacles[i](2);
+//         m.pose.orientation.x = 0;
+//         m.pose.orientation.y = 0;
+//         m.pose.orientation.z = 0;
+//         m.pose.orientation.w = 1;
+//         m.scale.x = 0.2; m.scale.y = 0.2; m.scale.z = 0.2;
+//         m.color.r = 1; m.color.g = 0; m.color.b = 0; m.color.a = 1;
+//         ma_obs.markers.push_back(m);
+//     }
     
     _trj_pub.publish(ma);
-    _obs_pub.publish(ma_obs);
+//     _obs_pub.publish(ma_obs);
 }
 
 
@@ -167,20 +160,19 @@ void Optimizer::load_edges()
     }
     std::cout << "done!" << std::endl;
 
-    std::cout << "adding binary edges to optimizer" << std::endl;
-    for (int i = 0; i < points.size() - 1; i++)
-    {
-        auto e = new EdgeDistance;
-        e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
-        e->vertices()[0] = _optimizer.vertex(i);
-        e->vertices()[1] = _optimizer.vertex(i+1);
-        _optimizer.addEdge(e);
-    }
-    std::cout << "done!" << std::endl;
+//     std::cout << "adding binary edges to optimizer" << std::endl;
+//     for (int i = 0; i < points.size() - 1; i++)
+//     {
+//         auto e = new EdgeDistance;
+//         e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+//         e->vertices()[0] = _optimizer.vertex(i);
+//         e->vertices()[1] = _optimizer.vertex(i+1);
+//         _optimizer.addEdge(e);
+//     }
+//     std::cout << "done!" << std::endl;
     
     _optimizer.initializeOptimization();
     _optimizer.optimize(10);
-    _optimizer.save(std::cout);
 }
 
 bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res) 
@@ -222,10 +214,10 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     obs_control.markers.push_back(m);
     int_marker.controls.push_back(obs_control);
 
-    visualization_msgs::InteractiveMarkerControl move_control;
-    move_control.name = "move_x";
-    move_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
-    int_marker.controls.push_back(move_control);
+    visualization_msgs::InteractiveMarkerControl move_control_x;
+    move_control_x.name = "move_x";
+    move_control_x.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_x);
 
     visualization_msgs::InteractiveMarkerControl move_control_y;
     move_control_y.name = "move_y";
@@ -235,15 +227,38 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     tf::quaternionEigenToMsg(quat, move_control_y.orientation);
     move_control_y.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
     int_marker.controls.push_back(move_control_y);
+    
+    visualization_msgs::InteractiveMarkerControl move_control_z;
+    move_control_z.name = "move_z";
+    R << cos(-M_PI/2), 0, sin(-M_PI/2), 0, 1, 0, -sin(-M_PI/2), 0, cos(-M_PI/2);
+    Eigen::Quaternion<double> quat_z(R);
+    tf::quaternionEigenToMsg(quat_z, move_control_z.orientation);
+    move_control_z.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_z);
 
     _server->insert(int_marker);
-    _server->setCallback(int_marker.name, &interactive_markers_feedback);
+    _server->setCallback(int_marker.name, boost::bind(&Optimizer::interactive_markers_feedback, this, _1));
     _server->applyChanges();
 
     load_edges();
     
     res.status = true;
     return res.status;
+}
+
+void Optimizer::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+{
+    ROS_INFO_STREAM( feedback->marker_name << " is now at "
+          << feedback->pose.position.x << ", " << feedback->pose.position.y
+          << ", " << feedback->pose.position.z );
+    
+    auto c = feedback->marker_name.back();
+    int index = c - '0';
+    std::cout << index << std::endl;
+    
+    _obstacles[index-1] << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
+    load_edges();
+    
 }
 
 

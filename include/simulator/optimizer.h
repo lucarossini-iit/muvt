@@ -3,10 +3,9 @@
 
 #include <ros/ros.h>
 #include <ros/service.h>
+#include <string.h>
 
 #include <tf/transform_broadcaster.h>
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
 
 #include <g2o/config.h>
@@ -45,7 +44,7 @@ private:
     
     bool create_obstacle_service(teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res);
 
-//    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
     
 
     ros::NodeHandle _nhpr, _nh;
