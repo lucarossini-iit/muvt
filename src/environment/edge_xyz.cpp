@@ -120,18 +120,15 @@ void EdgeDistance::computeError()
 
     double distance = sqrt(pow(v1->estimate()(0) - v2->estimate()(0), 2) + pow(v1->estimate()(1) - v2->estimate()(1), 2) + pow(v1->estimate()(2) - v2->estimate()(2), 2));
 
-    double eps = 0.1;
+    double eps = 0.01;
     double S = 0.05;
-    double r = 0.2;
+    double r = 0.02;
     int n = 2;
     double value = pow((-distance-(-r-eps))/S, n);
     if (-distance > -r - eps)
         _error << value;
     else
         _error << 0;
-
-    if (_error(0) > 0)
-        std::cout << "vertex: " << v1->estimate().transpose() << "   \nw.r.t. obs: " << v2->estimate().transpose() << "   ->  " << _error << std::endl;
 }
 
 

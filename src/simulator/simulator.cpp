@@ -13,7 +13,7 @@ _num_nodes(n)
     {
         g2o::Vector3 pos;
         pos << i*distance/_num_nodes, 0, 0;
-        
+
         Point p;
         p.point = pos;
        

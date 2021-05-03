@@ -19,7 +19,10 @@
 #include <environment/edge_xyz.h>
 
 #include <teb_test/SetObstacle.h>
+
 #include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/InteractiveMarker.h>
+#include <interactive_markers/interactive_marker_server.h>
 
 namespace XBot { namespace HyperGraph {
 
@@ -27,7 +30,7 @@ class Optimizer {
 public:
     Optimizer();
     
-    void solve(int max_iter);
+    void publish();
     
     void run();
 
@@ -38,6 +41,8 @@ private:
     void load_edges();
     
     bool create_obstacle_service(teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res);
+
+//    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
     
 
     ros::NodeHandle _nhpr, _nh;
@@ -50,6 +55,8 @@ private:
     Simulator::Ptr _simulator;
 
     g2o::SparseOptimizer _optimizer;
+
+    std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 };
 } }
 
