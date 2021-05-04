@@ -26,7 +26,7 @@ using namespace g2o;
 int main(int argc, char** argv)
 {    
     std::cout << "starting!" << std::endl;
-    Simulator simulator(100, 1.0);
+    Simulator simulator(100, Eigen::Vector3d(0.3, 0.25, 0.0), Eigen::Vector3d(0.3, -0.25, 0.0));
     SparseOptimizer optimizer;
     
     auto linearSolver = g2o::make_unique<LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>>();

@@ -5,8 +5,11 @@ using namespace g2o;
 
 Optimizer::Optimizer():
 _nhpr("~"),
-_nh()
+_nh(),
+_index(0),
+_incr(1)
 {
+    init_load_model();
     init_load_simulator();
     init_load_optimizer();
     load_vertices();
@@ -18,19 +21,16 @@ _nh()
     _create_obs_srv = _nh.advertiseService("create_obstacle", &Optimizer::create_obstacle_service, this);
     _obs_pub = _nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10, false);
     _trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trajectory", 10, false);
+    _ref_pub = _nh.advertise<geometry_msgs::PoseStamped>("cartesian/TCP/reference", 10, true);
 }
 
 void Optimizer::run()
 {
-    tf::Transform t;
-    t.setOrigin(tf::Vector3(0, 0, 0));
-    tf::Quaternion q;
-    q.setRPY(0, 0, 0);
-    t.setRotation(q);
-
-    tf::TransformBroadcaster br;
-    br.sendTransform(tf::StampedTransform(t, ros::Time::now(), "map", "world"));
-
+    publishCartesianReferences(_index);
+    _index += _incr;
+    if(_index == _simulator->getVertices().size()-1 || _index == 0)
+        _incr *= -1;
+    
     publish();
     
     ros::spinOnce();
@@ -38,15 +38,13 @@ void Optimizer::run()
 
 void Optimizer::publish()
 {
-    visualization_msgs::MarkerArray ma, ma_obs;
+    visualization_msgs::MarkerArray ma;
     visualization_msgs::Marker m;
     
     if (_trajectory.size() > 0 )
         _trajectory.clear();
     if (ma.markers.size() > 0)
         ma.markers.clear();
-//     if (ma_obs.markers.size() > 0)
-//         ma_obs.markers.clear();
     
     auto vertex_map = _optimizer.vertices();
     for (auto v : vertex_map)
@@ -75,30 +73,32 @@ void Optimizer::publish()
         ma.markers.push_back(m);
     }
     
-//     for (int i = 0; i < _obstacles.size(); i++)
-//     {
-//         m.header.frame_id = "world";
-//         m.header.stamp = ros::Time::now();
-//         m.id = i;
-//         
-//         m.action = visualization_msgs::Marker::ADD;
-//         m.type = visualization_msgs::Marker::CUBE;
-//         m.pose.position.x = _obstacles[i](0);
-//         m.pose.position.y = _obstacles[i](1);
-//         m.pose.position.z = _obstacles[i](2);
-//         m.pose.orientation.x = 0;
-//         m.pose.orientation.y = 0;
-//         m.pose.orientation.z = 0;
-//         m.pose.orientation.w = 1;
-//         m.scale.x = 0.2; m.scale.y = 0.2; m.scale.z = 0.2;
-//         m.color.r = 1; m.color.g = 0; m.color.b = 0; m.color.a = 1;
-//         ma_obs.markers.push_back(m);
-//     }
-    
     _trj_pub.publish(ma);
-//     _obs_pub.publish(ma_obs);
 }
 
+void Optimizer::publishCartesianReferences(int index) 
+{
+    geometry_msgs::PoseStamped pose;
+    auto v = _optimizer.vertex(index);
+    auto vertex = static_cast<const VertexPointXYZ*>(v);
+    pose.header.frame_id = "world";
+    pose.header.stamp = ros::Time::now();
+    pose.pose.position.x = vertex->estimate()(0);
+    pose.pose.position.y = vertex->estimate()(1);
+    pose.pose.position.z = vertex->estimate()(2);
+    _ref_pub.publish(pose);
+}
+
+void Optimizer::init_load_model() 
+{
+    auto cfg = XBot::ConfigOptionsFromParamServer();
+    _model = XBot::ModelInterface::getModel(cfg);
+    
+    Eigen::VectorXd qhome(_model->getJointNum());
+    _model->getRobotState("home", qhome);
+    _model->setJointPosition(qhome);
+    _model->update();
+}
 
 void Optimizer::init_load_simulator()
 {
@@ -108,8 +108,8 @@ void Optimizer::init_load_simulator()
         std::runtime_error("Missing mandatory parameter 'n'");
     if (!_nhpr.getParam("distance", distance))
         std::runtime_error("Missing mandatory parameter 'distance'");
-
-    _simulator = std::make_shared<Simulator>(n, distance);
+    
+    _simulator = std::make_shared<Simulator>(n, Eigen::Vector3d(0.3, 0.25, 0.0), Eigen::Vector3d(0.3, -0.25, 0.0));
 }
 
 void Optimizer::init_load_optimizer() 
@@ -124,7 +124,7 @@ void Optimizer::init_load_optimizer()
 
 void Optimizer::load_vertices() 
 {
-    std::cout << "adding vertices to optimizer..." << std::endl;
+//     std::cout << "adding vertices to optimizer..." << std::endl;
 
     PointGrid points = _simulator->getVertices();   
     for (int i = 0; i < points.size(); i++)
@@ -136,7 +136,7 @@ void Optimizer::load_vertices()
             v->setFixed(true);
         _optimizer.addVertex(v);
     }
-    std::cout << "done!" << std::endl;
+//     std::cout << "done!" << std::endl;
 }
 
 void Optimizer::load_edges() 
@@ -146,7 +146,7 @@ void Optimizer::load_edges()
 
     PointGrid points = _simulator->getVertices();
     
-    std::cout << "adding edges to optimizer..." << std::endl;      
+//     std::cout << "adding edges to optimizer..." << std::endl;      
     for (int i = 0; i < _obstacles.size(); i++)
     {
         for(int j = 0; j < points.size(); j++)
@@ -158,7 +158,7 @@ void Optimizer::load_edges()
             _optimizer.addEdge(e);
         }
     }
-    std::cout << "done!" << std::endl;
+//     std::cout << "done!" << std::endl;
 
 //     std::cout << "adding binary edges to optimizer" << std::endl;
 //     for (int i = 0; i < points.size() - 1; i++)
@@ -172,7 +172,11 @@ void Optimizer::load_edges()
 //     std::cout << "done!" << std::endl;
     
     _optimizer.initializeOptimization();
+//     auto tic = std::chrono::high_resolution_clock::now();
     _optimizer.optimize(10);
+//     auto toc = std::chrono::high_resolution_clock::now();
+//     std::chrono::duration<float> fsec = toc - tic;
+//     std::cout << "TIME: " << fsec.count() << std::endl;
 }
 
 bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res) 
@@ -199,9 +203,9 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
 
     visualization_msgs::Marker m;
     m.type = visualization_msgs::Marker::CUBE;
-    m.pose.position.x = req.pose.position.x;
-    m.pose.position.y = req.pose.position.y;
-    m.pose.position.z = req.pose.position.z;
+    m.pose.position.x = 0;
+    m.pose.position.y = 0;
+    m.pose.position.z = 0;
     m.pose.orientation.x = 0;
     m.pose.orientation.y = 0;
     m.pose.orientation.z = 0;
@@ -213,6 +217,9 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     obs_control.always_visible = true;
     obs_control.markers.push_back(m);
     int_marker.controls.push_back(obs_control);
+    int_marker.pose.position.x = req.pose.position.x;
+    int_marker.pose.position.y = req.pose.position.y;
+    int_marker.pose.position.z = req.pose.position.z;
 
     visualization_msgs::InteractiveMarkerControl move_control_x;
     move_control_x.name = "move_x";
@@ -246,15 +253,15 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     return res.status;
 }
 
+
 void Optimizer::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 {
-    ROS_INFO_STREAM( feedback->marker_name << " is now at "
-          << feedback->pose.position.x << ", " << feedback->pose.position.y
-          << ", " << feedback->pose.position.z );
+//     ROS_INFO_STREAM( feedback->marker_name << " is now at "
+//           << feedback->pose.position.x << ", " << feedback->pose.position.y
+//           << ", " << feedback->pose.position.z );
     
     auto c = feedback->marker_name.back();
     int index = c - '0';
-    std::cout << index << std::endl;
     
     _obstacles[index-1] << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
     load_edges();
