@@ -13,8 +13,9 @@
     </node>
     
     <include file="$(find cartesian_interface)/launch/cartesio.launch">
+        <arg name="enable_otg" value="false"/>
         <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
-        <arg name="tf_prefix" value=""/>
+        <arg name="tf_prefix" value="ci"/>
     </include>
 
     <node pkg="rviz" type="rviz" name="rviz"

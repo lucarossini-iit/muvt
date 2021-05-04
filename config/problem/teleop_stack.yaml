@@ -6,13 +6,22 @@ stack:
     - ["EE"]
     
     
-constraints: ["JointLimits"]
+constraints: ["JointLimits", "Collision"]
 
 JointLimits:
     type: "JointLimits"
 
 VelocityLimits:
     type: "VelocityLimits"
+    
+Collision:
+    type: CollisionConstraint
+    lib_name: libcartesio_collision_support.so
+    bound_scaling: 0.1
+    distance_threshold: 0.01
+    max_pairs: 5
+    collision_urdf_path: $(rospack find teleop_urdf)/urdf/teleop_capsules.urdf
+    collision_srdf_path: $(rospack find teleop_srdf)/srdf/teleop_fixed_base.srdf
 
 EE:
     type: "Cartesian"

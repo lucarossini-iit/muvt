@@ -55,7 +55,7 @@ void Optimizer::publish()
     
     for (int i = 0; i < _trajectory.size(); i++)
     {
-        m.header.frame_id = "world";
+        m.header.frame_id = "ci/world";
         m.header.stamp = ros::Time::now();
         m.id = i;
         
@@ -81,7 +81,7 @@ void Optimizer::publishCartesianReferences(int index)
     geometry_msgs::PoseStamped pose;
     auto v = _optimizer.vertex(index);
     auto vertex = static_cast<const VertexPointXYZ*>(v);
-    pose.header.frame_id = "world";
+    pose.header.frame_id = "ci/world";
     pose.header.stamp = ros::Time::now();
     pose.pose.position.x = vertex->estimate()(0);
     pose.pose.position.y = vertex->estimate()(1);
@@ -196,7 +196,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     _obstacles.push_back(position);
 
     visualization_msgs::InteractiveMarker int_marker;
-    int_marker.header.frame_id = "world";
+    int_marker.header.frame_id = "ci/world";
     int_marker.header.stamp = ros::Time::now();
     int_marker.name = "obstacle_" + std::to_string(_obstacles.size());
     int_marker.description = "obstacle_" + std::to_string(_obstacles.size());
