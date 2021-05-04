@@ -39,6 +39,7 @@ include_directories(
     include    
     ${g2o_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
+    ${cartesian_interface_INCLUDE_DIRS}
     )
 
 add_library(environment SHARED
@@ -48,13 +49,21 @@ target_link_libraries(environment ${catkin_LIBRARIES})
 add_library(simulator SHARED
             src/simulator/simulator.cpp
             src/simulator/optimizer.cpp)
-target_link_libraries(simulator environment g2o::core g2o::types_slam3d g2o::solver_csparse ${catkin_LIBRARIES})
+target_link_libraries(simulator environment
+                                g2o::core 
+                                g2o::types_slam3d 
+                                g2o::solver_csparse 
+                                ${catkin_LIBRARIES} 
+                                ${XBotInterface_LIBRARIES} 
+                                ${cartesian_interface_LIBRARIES} 
+                                ${OpenSoT_LIBRARIES}
+                                yaml-cpp)
 
 add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
 add_executable(optimizer src/nodes/optimizer_node.cpp src/simulator/optimizer.cpp)
-target_link_libraries(optimizer simulator ${catkin_LIBRARIES} ${Eigen3_LIBRARIES})
+target_link_libraries(optimizer simulator ${catkin_LIBRARIES})
 
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -81,4 +90,3 @@ install(DIRECTORY launch/
         FILES_MATCHING PATTERN "*.launch"
         PATTERN ".svn" EXCLUDE
         )
-
