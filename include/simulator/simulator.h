@@ -16,7 +16,7 @@ namespace XBot { namespace HyperGraph {
     class Simulator {
     public:
         typedef std::shared_ptr<Simulator> Ptr;
-        Simulator(int n, double distance);
+        Simulator(int n, Eigen::Vector3d start, Eigen::Vector3d goal);
         
         bool addObstacle(Eigen::Vector3d position);
         
