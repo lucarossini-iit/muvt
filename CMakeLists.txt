@@ -43,8 +43,9 @@ include_directories(
     )
 
 add_library(environment SHARED
-            src/environment/edge_xyz.cpp)
-target_link_libraries(environment ${catkin_LIBRARIES})
+            src/environment/edge_xyz.cpp
+            src/environment/robot_pos.cpp)
+target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 add_library(simulator SHARED
             src/simulator/simulator.cpp

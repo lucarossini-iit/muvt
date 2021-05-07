@@ -25,6 +25,9 @@
 
 #include <simulator/simulator.h>
 #include <environment/edge_xyz.h>
+#include <environment/robot_pos.h>
+#include <environment/vertex_robot_pos.h>
+#include <environment/edge_robot_pos.h>
 
 #include <teb_test/SetObstacle.h>
 #include <std_srvs/Empty.h>
