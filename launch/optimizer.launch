@@ -3,6 +3,7 @@
     <arg name="is_model_floating_base" default="false"/>
     <param name="robot_description" textfile="$(find teleop_urdf)/urdf/teleop_fixed_base.urdf"/>
     <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf"/>
+    <param name="collision_urdf" textfile="$(find teleop_urdf)/urdf/teleop_capsules.rviz"/>
     <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/teb_test/config/problem/teleop_stack.yaml"/>
     
     <node pkg="teb_test" type="optimizer" name="optimizer" output="screen">
@@ -10,6 +11,7 @@
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="n" value="100"/>
         <param name="distance" value="2.0"/>
+        <param name="scenario" value="single_robot_pos"/>
     </node>
     
     <include file="$(find cartesian_interface)/launch/cartesio.launch">

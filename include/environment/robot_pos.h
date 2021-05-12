@@ -11,6 +11,7 @@ class RobotPos {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
+    RobotPos();
     RobotPos(int n);
     RobotPos(Eigen::VectorXd q);
     RobotPos(Eigen::VectorXd q, int n);

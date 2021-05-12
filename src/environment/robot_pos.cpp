@@ -2,6 +2,12 @@
 
 using namespace XBot::HyperGraph;
 
+RobotPos::RobotPos() 
+{
+    RobotPos(0);
+}
+
+
 RobotPos::RobotPos(int n):
 _n(n)
 {

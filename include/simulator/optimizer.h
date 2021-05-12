@@ -28,6 +28,7 @@
 #include <environment/robot_pos.h>
 #include <environment/vertex_robot_pos.h>
 #include <environment/edge_robot_pos.h>
+#include <environment/edge_robot_vel.h>
 
 #include <teb_test/SetObstacle.h>
 #include <std_srvs/Empty.h>
@@ -65,7 +66,8 @@ private:
     ros::ServiceServer _create_obs_srv;
     ros::Publisher _trj_pub, _obs_pub, _ref_pub;
     
-    XBot::ModelInterface::Ptr _model;
+    XBot::ModelInterface::Ptr _model, _sol_model;
+    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
     
     std::vector<Eigen::Vector3d> _obstacles;
     std::vector<Eigen::Vector3d> _trajectory;
@@ -77,6 +79,8 @@ private:
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
     
     int _index, _incr;
+    
+    Eigen::VectorXd _q_old_sol;
 };
 } }
 

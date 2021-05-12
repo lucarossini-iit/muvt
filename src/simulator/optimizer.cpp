@@ -22,16 +22,37 @@ _incr(1)
     _obs_pub = _nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10, false);
     _trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trajectory", 10, false);
     _ref_pub = _nh.advertise<geometry_msgs::PoseStamped>("cartesian/TCP/reference", 10, true);
+    
+    
 }
 
 void Optimizer::run()
 {
-    publishCartesianReferences(_index);
-    _index += _incr;
-    if(_index == _simulator->getVertices().size()-1 || _index == 0)
-        _incr *= -1;
+    if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
+    {
+        publishCartesianReferences(_index);
+        _index += _incr;
+        if(_index == _simulator->getVertices().size()-1 || _index == 0)
+            _incr *= -1;
+        
+        publish();
+    }
     
-    publish();
+    else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
+    {
+        auto sol = _optimizer.vertices();        
+        auto vertex = static_cast<const VertexRobotPos<5>*>(sol[_index]);
+        _q_old_sol = vertex->estimate().q();
+        _sol_model->setJointPosition(_q_old_sol);
+        _sol_model->update();
+        _rspub->publishTransforms(ros::Time::now(), "");
+        
+        _index += _incr;
+        if (_simulator->getConfigurations().size() == 1)
+            _index = 0;
+        else if(_index == _simulator->getConfigurations().size()-1 || _index == 0)
+            _incr *= -1; 
+    }
     
     ros::spinOnce();
 }
@@ -55,7 +76,7 @@ void Optimizer::publish()
     
     for (int i = 0; i < _trajectory.size(); i++)
     {
-        m.header.frame_id = "ci/world";
+        m.header.frame_id = "world";
         m.header.stamp = ros::Time::now();
         m.id = i;
         
@@ -93,23 +114,67 @@ void Optimizer::init_load_model()
 {
     auto cfg = XBot::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
+    _sol_model = XBot::ModelInterface::getModel(cfg);
     
     Eigen::VectorXd qhome(_model->getJointNum());
     _model->getRobotState("home", qhome);
     _model->setJointPosition(qhome);
     _model->update();
+    _sol_model->setJointPosition(qhome);
+    _sol_model->update();
+    
+    _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_sol_model);
+    
+    _q_old_sol.resize(_model->getJointNum());
+    _q_old_sol = qhome;
 }
 
 void Optimizer::init_load_simulator()
 {
     int n;
     double distance;
+    std::string scenario;
     if (!_nhpr.getParam("n", n))
         std::runtime_error("Missing mandatory parameter 'n'");
     if (!_nhpr.getParam("distance", distance))
         std::runtime_error("Missing mandatory parameter 'distance'");
+    if (!_nhpr.getParam("scenario", scenario))
+        std::runtime_error("Missing mandatory parameter 'scenario'");
     
-    _simulator = std::make_shared<Simulator>(n, Eigen::Vector3d(0.3, 0.25, 0.0), Eigen::Vector3d(0.3, -0.25, 0.0));
+    if (scenario == "xyz")
+    {
+        Eigen::VectorXd start(3);
+        start << 0.3, 0.25, 0.0;
+        Eigen::VectorXd goal(3);
+        goal << 0.3, -0.25, 0.0;
+        
+        _simulator = std::make_shared<Simulator>(n, start, goal, Simulator::ScenarioType::XYZ);
+    }
+    
+    if (scenario == "single_robot_pos")
+    {
+        Eigen::VectorXd start(_model->getJointNum()), goal(_model->getJointNum()), qhome(_model->getJointNum());
+        
+        _model->getRobotState("home", qhome);
+        start = qhome;
+        goal = qhome;
+        
+        _simulator = std::make_shared<Simulator>(n, start, goal, Simulator::ScenarioType::ROBOTPOS);
+    }
+    
+    if (scenario == "trj_robot_pos")
+    {
+        Eigen::VectorXd start(_model->getJointNum()), goal(_model->getJointNum()), qhome(_model->getJointNum());
+        _model->getRobotState("home", qhome);
+        
+        start = qhome;
+        start(0) = -1;
+        
+        goal = qhome;
+        goal(0) = 1;
+        
+        _simulator = std::make_shared<Simulator>(n, start, goal, Simulator::ScenarioType::ROBOTPOS);        
+    }       
 }
 
 void Optimizer::init_load_optimizer() 
@@ -122,54 +187,94 @@ void Optimizer::init_load_optimizer()
     _optimizer.setAlgorithm(algorithm);
 }
 
-void Optimizer::load_vertices() 
-{
-//     std::cout << "adding vertices to optimizer..." << std::endl;
-
-    PointGrid points = _simulator->getVertices();   
-    for (int i = 0; i < points.size(); i++)
-    {       
-        auto v = new VertexPointXYZ;
-        v->setEstimate(points[i].point);
-        v->setId(i);
-        if (i == 0 || i == points.size() - 1)
-            v->setFixed(true);
-        _optimizer.addVertex(v);
+void Optimizer::load_vertices()
+{    
+    if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
+    {
+        PointGrid points = _simulator->getVertices();
+        for (int i = 0; i < points.size(); i++)
+        {       
+            auto v = new VertexPointXYZ;
+            v->setEstimate(points[i].point);
+            v->setId(i);
+            if (i == 0 || i == points.size() - 1)
+                v->setFixed(true);
+            _optimizer.addVertex(v);
+        }
     }
-//     std::cout << "done!" << std::endl;
+    
+    else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
+    {
+        ConfigurationGrid configurations = _simulator->getConfigurations();
+        if (_simulator->getConfigurations().size() == 1)
+        {
+            auto v = new VertexRobotPos<5>;
+            RobotPos q(_q_old_sol, _model->getJointNum());
+            v->setEstimate(q);
+            v->setId(0);
+            _optimizer.addVertex(v);
+        }
+        else
+        {
+            for (int i = 0; i < configurations.size(); i++)
+            {
+                auto v = new VertexRobotPos<5>;
+                RobotPos q(configurations[i].q, configurations[i].n_dof);
+                v->setEstimate(q);
+                v->setId(i);
+                _optimizer.addVertex(v);
+            }  
+        }
+    }
 }
 
 void Optimizer::load_edges() 
 {
     _optimizer.clear();
     load_vertices();
-
-    PointGrid points = _simulator->getVertices();
     
-//     std::cout << "adding edges to optimizer..." << std::endl;      
-    for (int i = 0; i < _obstacles.size(); i++)
+    if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
     {
-        for(int j = 0; j < points.size(); j++)
+        PointGrid points = _simulator->getVertices();
+        
+        for (int i = 0; i < _obstacles.size(); i++)
         {
-            auto e = new EdgeScalarXYZ;
+            for(int j = 0; j < points.size(); j++)
+            {
+                auto e = new EdgeScalarXYZ;
+                e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+                e->vertices()[0] = _optimizer.vertex(j);
+                e->setObstacle(_obstacles[i]);
+                _optimizer.addEdge(e);
+            }
+        }
+
+        for (int i = 0; i < points.size() - 1; i++)
+        {
+            auto e = new EdgeDistance;
             e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
-            e->vertices()[0] = _optimizer.vertex(j);
-            e->setObstacle(_obstacles[i]);
+            e->vertices()[0] = _optimizer.vertex(i);
+            e->vertices()[1] = _optimizer.vertex(i+1);
             _optimizer.addEdge(e);
         }
     }
-//     std::cout << "done!" << std::endl;
-
-//     std::cout << "adding binary edges to optimizer" << std::endl;
-//     for (int i = 0; i < points.size() - 1; i++)
-//     {
-//         auto e = new EdgeDistance;
-//         e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
-//         e->vertices()[0] = _optimizer.vertex(i);
-//         e->vertices()[1] = _optimizer.vertex(i+1);
-//         _optimizer.addEdge(e);
-//     }
-//     std::cout << "done!" << std::endl;
+    
+    else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
+    {
+        ConfigurationGrid configurations = _simulator->getConfigurations();
+        
+        for (int i = 0; i < configurations.size(); i ++)
+        {    
+            for (int j = 0; j < _obstacles.size(); j++)
+            {
+                auto e = new EdgeRobotPos<10, 5>(_model);
+                e->setInformation(Eigen::Matrix<double, 10, 10>::Identity());
+                e->vertices()[0] = _optimizer.vertex(i);
+                e->setObstacle(_obstacles[j], j);
+                _optimizer.addEdge(e);
+            }
+        }
+    }
     
     _optimizer.initializeOptimization();
 //     auto tic = std::chrono::high_resolution_clock::now();
@@ -196,7 +301,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     _obstacles.push_back(position);
 
     visualization_msgs::InteractiveMarker int_marker;
-    int_marker.header.frame_id = "ci/world";
+    int_marker.header.frame_id = "world";
     int_marker.header.stamp = ros::Time::now();
     int_marker.name = "obstacle_" + std::to_string(_obstacles.size());
     int_marker.description = "obstacle_" + std::to_string(_obstacles.size());
@@ -255,17 +360,12 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
 
 
 void Optimizer::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
-{
-//     ROS_INFO_STREAM( feedback->marker_name << " is now at "
-//           << feedback->pose.position.x << ", " << feedback->pose.position.y
-//           << ", " << feedback->pose.position.z );
-    
+{   
     auto c = feedback->marker_name.back();
     int index = c - '0';
     
     _obstacles[index-1] << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
-    load_edges();
-    
+    load_edges();    
 }
 
 
