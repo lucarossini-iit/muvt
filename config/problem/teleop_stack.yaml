@@ -6,7 +6,7 @@ stack:
     - ["EE"]
     
     
-constraints: ["JointLimits", "Collision"]
+constraints: ["JointLimits"]#, "Collision"]
 
 JointLimits:
     type: "JointLimits"
@@ -20,7 +20,7 @@ Collision:
     bound_scaling: 0.1
     distance_threshold: 0.01
     max_pairs: 5
-    collision_urdf_path: $(rospack find teleop_urdf)/urdf/teleop_capsules.urdf
+    collision_urdf_path: $(rospack find teleop_urdf)/urdf/teleop_capsules.rviz
     collision_srdf_path: $(rospack find teleop_srdf)/srdf/teleop_fixed_base.srdf
 
 EE:
