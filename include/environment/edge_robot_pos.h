@@ -57,9 +57,7 @@ public:
     }
         
     void setObstacle(Eigen::Vector3d ob, int id)
-    {
-        _obstacle = ob;
-        
+    {        
         moveit_msgs::PlanningSceneWorld wc;
         moveit_msgs::CollisionObject coll;
         coll.header.frame_id = "world";
@@ -72,9 +70,9 @@ public:
         coll.primitives[0].dimensions = {0.2}; 
         
         geometry_msgs::Pose p;
-        p.position.x = _obstacle(0);
-        p.position.y = _obstacle(1);
-        p.position.z = _obstacle(2);
+        p.position.x = ob(0);
+        p.position.y = ob(1);
+        p.position.z = ob(2);
         p.orientation.x = 0;
         p.orientation.y = 0;
         p.orientation.z = 0;
@@ -93,32 +91,42 @@ public:
         _model->setJointPosition(q);
         _model->update();
         
-        double eps = 0.1;
+        double eps = 0.01;
         double S = 0.05;
         double r = 0.2;
         int n = 2;
+        
+        BaseEdge::_error.setZero(M);
 
         auto distances = _dist->getLinkDistances();
-        double distance = 0;    
         int index = 0;
         
         for (auto i : distances)
         {
-//             if (i.getLinkNames().first == "obstacle" || i.getLinkNames().second == "obstacle")
-//             {   
+            if (i.getLinkNames().first == "world/obstacle" || i.getLinkNames().second == "world/obstacle")
+            {   
+                double distance = 0;
                 distance += i.getDistance();
-                if (-distance > -r - eps)
+                if (distance > r + eps)
                     BaseEdge::_error(index) = 0;
-                double value = pow((-distance-(-r-eps))/S, n);
-                BaseEdge::_error(index) = value;
-//             }
+                else
+                {
+                    double value = pow((-distance-(-r-eps))/S, n);
+                    BaseEdge::_error(index) = value;
+                }
+            }
+        index++;
         }
+    }
+    
+    Eigen::VectorXd getError() const
+    {
+        return BaseEdge::_error;
     }
     
 private:
     XBot::ModelInterface::Ptr _model;
     std::vector<std::string> _links;
-    Eigen::Vector3d _obstacle;
     std::shared_ptr<ComputeLinksDistance> _dist;
 }; } }
 

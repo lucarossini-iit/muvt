@@ -6,7 +6,7 @@ int main(int argc, char** argv)
     
     XBot::HyperGraph::Optimizer optimizer;
     
-    ros::Rate rate(100);
+    ros::Rate rate(std::atof(argv[1]));
     while (ros::ok())
     {
         optimizer.run();

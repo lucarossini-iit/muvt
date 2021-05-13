@@ -14,6 +14,7 @@
 #include "g2o/core/block_solver.h"
 #include "g2o/core/factory.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
+#include "g2o/solvers/eigen/linear_solver_eigen.h"
 #include <g2o/core/optimization_algorithm_levenberg.h>
 #include "g2o/core/optimization_algorithm_factory.h"
 #include <g2o/types/slam3d/vertex_pointxyz.h>

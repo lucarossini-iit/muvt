@@ -68,6 +68,7 @@ void Optimizer::publish()
         ma.markers.clear();
     
     auto vertex_map = _optimizer.vertices();
+    auto edges = _optimizer.edges();
     for (auto v : vertex_map)
     {
         auto vertex = static_cast<const VertexPointXYZ*>(v.second);
@@ -179,7 +180,7 @@ void Optimizer::init_load_simulator()
 
 void Optimizer::init_load_optimizer() 
 {
-    auto linearSolver = g2o::make_unique<LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>>();
+    auto linearSolver = g2o::make_unique<LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>>();
     auto blockSolver = g2o::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
     g2o::OptimizationAlgorithm *algorithm = new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver));
     
@@ -206,7 +207,7 @@ void Optimizer::load_vertices()
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
     {
         ConfigurationGrid configurations = _simulator->getConfigurations();
-        if (_simulator->getConfigurations().size() == 1)
+        if (configurations.size() == 1)
         {
             auto v = new VertexRobotPos<5>;
             RobotPos q(_q_old_sol, _model->getJointNum());
@@ -222,6 +223,8 @@ void Optimizer::load_vertices()
                 RobotPos q(configurations[i].q, configurations[i].n_dof);
                 v->setEstimate(q);
                 v->setId(i);
+                if (i == 0 || i == configurations.size() - 1)
+                    v->setFixed(true);
                 _optimizer.addVertex(v);
             }  
         }
@@ -231,8 +234,15 @@ void Optimizer::load_vertices()
 void Optimizer::load_edges() 
 {
     _optimizer.clear();
-    load_vertices();
     
+    auto tic = std::chrono::high_resolution_clock::now();
+    load_vertices();
+    auto toc = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> fsec = toc - tic;
+    std::cout << "TIME TO LOAD VERTICES: " << fsec.count() << std::endl;
+    
+    
+    tic = std::chrono::high_resolution_clock::now();
     if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
     {
         PointGrid points = _simulator->getVertices();
@@ -249,14 +259,7 @@ void Optimizer::load_edges()
             }
         }
 
-        for (int i = 0; i < points.size() - 1; i++)
-        {
-            auto e = new EdgeDistance;
-            e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
-            e->vertices()[0] = _optimizer.vertex(i);
-            e->vertices()[1] = _optimizer.vertex(i+1);
-            _optimizer.addEdge(e);
-        }
+
     }
     
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
@@ -271,17 +274,68 @@ void Optimizer::load_edges()
                 e->setInformation(Eigen::Matrix<double, 10, 10>::Identity());
                 e->vertices()[0] = _optimizer.vertex(i);
                 e->setObstacle(_obstacles[j], j);
-                _optimizer.addEdge(e);
+                e->computeError();
+                Eigen::VectorXd err = e->getError();
+                Eigen::VectorXd null(err.size());
+                null.setZero();
+                if (err == null)
+                {
+//                     auto v = _optimizer.vertex(i);
+//                     auto vertex = static_cast<VertexRobotPos<5>*>(v);
+//                     vertex->setFixed(true);
+                }
+                else
+                {
+                    _optimizer.addEdge(e);
+                }
             }
         }
     }
     
+    // velocity constraints
+    if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
+    {
+//         for (int i = 0; i < points.size() - 1; i++)
+//         {
+//             auto e = new EdgeDistance;
+//             e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+//             e->vertices()[0] = _optimizer.vertex(i);
+//             e->vertices()[1] = _optimizer.vertex(i+1);
+//             _optimizer.addEdge(e);
+//         }
+    }
+    else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
+    {
+//         ConfigurationGrid configurations = _simulator->getConfigurations();
+//         
+//         for (int i = 0; i < configurations.size() - 1; i++)
+//         {
+//             auto e = new EdgeRobotVel<5>(_model);
+//             e->setInformation(Eigen::Matrix<double, 5, 5>::Identity());
+//             e->vertices()[0] = _optimizer.vertex(i);
+//             e->vertices()[1] = _optimizer.vertex(i+1);
+//             _optimizer.addEdge(e);
+//         }
+    }
+    
+    toc = std::chrono::high_resolution_clock::now();
+    fsec = toc - tic;
+    std::cout << "TIME TO LOAD EDGES: " << fsec.count() << std::endl;
+    
     _optimizer.initializeOptimization();
-//     auto tic = std::chrono::high_resolution_clock::now();
-    _optimizer.optimize(10);
-//     auto toc = std::chrono::high_resolution_clock::now();
-//     std::chrono::duration<float> fsec = toc - tic;
-//     std::cout << "TIME: " << fsec.count() << std::endl;
+    
+   if (!_optimizer.verifyInformationMatrices(true))
+       ROS_ERROR("matrices ar not positive definite");
+    
+    tic = std::chrono::high_resolution_clock::now();
+    _optimizer.optimize(100);
+    toc = std::chrono::high_resolution_clock::now();
+    fsec = toc - tic;
+    std::cout << "TIME TO OPTIMIZE: " << fsec.count() << std::endl;
+    
+    std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
+    std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
+//     
 }
 
 bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res) 
