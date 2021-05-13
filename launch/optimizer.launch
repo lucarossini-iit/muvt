@@ -6,13 +6,18 @@
     <param name="collision_urdf" textfile="$(find teleop_urdf)/urdf/teleop_capsules.rviz"/>
     <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/teb_test/config/problem/teleop_stack.yaml"/>
     
-    <node pkg="teb_test" type="optimizer" name="optimizer" output="screen">
+    <node pkg="teb_test" type="optimizer" name="optimizer" output="screen" args="100">
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="n" value="100"/>
         <param name="distance" value="2.0"/>
-        <param name="scenario" value="single_robot_pos"/>
+<!--         <param name="scenario" value="xyz"/> -->
+<!--         <param name="scenario" value="single_robot_pos"/> -->
+        <param name="scenario" value="trj_robot_pos"/>
     </node>
+    
+    <node pkg="tf" type="static_transform_publisher" name="world_connecter"
+        args="0 0 0 0 0 0 world ci/world 100"/>
     
     <include file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="enable_otg" value="false"/>
