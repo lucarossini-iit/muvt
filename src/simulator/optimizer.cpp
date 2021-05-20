@@ -19,6 +19,8 @@ _incr(1)
     _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("optimizer");
     
     _create_obs_srv = _nh.advertiseService("create_obstacle", &Optimizer::create_obstacle_service, this);
+    _opt_srv = _nh.advertiseService("optimize", &Optimizer::optimization_service, this);
+    
     _obs_pub = _nh.advertise<visualization_msgs::MarkerArray>("obstacles", 10, false);
     _trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trajectory", 10, false);
     _ref_pub = _nh.advertise<geometry_msgs::PoseStamped>("cartesian/TCP/reference", 10, true);
@@ -41,8 +43,8 @@ void Optimizer::run()
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
     {
         auto sol = _optimizer.vertices();        
-        auto vertex = static_cast<const VertexRobotPos<5>*>(sol[_index]);
-        _q_old_sol = vertex->estimate().q();
+        auto vertex = static_cast<const VertexRobotPos*>(sol[_index]);
+        _q_old_sol = vertex->estimate();
         _sol_model->setJointPosition(_q_old_sol);
         _sol_model->update();
         _rspub->publishTransforms(ros::Time::now(), "");
@@ -207,11 +209,12 @@ void Optimizer::load_vertices()
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
     {
         ConfigurationGrid configurations = _simulator->getConfigurations();
+        int n = _model->getJointNum();
         if (configurations.size() == 1)
         {
-            auto v = new VertexRobotPos<5>;
-            RobotPos q(_q_old_sol, _model->getJointNum());
-            v->setEstimate(q);
+            auto v = new VertexRobotPos();
+            v->setNDoFs(_model->getJointNum());
+            v->setEstimate(_q_old_sol);
             v->setId(0);
             _optimizer.addVertex(v);
         }
@@ -219,9 +222,9 @@ void Optimizer::load_vertices()
         {
             for (int i = 0; i < configurations.size(); i++)
             {
-                auto v = new VertexRobotPos<5>;
-                RobotPos q(configurations[i].q, configurations[i].n_dof);
-                v->setEstimate(q);
+                auto v = new VertexRobotPos();
+                v->setNDoFs(_model->getJointNum());
+                v->setEstimate(configurations[i].q);
                 v->setId(i);
                 if (i == 0 || i == configurations.size() - 1)
                     v->setFixed(true);
@@ -265,12 +268,13 @@ void Optimizer::load_edges()
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
     {
         ConfigurationGrid configurations = _simulator->getConfigurations();
+        int counter = 0;
         
         for (int i = 0; i < configurations.size(); i ++)
         {    
             for (int j = 0; j < _obstacles.size(); j++)
             {
-                auto e = new EdgeRobotPos<10, 5>(_model);
+                auto e = new EdgeRobotPos(_model, 10);
                 e->setInformation(Eigen::Matrix<double, 10, 10>::Identity());
                 e->vertices()[0] = _optimizer.vertex(i);
                 e->setObstacle(_obstacles[j], j);
@@ -286,6 +290,8 @@ void Optimizer::load_edges()
                 }
                 else
                 {
+                    e->setId(counter);
+                    counter++;
                     _optimizer.addEdge(e);
                 }
             }
@@ -293,8 +299,8 @@ void Optimizer::load_edges()
     }
     
     // velocity constraints
-    if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
-    {
+//     if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
+//     {
 //         for (int i = 0; i < points.size() - 1; i++)
 //         {
 //             auto e = new EdgeDistance;
@@ -303,9 +309,9 @@ void Optimizer::load_edges()
 //             e->vertices()[1] = _optimizer.vertex(i+1);
 //             _optimizer.addEdge(e);
 //         }
-    }
-    else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
-    {
+//     }
+//     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
+//     {
 //         ConfigurationGrid configurations = _simulator->getConfigurations();
 //         
 //         for (int i = 0; i < configurations.size() - 1; i++)
@@ -316,22 +322,24 @@ void Optimizer::load_edges()
 //             e->vertices()[1] = _optimizer.vertex(i+1);
 //             _optimizer.addEdge(e);
 //         }
-    }
+//     }
     
     toc = std::chrono::high_resolution_clock::now();
     fsec = toc - tic;
     std::cout << "TIME TO LOAD EDGES: " << fsec.count() << std::endl;
     
-    _optimizer.initializeOptimization();
+    if (!_optimizer.verifyInformationMatrices(true))
+        ROS_ERROR("matrices are not positive definite");
+    else
+        std::cout << "matrices are positive definite! continuing with optimization" << std::endl;
     
-   if (!_optimizer.verifyInformationMatrices(true))
-       ROS_ERROR("matrices ar not positive definite");
+//     _optimizer.initializeOptimization();
     
-    tic = std::chrono::high_resolution_clock::now();
-    _optimizer.optimize(100);
-    toc = std::chrono::high_resolution_clock::now();
-    fsec = toc - tic;
-    std::cout << "TIME TO OPTIMIZE: " << fsec.count() << std::endl;
+//     tic = std::chrono::high_resolution_clock::now();
+//     _optimizer.optimize(100);
+//     toc = std::chrono::high_resolution_clock::now();
+//     fsec = toc - tic;
+//     std::cout << "TIME TO OPTIMIZE: " << fsec.count() << std::endl;
     
     std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
     std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
@@ -406,7 +414,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     _server->setCallback(int_marker.name, boost::bind(&Optimizer::interactive_markers_feedback, this, _1));
     _server->applyChanges();
 
-    load_edges();
+//     load_edges();
     
     res.status = true;
     return res.status;
@@ -419,7 +427,19 @@ void Optimizer::interactive_markers_feedback(const visualization_msgs::Interacti
     int index = c - '0';
     
     _obstacles[index-1] << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
-    load_edges();    
+//     load_edges();    
 }
+
+bool Optimizer::optimization_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+    load_edges();
+    std::cout << "AAAAAAAAAAAAAAAAAAAAA" << std::endl;
+    _optimizer.initializeOptimization();
+    std::cout << "BBBBBBBBBBBBBBBBBBBBBB" << std::endl;
+    _optimizer.optimize(10);
+    
+    return true;
+}
+
 
 

@@ -59,12 +59,13 @@ private:
     void publishCartesianReferences(int index);
     
     bool create_obstacle_service(teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res);
+    bool optimization_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
     void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
     
 
     ros::NodeHandle _nhpr, _nh;
-    ros::ServiceServer _create_obs_srv;
+    ros::ServiceServer _create_obs_srv, _opt_srv;
     ros::Publisher _trj_pub, _obs_pub, _ref_pub;
     
     XBot::ModelInterface::Ptr _model, _sol_model;

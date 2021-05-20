@@ -13,35 +13,17 @@ using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
     
-// The template argument defines the maximum number of link pairs of the robot and the number of DoFs of the robot
-template <int M, int N>
-class EdgeRobotPos : public BaseUnaryEdge<M, Eigen::VectorXd, VertexRobotPos<N>> {
+class EdgeRobotPos : public BaseUnaryEdge<10, Eigen::VectorXd, VertexRobotPos> {
 public:
-    typedef BaseUnaryEdge<M, Eigen::VectorXd, VertexRobotPos<N>> BaseEdge;
-    EdgeRobotPos(XBot::ModelInterface::Ptr& model):
-    _model(model),
-    BaseUnaryEdge<M, Eigen::VectorXd, VertexRobotPos<N>>()
-    { 
-        auto urdf = _model->getUrdf();
-        std::vector<urdf::LinkSharedPtr> links;
-        urdf.getLinks(links);        
-        for (auto link : links)
-            _links.push_back(link->name); 
-        
-        urdf::ModelSharedPtr collision_urdf = boost::make_shared<urdf::Model>();
-        if (collision_urdf->initParam("collision_urdf"))
-            _dist = std::make_shared<ComputeLinksDistance>(*_model, collision_urdf);
-        else
-            ROS_ERROR("unable to find collision_urdf");
-    }
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    
+    EdgeRobotPos(XBot::ModelInterface::Ptr& model,
+                 int max_pair_link);
     
     bool read(std::istream& is)
     {
-//         Eigen::VectorXd p;
-//         is >> p;
-//         BaseEdge::setMeasurement(p);
         Eigen::VectorXd meas;
-        meas.resize(M);
+        meas.resize(_max_pair_link);
         internal::readVector(is, meas);
         BaseEdge::setMeasurement(meas);
         
@@ -50,83 +32,21 @@ public:
     
     bool write(std::ostream& os) const
     {
-        Eigen::VectorXd p = BaseEdge::measurement();
+        Eigen::VectorXd p = measurement();
         os << p;
 
         return os.good();
     }
         
-    void setObstacle(Eigen::Vector3d ob, int id)
-    {        
-        moveit_msgs::PlanningSceneWorld wc;
-        moveit_msgs::CollisionObject coll;
-        coll.header.frame_id = "world";
-        coll.header.stamp = ros::Time::now();
-        coll.id = "obstacle";
-        
-        coll.operation = moveit_msgs::CollisionObject::ADD;
-        coll.primitives.resize(1);
-        coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
-        coll.primitives[0].dimensions = {0.2}; 
-        
-        geometry_msgs::Pose p;
-        p.position.x = ob(0);
-        p.position.y = ob(1);
-        p.position.z = ob(2);
-        p.orientation.x = 0;
-        p.orientation.y = 0;
-        p.orientation.z = 0;
-        p.orientation.w = 1;
-        coll.primitive_poses = {p};
-        
-        wc.collision_objects.push_back(coll);
-        _dist->setWorldCollisions(wc);
-    }    
+    void setObstacle(Eigen::Vector3d ob, int id);    
     
-    void computeError()
-    {
-        const VertexRobotPos<N>* v1 = dynamic_cast<const VertexRobotPos<N>*>(BaseEdge::_vertices[0]);
-        
-        Eigen::VectorXd q = v1->estimate().q();
-        _model->setJointPosition(q);
-        _model->update();
-        
-        double eps = 0.01;
-        double S = 0.05;
-        double r = 0.2;
-        int n = 2;
-        
-        BaseEdge::_error.setZero(M);
-
-        auto distances = _dist->getLinkDistances();
-        int index = 0;
-        
-        for (auto i : distances)
-        {
-            if (i.getLinkNames().first == "world/obstacle" || i.getLinkNames().second == "world/obstacle")
-            {   
-                double distance = 0;
-                distance += i.getDistance();
-                if (distance > r + eps)
-                    BaseEdge::_error(index) = 0;
-                else
-                {
-                    double value = pow((-distance-(-r-eps))/S, n);
-                    BaseEdge::_error(index) = value;
-                }
-            }
-        index++;
-        }
-    }
+    void computeError();
     
-    Eigen::VectorXd getError() const
-    {
-        return BaseEdge::_error;
-    }
+    Eigen::VectorXd getError() const;
     
 private:
     XBot::ModelInterface::Ptr _model;
-    std::vector<std::string> _links;
+    int _max_pair_link;
     std::shared_ptr<ComputeLinksDistance> _dist;
 }; } }
 

@@ -2,6 +2,7 @@
 #define VERTEX_ROBOT_POS_H
 
 #include <g2o/core/base_vertex.h>
+#include <g2o/core/base_dynamic_vertex.h>
 
 #include <environment/robot_pos.h>
 
@@ -12,73 +13,61 @@ using namespace g2o;
 namespace XBot { namespace HyperGraph {
 
 // The template argument defines the number of DoFs of the robot
-template <int N>
-class VertexRobotPos : public BaseVertex<N, RobotPos>{
+class VertexRobotPos : public BaseDynamicVertex<Eigen::VectorXd>{
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    VertexRobotPos() : BaseVertex<N, RobotPos>()
-    {}
+    /**
+     * @brief The VertexRobotPos Constructor 
+     */ 
+    VertexRobotPos();
     
-    virtual void setToOriginImpl() override 
-    { 
-        BaseVertex<N,RobotPos>::_estimate = RobotPos(N); 
-    }
+    /**
+     * @brief update the number of DoFs
+     * @param n is the number of DoFs
+     */
+    void setNDoFs(int n);
     
-    virtual void oplusImpl(const double* update) override
-    {
-        Eigen::VectorXd q(N);
-        q = BaseVertex<N, RobotPos>::_estimate.q();
-        q = q + Eigen::VectorXd::Map(update, N);
-        BaseVertex<N,RobotPos>::_estimate = RobotPos(q, N);
-    }
+    /**
+     * @brief Overrides the g2o function that resets the estimate value of the VERTEX_ROBOT_POS_H
+     */ 
+    virtual void setToOriginImpl() override;
     
-    virtual bool setEstimateDataImpl(const number_t* est) override
-    {
-        BaseVertex<N,RobotPos>::_estimate=RobotPos(Eigen::VectorXd::Map(est, N));
-        return true;
-    }
+    /**
+     * @brief Overrides the g2o function that defines how the perturbation is applied to estimate
+     * @param update is the perturbation
+     */
+    virtual void oplusImpl(const double* update) override;
     
-    virtual bool getEstimateData(number_t* est) const override
-    {
-        Eigen::VectorXd q = Eigen::VectorXd::Map(est, N);
-        q = BaseVertex<N, RobotPos>::_estimate.q();
-        return true;
-    }
+    virtual bool setEstimateDataImpl(const number_t* est) override;
     
-    virtual int estimateDimension() const override
-    {
-        return N;
-    }
+    virtual bool getEstimateData(number_t* est) const override;
     
-    virtual bool setMinimalEstimateDataImpl(const number_t* est) override
-    {
-        return BaseVertex<N, RobotPos>::setEstimateData(est);
-    }
+    virtual int estimateDimension() const override;
+    
+    virtual bool setMinimalEstimateDataImpl(const number_t* est) override;
 
-    virtual bool getMinimalEstimateData(number_t* est) const override
-    {
-        return getEstimateData(est);
-    }
-    
-    virtual int minimalEstimateDimension() const override 
-    {
-        return N; 
-    }
+    virtual bool getMinimalEstimateData(number_t* est) const override;
+
+    virtual int minimalEstimateDimension() const override; 
     
     virtual bool read(std::istream& is) override
     {
         Eigen::VectorXd p;
         bool state = internal::readVector(is, p);
-        BaseVertex<N, RobotPos>::setEstimate(p);
+        setEstimate(p);
         return state;
     }
     
     virtual bool write(std::ostream& os) const override
     {
-        return internal::writeVector(os, BaseVertex<N, RobotPos>::estimate().q());
+        return internal::writeVector(os, estimate());
     }
     
+private:
+    int _n_dof;
 };
+
+
     
 } }
 
