@@ -25,7 +25,7 @@ public:
      * @brief update the number of DoFs
      * @param n is the number of DoFs
      */
-    void setNDoFs(int n);
+    virtual bool setDimensionImpl(int newDimension);
     
     /**
      * @brief Overrides the g2o function that resets the estimate value of the VERTEX_ROBOT_POS_H
@@ -52,15 +52,25 @@ public:
     
     virtual bool read(std::istream& is) override
     {
-        Eigen::VectorXd p;
-        bool state = internal::readVector(is, p);
-        setEstimate(p);
-        return state;
+        // Read the dimension
+        int dimension;
+        is >> dimension;
+        if (is.good() == false) {
+        return false;
+        }
+
+        // Set the dimension; we call the method here to ensure stuff like
+        // cache and the workspace is setup
+        setDimension(dimension);
+
+        // Read the state
+        return g2o::internal::readVector(is, _estimate);
     }
     
     virtual bool write(std::ostream& os) const override
     {
-        return internal::writeVector(os, estimate());
+        os << _estimate.size() << " ";
+        return g2o::internal::writeVector(os, _estimate);
     }
     
 private:

@@ -4,17 +4,21 @@ using namespace XBot::HyperGraph;
 using namespace g2o;
 
 EdgeRobotPos::EdgeRobotPos(XBot::ModelInterface::Ptr& model, int max_pair_link):
-BaseUnaryEdge<int(10), Eigen::VectorXd, XBot::HyperGraph::VertexRobotPos>(),
+BaseUnaryEdge<int(10), Eigen::VectorXd, VertexRobotPos>(),
 _model(model),
 _max_pair_link(max_pair_link)
 { 
     urdf::ModelSharedPtr collision_urdf = boost::make_shared<urdf::Model>();
     if (collision_urdf->initParam("collision_urdf"))
+    {
+        std::cout << "creating ComputeLinkDistance..." << std::endl;
         _dist = std::make_shared<ComputeLinksDistance>(*_model, collision_urdf);
+        std::cout << "ComputeLinksDistance done!" << std::endl;
+    }
     else
         ROS_ERROR("unable to find collision_urdf");
     
-    _error.resize(_max_pair_link);
+//     _error.resize(_max_pair_link);
 }
 
 void EdgeRobotPos::setObstacle(Eigen::Vector3d ob, int id)
@@ -50,7 +54,6 @@ void EdgeRobotPos::computeError()
     const VertexRobotPos* v1 = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
     
     Eigen::VectorXd q = v1->estimate();
-    std::cout << "ESTIMATE INSIDE computeError(): " << v1->estimate().transpose() << std::endl;
     _model->setJointPosition(q);
     _model->update();
     
@@ -59,7 +62,7 @@ void EdgeRobotPos::computeError()
     double r = 0.2;
     int n = 2;
     
-    _error.setZero(_max_pair_link);
+    _error.setZero();
 
     auto distances = _dist->getLinkDistances();
     int index = 0;

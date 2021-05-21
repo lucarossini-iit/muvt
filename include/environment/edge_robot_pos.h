@@ -23,9 +23,9 @@ public:
     bool read(std::istream& is)
     {
         Eigen::VectorXd meas;
-        meas.resize(_max_pair_link);
+//         meas.resize(_max_pair_link);
         internal::readVector(is, meas);
-        BaseEdge::setMeasurement(meas);
+        setMeasurement(meas);
         
         return is.good() || is.eof();
     }

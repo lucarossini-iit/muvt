@@ -213,7 +213,7 @@ void Optimizer::load_vertices()
         if (configurations.size() == 1)
         {
             auto v = new VertexRobotPos();
-            v->setNDoFs(_model->getJointNum());
+            v->setDimension(_model->getJointNum());
             v->setEstimate(_q_old_sol);
             v->setId(0);
             _optimizer.addVertex(v);
@@ -223,7 +223,7 @@ void Optimizer::load_vertices()
             for (int i = 0; i < configurations.size(); i++)
             {
                 auto v = new VertexRobotPos();
-                v->setNDoFs(_model->getJointNum());
+                v->setDimension(_model->getJointNum());
                 v->setEstimate(configurations[i].q);
                 v->setId(i);
                 if (i == 0 || i == configurations.size() - 1)
