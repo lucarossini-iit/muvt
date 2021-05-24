@@ -55,6 +55,9 @@ private:
     void init_load_optimizer();
     void load_vertices();
     void load_edges();
+    void add_edges(int index);
+    void update_edges(int index);
+    void clear_edges();
     
     void publishCartesianReferences(int index);
     

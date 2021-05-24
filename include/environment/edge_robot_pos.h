@@ -13,7 +13,7 @@ using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
     
-class EdgeRobotPos : public BaseUnaryEdge<10, Eigen::VectorXd, VertexRobotPos> {
+class EdgeRobotPos : public BaseUnaryEdge<30, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
@@ -38,7 +38,8 @@ public:
         return os.good();
     }
         
-    void setObstacle(Eigen::Vector3d ob, int id);    
+    void addObstacle(Eigen::Vector3d ob, int id);
+    void updateObstacle(Eigen::Vector3d ob, int ind);
     
     void computeError();
     

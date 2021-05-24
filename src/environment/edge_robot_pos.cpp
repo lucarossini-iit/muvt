@@ -4,7 +4,7 @@ using namespace XBot::HyperGraph;
 using namespace g2o;
 
 EdgeRobotPos::EdgeRobotPos(XBot::ModelInterface::Ptr& model, int max_pair_link):
-BaseUnaryEdge<int(10), Eigen::VectorXd, VertexRobotPos>(),
+BaseUnaryEdge<int(30), Eigen::VectorXd, VertexRobotPos>(),
 _model(model),
 _max_pair_link(max_pair_link)
 { 
@@ -21,13 +21,13 @@ _max_pair_link(max_pair_link)
 //     _error.resize(_max_pair_link);
 }
 
-void EdgeRobotPos::setObstacle(Eigen::Vector3d ob, int id)
+void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, int id)
 {
     moveit_msgs::PlanningSceneWorld wc;
     moveit_msgs::CollisionObject coll;
     coll.header.frame_id = "world";
     coll.header.stamp = ros::Time::now();
-    coll.id = "obstacle";
+    coll.id = "obstacle" + std::to_string(id);
     
     coll.operation = moveit_msgs::CollisionObject::ADD;
     coll.primitives.resize(1);
@@ -46,6 +46,17 @@ void EdgeRobotPos::setObstacle(Eigen::Vector3d ob, int id)
     
     wc.collision_objects.push_back(coll);
     _dist->setWorldCollisions(wc);
+}
+
+void EdgeRobotPos::updateObstacle(Eigen::Vector3d ob, int ind)
+{
+    Eigen::Affine3d T;
+    KDL::Frame Tk;
+    T.translation() = ob;
+    T.linear() = Eigen::Matrix3d::Identity();
+    tf::transformEigenToKDL(T, Tk);
+    std::cout << "moving obstacle" << std::to_string(ind) << " to :\n" << T.matrix() << std::endl;
+    _dist->moveWorldCollision("obstacle" + std::to_string(ind), Tk);
 }
 
 void EdgeRobotPos::computeError() 
@@ -69,7 +80,7 @@ void EdgeRobotPos::computeError()
     
     for (auto i : distances)
     {
-        if (i.getLinkNames().first == "world/obstacle" || i.getLinkNames().second == "world/obstacle")
+        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
         {   
             double distance = 0;
             distance += i.getDistance();
