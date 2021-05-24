@@ -47,7 +47,7 @@ add_library(environment SHARED
             src/environment/robot_pos.cpp
             src/environment/vertex_robot_pos.cpp
             src/environment/edge_robot_pos.cpp)
-target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT)
 
 add_library(simulator SHARED
             src/simulator/simulator.cpp
