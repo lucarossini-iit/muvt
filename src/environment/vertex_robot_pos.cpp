@@ -37,8 +37,7 @@ void VertexRobotPos::oplusImpl(const double* update)
 {
     Eigen::VectorXd q(_dimension);
     q = _estimate;
-    q = q + Eigen::VectorXd::Map(update, _n_dof);
-    std::cout << "adding " << Eigen::VectorXd::Map(update, _dimension).transpose() << " to " << _estimate.transpose() << std::endl;
+    q = q + Eigen::VectorXd::Map(update, _dimension);
     _estimate = q;
 }
 

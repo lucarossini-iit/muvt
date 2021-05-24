@@ -8,7 +8,7 @@ BaseUnaryEdge<int(10), Eigen::VectorXd, VertexRobotPos>(),
 _model(model),
 _max_pair_link(max_pair_link)
 { 
-    urdf::ModelSharedPtr collision_urdf = boost::make_shared<urdf::Model>();
+    urdf::ModelSharedPtr collision_urdf = std::make_shared<urdf::Model>();
     if (collision_urdf->initParam("collision_urdf"))
     {
         std::cout << "creating ComputeLinkDistance..." << std::endl;
@@ -83,8 +83,6 @@ void EdgeRobotPos::computeError()
         }
     index++;
     }
-    
-    std::cout << "ERROR: " << _error.transpose() << std::endl;
 }
 
 Eigen::VectorXd EdgeRobotPos::getError() const
