@@ -250,22 +250,20 @@ void Optimizer::load_edges()
 //     }
 //     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
 //     {
-//         ConfigurationGrid configurations = _simulator->getConfigurations();
-//         
-//         for (int i = 0; i < configurations.size() - 1; i++)
-//         {
-//             auto e = new EdgeRobotVel<5>(_model);
-//             e->setInformation(Eigen::Matrix<double, 5, 5>::Identity());
-//             e->vertices()[0] = _optimizer.vertex(i);
-//             e->vertices()[1] = _optimizer.vertex(i+1);
-//             _optimizer.addEdge(e);
-//         }
+         ConfigurationGrid configurations = _simulator->getConfigurations();
+
+         for (int i = 0; i < configurations.size() - 1; i++)
+         {
+             auto e = new EdgeRobotVel(_model);
+             Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+             info.setIdentity();
+             e->setInformation(info);
+             e->vertices()[0] = _optimizer.vertex(i);
+             e->vertices()[1] = _optimizer.vertex(i+1);
+             _optimizer.addEdge(e);
+         }
 //     }
         
-    if (!_optimizer.verifyInformationMatrices(true))
-        ROS_ERROR("matrices are not positive definite");
-    else
-        std::cout << "matrices are positive definite! continuing with optimization" << std::endl;     
 }
 
 void Optimizer::add_edges(int index)
