@@ -22,12 +22,7 @@ public:
     
     bool read(std::istream& is)
     {
-        Eigen::VectorXd meas;
-//         meas.resize(_max_pair_link);
-        internal::readVector(is, meas);
-        setMeasurement(meas);
-        
-        return is.good() || is.eof();
+
     }
     
     bool write(std::ostream& os) const
@@ -44,11 +39,13 @@ public:
     void computeError();
     
     Eigen::VectorXd getError() const;
+
+    std::shared_ptr<ComputeLinksDistance> _dist;
     
 private:
     XBot::ModelInterface::Ptr _model;
     int _max_pair_link;
-    std::shared_ptr<ComputeLinksDistance> _dist;
+
 }; } }
 
 #endif
