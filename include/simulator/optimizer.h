@@ -30,6 +30,7 @@
 #include <environment/vertex_robot_pos.h>
 #include <environment/edge_robot_pos.h>
 #include <environment/edge_robot_vel.h>
+#include <environment/edge_joint_limits.h>
 
 #include <teb_test/SetObstacle.h>
 #include <std_srvs/Empty.h>
@@ -58,6 +59,7 @@ private:
     void add_edges(int index);
     void update_edges(int index);
     void clear_edges();
+    void optimize();
     
     void publishCartesianReferences(int index);
     

@@ -13,7 +13,7 @@ _incr(1)
     init_load_simulator();
     init_load_optimizer();
     load_vertices();
-//    load_edges();
+    load_edges();
 
     // interactive marker server for obstacles
     _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("optimizer");
@@ -171,10 +171,10 @@ void Optimizer::init_load_simulator()
         _model->getRobotState("home", qhome);
         
         start = qhome;
-        start(0) = -1;
+        start(0) = -1.0;
         
         goal = qhome;
-        goal(0) = 1;
+        goal(0) = 1.0;
         
         _simulator = std::make_shared<Simulator>(n, start, goal, Simulator::ScenarioType::ROBOTPOS);        
     }       
@@ -226,8 +226,8 @@ void Optimizer::load_vertices()
                 v->setDimension(_model->getJointNum());
                 v->setEstimate(configurations[i].q);
                 v->setId(i);
-                if (i == 0 || i == configurations.size() - 1)
-                    v->setFixed(true);
+//                if (i == 0 || i == configurations.size() - 1)
+//                    v->setFixed(true);
                 _optimizer.addVertex(v);
             }  
         }
@@ -252,6 +252,28 @@ void Optimizer::load_edges()
 //     {
          ConfigurationGrid configurations = _simulator->getConfigurations();
 
+         if (configurations.size() == 1)
+         {
+             auto e = new EdgeRobotUnaryVel(_model);
+             Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+             info.setIdentity();
+             e->setInformation(info);
+             e->vertices()[0] = _optimizer.vertex(0);
+             Eigen::VectorXd q(_model->getJointNum());
+             _model->getJointPosition(q);
+             e->setRef(q);
+             e->resize();
+             _optimizer.addEdge(e);
+
+             auto e_jl = new EdgeJointLimits(_model);
+             Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
+             info_jl.setIdentity();
+             e_jl->vertices()[0] = _optimizer.vertex(0);
+             e_jl->setInformation(info_jl);
+             e_jl->resize();
+             _optimizer.addEdge(e_jl);
+         }
+
          for (int i = 0; i < configurations.size() - 1; i++)
          {
              auto e = new EdgeRobotVel(_model);
@@ -260,9 +282,13 @@ void Optimizer::load_edges()
              e->setInformation(info);
              e->vertices()[0] = _optimizer.vertex(i);
              e->vertices()[1] = _optimizer.vertex(i+1);
+             e->resize();
              _optimizer.addEdge(e);
          }
 //     }
+
+         std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
+         std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
         
 }
 
@@ -285,36 +311,95 @@ void Optimizer::add_edges(int index)
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
     {
         ConfigurationGrid configurations = _simulator->getConfigurations();
-        int counter = 0;
 
         for (int i = 0; i < configurations.size(); i ++)
         {
-            auto e = new EdgeRobotPos(_model, 10);
+            auto e = new EdgeRobotPos(_model, 30);
             e->setInformation(Eigen::Matrix<double, 30, 30>::Identity());
             e->vertices()[0] = _optimizer.vertex(i);
             e->addObstacle(_obstacles[index], index);
             e->computeError();
             Eigen::VectorXd err = e->getError();
             Eigen::VectorXd null(err.size());
-            null.setZero();
+//            null.setZero();
 //            if (err != null)
 //            {
-                e->setId(counter);
-                counter++;
                 _optimizer.addEdge(e);
 //            }
         }
     }
+
+    std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
+    std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
 }
 
 void Optimizer::update_edges(int index)
 {
     auto edges = _optimizer.edges();
+
+//    auto vertices = _optimizer.vertices();
     for (auto e : edges)
     {
         auto edge = dynamic_cast<EdgeRobotPos*>(e);
-        edge->updateObstacle(_obstacles[index], index);
+        if (edge != nullptr)
+        {
+            edge->updateObstacle(_obstacles[index], index);
+            // CASE 0: the vertex is still near enough to the obstacle and must be updated
+            Eigen::VectorXd null(edge->getError().size());
+            null.setZero();
+            edge->computeError();
+            if (edge->getError() != null)
+            {
+                auto vertex = edge->vertices()[0];
+                auto v = dynamic_cast<VertexRobotPos*>(vertex);
+                v->setFixed(false);
+//                vertices.erase(edge->vertices()[0]->id());
+            }
+
+            //CASE 1: the vertex is not anymore near the obstacle and can be deleted
+            else
+            {
+                auto vertex = edge->vertices()[0];
+                auto v = dynamic_cast<VertexRobotPos*>(vertex);
+                v->setFixed(true);
+//                vertices.erase(edge->vertices()[0]->id());
+            }
+        }
     }
+
+    // CASE 2: add new edges if the obstacle get near to uncovered vertices
+//    for (auto v : vertices)
+//    {
+//        auto e = new EdgeRobotPos(_model, 30);
+//        e->setInformation(Eigen::Matrix<double, 30, 30>::Identity());
+//        e->vertices()[0] = v.second;
+//        e->addObstacle(_obstacles[index], index);
+//        e->computeError();
+//        Eigen::VectorXd err = e->getError();
+//        Eigen::VectorXd null(err.size());
+//        null.setZero();
+//        if (err != null)
+//        {
+//            _optimizer.addEdge(e);
+//        }
+//    }
+//    std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
+//    std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
+}
+
+void Optimizer::clear_edges()
+{
+    auto edges = _optimizer.edges();
+
+    for (auto e : edges)
+    {
+        auto edge = dynamic_cast<EdgeRobotPos*>(e);
+        if (edge != nullptr)
+            _optimizer.removeEdge(edge);
+    }
+
+    std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
+    std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
 }
 
 bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res) 
@@ -324,7 +409,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
         _server->clear();
         _server->applyChanges();
         _obstacles.clear();
-        load_edges();
+        clear_edges();
         res.status = true;
         return res.status;
     }
@@ -385,8 +470,6 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     _server->insert(int_marker);
     _server->setCallback(int_marker.name, boost::bind(&Optimizer::interactive_markers_feedback, this, _1));
     _server->applyChanges();
-
-//     load_edges();
     
     res.status = true;
     return res.status;
@@ -400,18 +483,98 @@ void Optimizer::interactive_markers_feedback(const visualization_msgs::Interacti
     
     _obstacles[index-1] << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
     update_edges(index-1);
-//     load_edges();    
+
+    optimize();
+}
+
+void Optimizer::optimize()
+{
+    auto vertices = _optimizer.vertices();
+    int n_fixed = 0;
+    int n_nfixed = 0;
+    for (auto v : vertices)
+    {
+        auto vertex = dynamic_cast<VertexRobotPos*>(v.second);
+        if (vertex->fixed())
+            n_fixed++;
+        else
+            n_nfixed++;
+    }
+
+    std::cout << "OPTIMIZER HAS " << n_fixed << " FIXED VERTICES AND " << n_nfixed << " NON-FIXED VERTICES!" << std::endl;
+
+     auto tic = std::chrono::high_resolution_clock::now();
+    _optimizer.initializeOptimization();
+    _optimizer.optimize(10);
+
+    auto toc = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> fsec = toc - tic;
+    std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
+
+//    std::cout << "final cost for each edge: " << std::endl;
+//    auto edges = _optimizer.edges();
+//    for (auto i : edges)
+//    {
+//        auto e1 = dynamic_cast<EdgeRobotPos*>(i);
+//        if (e1 != nullptr)
+//        {
+//            auto v1 = dynamic_cast<VertexRobotPos*>(e1->vertices()[0]);
+//            std::cout << "q1: " << v1->estimate().transpose() << std::endl;
+//            std::cout << "EdgeRobotPos error: " << e1->error().transpose() << std::endl;
+//            auto distances = e1->_dist->getLinkDistances();
+//            std::cout << "distances: ";
+//            for (auto d : distances)
+//                std::cout << d.getDistance() << "  ";
+//            std::cout << std::endl;
+//        }
+
+//        auto e2 = dynamic_cast<EdgeRobotVel*>(i);
+//        if (e2 != nullptr)
+//        {
+//            auto v1 = dynamic_cast<VertexRobotPos*>(e2->vertices()[0]);
+//            auto v2 = dynamic_cast<VertexRobotPos*>(e2->vertices()[1]);
+//            std::cout << "q1: " << v1->estimate().transpose() << std::endl;
+//            std::cout << "q2: " << v2->estimate().transpose() << std::endl;
+//            std::cout << "EdgeRobotVel error: " << e2->error().transpose() << std::endl;
+//        }
+
+//        auto e3 = dynamic_cast<EdgeRobotUnaryVel*>(i);
+//        if (e3 != nullptr)
+//        {
+//            auto v2 = dynamic_cast<VertexRobotPos*>(e3->vertices()[0]);
+//            Eigen::VectorXd v1(v2->estimateDimension());
+//            e3->getRef(v1);
+//            std::cout << "q_old: " << v1.transpose() << std::endl;
+//            std::cout << "q_new: " << v2->estimate().transpose() << std::endl;
+//            std::cout << "EdgeRobotUnaryEdge error: " << e3->error().transpose() << std::endl;
+//        }
+
+//        auto e4 = dynamic_cast<EdgeJointLimits*>(i);
+//        if (e4 != nullptr)
+//        {
+//            auto v = dynamic_cast<VertexRobotPos*>(e4->vertices()[0]);
+//            std::cout << "q: " << v->estimate().transpose() << std::endl;
+//            std::cout << "JointLimits error: " << e4->error().transpose() << std::endl;
+//        }
+
+
+//    }
+
+//    auto edge = _optimizer.edges();
+//    auto vertex = _optimizer.vertices();
+//    auto v = dynamic_cast<VertexRobotPos*>(vertex[0]);
+//    for (auto i : edge)
+//    {
+//        auto e = dynamic_cast<EdgeRobotUnaryVel*>(i);
+
+//        if (e != nullptr)
+//            e->setRef(v->estimate());
+//    }
 }
 
 bool Optimizer::optimization_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-    _optimizer.initializeOptimization();
-    auto tic = std::chrono::high_resolution_clock::now();
-    _optimizer.optimize(10);
-    auto toc = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<float> fsec = toc - tic;
-    std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
-    
+    optimize();
     return true;
 }
 
