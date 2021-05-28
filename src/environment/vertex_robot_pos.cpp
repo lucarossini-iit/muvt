@@ -14,7 +14,7 @@ bool VertexRobotPos::setDimensionImpl(int newDimension)
     // Handle the special case this is the first time
     if (oldDimension == Eigen::Dynamic) {
       _estimate.resize(newDimension);
-      _estimate.setZero();
+      _estimate.setZero(newDimension);
       return true;
     }
 

@@ -19,6 +19,7 @@ _max_pair_link(max_pair_link)
         ROS_ERROR("unable to find collision_urdf");
     
 //     _error.resize(_max_pair_link);
+//     _measurement.resize(_max_pair_link);
 }
 
 void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, int id)
@@ -55,7 +56,6 @@ void EdgeRobotPos::updateObstacle(Eigen::Vector3d ob, int ind)
     T.translation() = ob;
     T.linear() = Eigen::Matrix3d::Identity();
     tf::transformEigenToKDL(T, Tk);
-    std::cout << "moving obstacle" << std::to_string(ind) << " to :\n" << T.matrix() << std::endl;
     _dist->moveWorldCollision("obstacle" + std::to_string(ind), Tk);
 }
 
@@ -70,10 +70,10 @@ void EdgeRobotPos::computeError()
     
     double eps = 0.01;
     double S = 0.05;
-    double r = 0.2;
+    double r = 0.1;
     int n = 2;
     
-    _error.setZero();
+    _error.setZero(_max_pair_link);
 
     auto distances = _dist->getLinkDistances();
     int index = 0;
