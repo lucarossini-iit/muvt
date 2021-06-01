@@ -226,8 +226,8 @@ void Optimizer::load_vertices()
                 v->setDimension(_model->getJointNum());
                 v->setEstimate(configurations[i].q);
                 v->setId(i);
-//                if (i == 0 || i == configurations.size() - 1)
-//                    v->setFixed(true);
+                if (i == 0 || i == configurations.size() - 1)
+                    v->setFixed(true);
                 _optimizer.addVertex(v);
             }  
         }
@@ -236,59 +236,72 @@ void Optimizer::load_vertices()
 
 void Optimizer::load_edges() 
 {        
-    // velocity constraints
-//     if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
-//     {
-//         for (int i = 0; i < points.size() - 1; i++)
-//         {
-//             auto e = new EdgeDistance;
-//             e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
-//             e->vertices()[0] = _optimizer.vertex(i);
-//             e->vertices()[1] = _optimizer.vertex(i+1);
-//             _optimizer.addEdge(e);
-//         }
-//     }
-//     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
-//     {
-         ConfigurationGrid configurations = _simulator->getConfigurations();
+    auto points = _simulator->getVertices();
+    if (_simulator->getScenarioType() == Simulator::ScenarioType::XYZ)
+    {
+     for (int i = 0; i < points.size() - 1; i++)
+     {
+         auto e = new EdgeDistance;
+         e->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
+         e->vertices()[0] = _optimizer.vertex(i);
+         e->vertices()[1] = _optimizer.vertex(i+1);
+         _optimizer.addEdge(e);
+     }
+    }
+    else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
+    {
+     ConfigurationGrid configurations = _simulator->getConfigurations();
 
-         if (configurations.size() == 1)
-         {
-             auto e = new EdgeRobotUnaryVel(_model);
-             Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-             info.setIdentity();
-             e->setInformation(info);
-             e->vertices()[0] = _optimizer.vertex(0);
-             Eigen::VectorXd q(_model->getJointNum());
-             _model->getJointPosition(q);
-             e->setRef(q);
-             e->resize();
-             _optimizer.addEdge(e);
+     if (configurations.size() == 1)
+     {
+         auto e = new EdgeRobotUnaryVel(_model);
+         Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+         info.setIdentity();
+         e->setInformation(info);
+         e->vertices()[0] = _optimizer.vertex(0);
+         Eigen::VectorXd q(_model->getJointNum());
+         _model->getJointPosition(q);
+         e->setRef(q);
+         e->resize();
+         _optimizer.addEdge(e);
 
-             auto e_jl = new EdgeJointLimits(_model);
-             Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
-             info_jl.setIdentity();
-             e_jl->vertices()[0] = _optimizer.vertex(0);
-             e_jl->setInformation(info_jl);
-             e_jl->resize();
-             _optimizer.addEdge(e_jl);
-         }
+         auto e_jl = new EdgeJointLimits(_model);
+         Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
+         info_jl.setIdentity();
+         e_jl->vertices()[0] = _optimizer.vertex(0);
+         e_jl->setInformation(info_jl);
+         e_jl->resize();
+         _optimizer.addEdge(e_jl);
+     }
 
-         for (int i = 0; i < configurations.size() - 1; i++)
-         {
-             auto e = new EdgeRobotVel(_model);
-             Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-             info.setIdentity();
-             e->setInformation(info);
-             e->vertices()[0] = _optimizer.vertex(i);
-             e->vertices()[1] = _optimizer.vertex(i+1);
-             e->resize();
-             _optimizer.addEdge(e);
-         }
-//     }
+     // velocity limits
+     for (int i = 0; i < configurations.size() - 1; i++)
+     {
+         auto e = new EdgeRobotVel(_model);
+         Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+         info.setIdentity();
+         e->setInformation(info);
+         e->vertices()[0] = _optimizer.vertex(i);
+         e->vertices()[1] = _optimizer.vertex(i+1);
+         e->resize();
+         _optimizer.addEdge(e);
+     }
 
-         std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
-         std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
+     // joint limits
+     for (int i = 0; i < configurations.size(); i++)
+     {
+         auto e_jl = new EdgeJointLimits(_model);
+         Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
+         info_jl.setIdentity();
+         e_jl->setInformation(info_jl);
+         e_jl->vertices()[0] = _optimizer.vertex(i);
+         e_jl->resize();
+         _optimizer.addEdge(e_jl);
+     }
+    }
+
+     std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
+     std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
         
 }
 
@@ -318,14 +331,7 @@ void Optimizer::add_edges(int index)
             e->setInformation(Eigen::Matrix<double, 30, 30>::Identity());
             e->vertices()[0] = _optimizer.vertex(i);
             e->addObstacle(_obstacles[index], index);
-            e->computeError();
-            Eigen::VectorXd err = e->getError();
-            Eigen::VectorXd null(err.size());
-//            null.setZero();
-//            if (err != null)
-//            {
-                _optimizer.addEdge(e);
-//            }
+            _optimizer.addEdge(e);
         }
     }
 
@@ -337,13 +343,13 @@ void Optimizer::update_edges(int index)
 {
     auto edges = _optimizer.edges();
 
-//    auto vertices = _optimizer.vertices();
     for (auto e : edges)
     {
         auto edge = dynamic_cast<EdgeRobotPos*>(e);
         if (edge != nullptr)
         {
             edge->updateObstacle(_obstacles[index], index);
+
             // CASE 0: the vertex is still near enough to the obstacle and must be updated
             Eigen::VectorXd null(edge->getError().size());
             null.setZero();
@@ -353,38 +359,17 @@ void Optimizer::update_edges(int index)
                 auto vertex = edge->vertices()[0];
                 auto v = dynamic_cast<VertexRobotPos*>(vertex);
                 v->setFixed(false);
-//                vertices.erase(edge->vertices()[0]->id());
             }
 
-            //CASE 1: the vertex is not anymore near the obstacle and can be deleted
+            // CASE 1: the vertex is not anymore near the obstacle and can be deleted
             else
             {
                 auto vertex = edge->vertices()[0];
                 auto v = dynamic_cast<VertexRobotPos*>(vertex);
                 v->setFixed(true);
-//                vertices.erase(edge->vertices()[0]->id());
             }
         }
     }
-
-    // CASE 2: add new edges if the obstacle get near to uncovered vertices
-//    for (auto v : vertices)
-//    {
-//        auto e = new EdgeRobotPos(_model, 30);
-//        e->setInformation(Eigen::Matrix<double, 30, 30>::Identity());
-//        e->vertices()[0] = v.second;
-//        e->addObstacle(_obstacles[index], index);
-//        e->computeError();
-//        Eigen::VectorXd err = e->getError();
-//        Eigen::VectorXd null(err.size());
-//        null.setZero();
-//        if (err != null)
-//        {
-//            _optimizer.addEdge(e);
-//        }
-//    }
-//    std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
-//    std::cout << "#edges: " << _optimizer.edges().size() << std::endl;
 }
 
 void Optimizer::clear_edges()

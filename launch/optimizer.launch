@@ -12,7 +12,7 @@
         <param name="n" value="100"/>
         <param name="distance" value="2.0"/>
 <!--         <param name="scenario" value="xyz"/> -->
-<!--         <param name="scenario" value="single_robot_pos"/> -->
+<!--         <param name="scenario" value="single_robot_pos"/>-->
         <param name="scenario" value="trj_robot_pos"/>
     </node>
     
