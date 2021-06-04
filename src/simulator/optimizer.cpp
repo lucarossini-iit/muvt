@@ -226,8 +226,8 @@ void Optimizer::load_vertices()
                 v->setDimension(_model->getJointNum());
                 v->setEstimate(configurations[i].q);
                 v->setId(i);
-                if (i == 0 || i == configurations.size() - 1)
-                    v->setFixed(true);
+//                if (i == 0 || i == configurations.size() - 1)
+//                    v->setFixed(true);
                 _optimizer.addVertex(v);
             }  
         }
@@ -287,9 +287,10 @@ void Optimizer::load_edges()
          _optimizer.addEdge(e);
      }
 
-     // joint limits
+
      for (int i = 0; i < configurations.size(); i++)
      {
+         // joint limits
          auto e_jl = new EdgeJointLimits(_model);
          Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
          info_jl.setIdentity();
@@ -297,6 +298,17 @@ void Optimizer::load_edges()
          e_jl->vertices()[0] = _optimizer.vertex(i);
          e_jl->resize();
          _optimizer.addEdge(e_jl);
+
+         // reference trajectory task
+         auto e_t = new EdgeTask();
+         Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
+         info_t.setIdentity();
+         e_t->setInformation(info_t);
+         e_t->vertices()[0] = _optimizer.vertex(i);
+         auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
+         e_t->setReference(v->estimate());
+         e_t->resize();
+         _optimizer.addEdge(e_t);
      }
     }
 
@@ -342,6 +354,7 @@ void Optimizer::add_edges(int index)
 void Optimizer::update_edges(int index)
 {
     auto edges = _optimizer.edges();
+    double cum_err = 0;
 
     for (auto e : edges)
     {
@@ -351,24 +364,29 @@ void Optimizer::update_edges(int index)
             edge->updateObstacle(_obstacles[index], index);
 
             // CASE 0: the vertex is still near enough to the obstacle and must be updated
-            Eigen::VectorXd null(edge->getError().size());
-            null.setZero();
             edge->computeError();
-            if (edge->getError() != null)
-            {
-                auto vertex = edge->vertices()[0];
-                auto v = dynamic_cast<VertexRobotPos*>(vertex);
-                v->setFixed(false);
-            }
-
-            // CASE 1: the vertex is not anymore near the obstacle and can be deleted
-            else
-            {
-                auto vertex = edge->vertices()[0];
-                auto v = dynamic_cast<VertexRobotPos*>(vertex);
-                v->setFixed(true);
-            }
+            cum_err += edge->getError().norm();
         }
+
+        auto edge_t = dynamic_cast<EdgeTask*>(e);
+        if (edge_t != nullptr)
+        {
+            cum_err += edge_t->getError().norm();
+        }
+
+        double thresh = 1e-3;
+        std::cout << cum_err << std::endl;
+        if (cum_err > thresh)
+        {
+            auto v = dynamic_cast<VertexRobotPos*>(e->vertices()[0]);
+            v->setFixed(false);
+        }
+        else
+        {
+            auto v = dynamic_cast<VertexRobotPos*>(e->vertices()[0]);
+            v->setFixed(true);
+        }
+
     }
 }
 
@@ -490,7 +508,7 @@ void Optimizer::optimize()
 
      auto tic = std::chrono::high_resolution_clock::now();
     _optimizer.initializeOptimization();
-    _optimizer.optimize(10);
+    _optimizer.optimize(100);
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
@@ -541,7 +559,14 @@ void Optimizer::optimize()
 //            std::cout << "q: " << v->estimate().transpose() << std::endl;
 //            std::cout << "JointLimits error: " << e4->error().transpose() << std::endl;
 //        }
-
+//        auto e5 = dynamic_cast<EdgeTask*>(i);
+//        if (e5 != nullptr)
+//        {
+//            std::cout << "Reference: " << e5->getReference().transpose() << std::endl;
+//            auto v = dynamic_cast<VertexRobotPos*>(e5->vertices()[0]);
+//            std::cout << "q: " << v->estimate().transpose() << std::endl;
+//            std::cout << "Task Error: " << e5->error().transpose() << std::endl;
+//        }
 
 //    }
 

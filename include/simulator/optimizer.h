@@ -31,6 +31,7 @@
 #include <environment/edge_robot_pos.h>
 #include <environment/edge_robot_vel.h>
 #include <environment/edge_joint_limits.h>
+#include <environment/edge_task.h>
 
 #include <teb_test/SetObstacle.h>
 #include <std_srvs/Empty.h>
