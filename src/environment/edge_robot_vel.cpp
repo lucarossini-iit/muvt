@@ -34,38 +34,16 @@ void EdgeRobotVel::computeError()
    _error.setZero(v1->estimateDimension());
 
     double eps = 0.005;
-    double S = 0.05;
+    double S = 3;
     double r = 0.2;
     int n = 2;
     diff = (q2/0.01 - q1/0.01);
 
-    S = 3;
     for (int i = 0; i < q1.size(); i++)
     {
         double value = 1/exp(S*diff(i) - _vel_min(i)) + exp(S*diff(i) - _vel_max(i));
         _error(i) = value;
     }
-//    for (int i = 0; i < q1.size(); i++)
-//    {
-//        if (diff(i) > _vel_max(i) - eps)
-//        {
-//            double value = pow((-diff(i)-(-_vel_max(i)-eps))/S, n);
-//            _error(i) = value;
-//        }
-//        else
-//            _error(i) = 0;
-//    }
-
-//    for (int i = 0; i < q1.size(); i++)
-//    {
-//        if (diff(i) < _vel_min(i) + eps)
-//        {
-//           double value = pow((-diff(i)-(-_vel_min(i)-eps))/S, n);
-//           _error(i) += value;
-//        }
-//        else
-//            _error(i) += 0;
-//    }
 }
 
 EdgeRobotUnaryVel::EdgeRobotUnaryVel(XBot::ModelInterface::Ptr model):
