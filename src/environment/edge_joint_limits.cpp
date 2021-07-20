@@ -33,26 +33,4 @@ void EdgeJointLimits::computeError()
         double value = 1/exp(S*v1->estimate()(i) - min(i)) + exp(S*v1->estimate()(i) - max(i));
         _error(i) = value;
     }
-
-//    for (int i = 0; i < v1->estimateDimension(); i++)
-//    {
-//        if (v1->estimate()(i) > max(i) - eps)
-//        {
-//            double value = pow((-v1->estimate()(i)-(-max(i)-eps))/S, n);
-//            _error(i) = value;
-//        }
-//        else
-//            _error(i) = 0;
-//    }
-
-//    for (int i = 0; i < v1->estimateDimension(); i++)
-//    {
-//        if (v1->estimate()(i) < min(i) + eps)
-//        {
-//           double value = pow((v1->estimate()(i)-(-min(i)-eps))/S, n);
-//           _error(i) += value;
-//        }
-//        else
-//            _error(i) += 0;
-//    }
 }

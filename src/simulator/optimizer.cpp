@@ -250,66 +250,66 @@ void Optimizer::load_edges()
     }
     else if (_simulator->getScenarioType() == Simulator::ScenarioType::ROBOTPOS)
     {
-     ConfigurationGrid configurations = _simulator->getConfigurations();
+         ConfigurationGrid configurations = _simulator->getConfigurations();
 
-     if (configurations.size() == 1)
-     {
-         auto e = new EdgeRobotUnaryVel(_model);
-         Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-         info.setIdentity();
-         e->setInformation(info);
-         e->vertices()[0] = _optimizer.vertex(0);
-         Eigen::VectorXd q(_model->getJointNum());
-         _model->getJointPosition(q);
-         e->setRef(q);
-         e->resize();
-         _optimizer.addEdge(e);
+         if (configurations.size() == 1)
+         {
+             auto e = new EdgeRobotUnaryVel(_model);
+             Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+             info.setIdentity();
+             e->setInformation(info);
+             e->vertices()[0] = _optimizer.vertex(0);
+             Eigen::VectorXd q(_model->getJointNum());
+             _model->getJointPosition(q);
+             e->setRef(q);
+             e->resize();
+             _optimizer.addEdge(e);
 
-         auto e_jl = new EdgeJointLimits(_model);
-         Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
-         info_jl.setIdentity();
-         e_jl->vertices()[0] = _optimizer.vertex(0);
-         e_jl->setInformation(info_jl);
-         e_jl->resize();
-         _optimizer.addEdge(e_jl);
-     }
+             auto e_jl = new EdgeJointLimits(_model);
+             Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
+             info_jl.setIdentity(); info_jl *= 0.1;
+             e_jl->vertices()[0] = _optimizer.vertex(0);
+             e_jl->setInformation(info_jl);
+             e_jl->resize();
+             _optimizer.addEdge(e_jl);
+         }
 
-     // velocity limits
-     for (int i = 0; i < configurations.size() - 1; i++)
-     {
-         auto e = new EdgeRobotVel(_model);
-         Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-         info.setIdentity();
-         e->setInformation(info);
-         e->vertices()[0] = _optimizer.vertex(i);
-         e->vertices()[1] = _optimizer.vertex(i+1);
-         e->resize();
-         _optimizer.addEdge(e);
-     }
+         // velocity limits
+         for (int i = 0; i < configurations.size() - 1; i++)
+         {
+             auto e = new EdgeRobotVel(_model);
+             Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+             info.setIdentity(); info *= 0.1;
+             e->setInformation(info);
+             e->vertices()[0] = _optimizer.vertex(i);
+             e->vertices()[1] = _optimizer.vertex(i+1);
+             e->resize();
+             _optimizer.addEdge(e);
+         }
 
 
-     for (int i = 0; i < configurations.size(); i++)
-     {
-         // joint limits
-         auto e_jl = new EdgeJointLimits(_model);
-         Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
-         info_jl.setIdentity();
-         e_jl->setInformation(info_jl);
-         e_jl->vertices()[0] = _optimizer.vertex(i);
-         e_jl->resize();
-         _optimizer.addEdge(e_jl);
+         for (int i = 0; i < configurations.size(); i++)
+         {
+             // joint limits
+             auto e_jl = new EdgeJointLimits(_model);
+             Eigen::MatrixXd info_jl(_model->getJointNum(), _model->getJointNum());
+             info_jl.setIdentity(); info_jl *= 0.1;
+             e_jl->setInformation(info_jl);
+             e_jl->vertices()[0] = _optimizer.vertex(i);
+             e_jl->resize();
+             _optimizer.addEdge(e_jl);
 
-         // reference trajectory task
-         auto e_t = new EdgeTask();
-         Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
-         info_t.setIdentity();
-         e_t->setInformation(info_t);
-         e_t->vertices()[0] = _optimizer.vertex(i);
-         auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
-         e_t->setReference(v->estimate());
-         e_t->resize();
-         _optimizer.addEdge(e_t);
-     }
+             // reference trajectory task
+//             auto e_t = new EdgeTask();
+//             Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
+//             info_t.setIdentity(); info_t *= 0.1;
+//             e_t->setInformation(info_t);
+//             e_t->vertices()[0] = _optimizer.vertex(i);
+//             auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
+//             e_t->setReference(v->estimate());
+//             e_t->resize();
+//             _optimizer.addEdge(e_t);
+         }
     }
 
      std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
@@ -358,9 +358,9 @@ void Optimizer::update_edges(int index)
 
     for (auto e : edges)
     {
-        auto edge = dynamic_cast<EdgeRobotPos*>(e);
-        if (edge != nullptr)
+        if (dynamic_cast<EdgeRobotPos*>(e) != nullptr)
         {
+            auto edge = dynamic_cast<EdgeRobotPos*>(e);
             edge->updateObstacle(_obstacles[index], index);
 
             // CASE 0: the vertex is still near enough to the obstacle and must be updated
@@ -368,14 +368,13 @@ void Optimizer::update_edges(int index)
             cum_err += edge->getError().norm();
         }
 
-        auto edge_t = dynamic_cast<EdgeTask*>(e);
-        if (edge_t != nullptr)
+        if (dynamic_cast<EdgeTask*>(e) != nullptr)
         {
-            cum_err += edge_t->getError().norm();
+            auto edge = dynamic_cast<EdgeTask*>(e);
+            cum_err += edge->getError().norm();
         }
 
         double thresh = 1e-3;
-        std::cout << cum_err << std::endl;
         if (cum_err > thresh)
         {
             auto v = dynamic_cast<VertexRobotPos*>(e->vertices()[0]);
@@ -506,9 +505,11 @@ void Optimizer::optimize()
 
     std::cout << "OPTIMIZER HAS " << n_fixed << " FIXED VERTICES AND " << n_nfixed << " NON-FIXED VERTICES!" << std::endl;
 
-     auto tic = std::chrono::high_resolution_clock::now();
+    auto tic = std::chrono::high_resolution_clock::now();
+
+//    _optimizer.verifyInformationMatrices(true);
     _optimizer.initializeOptimization();
-    _optimizer.optimize(100);
+    _optimizer.optimize(10);
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
