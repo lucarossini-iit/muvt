@@ -22,7 +22,7 @@ public:
     
     bool read(std::istream& is)
     {
-
+        return true;
     }
     
     bool write(std::ostream& os) const

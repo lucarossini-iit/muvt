@@ -64,6 +64,8 @@ bool Simulator::addObstacle (Eigen::Vector3d position)
     obs.position = position;
     
     _obstacles.push_back(obs);
+
+     return true;
 }
 
 void Simulator::clear()
