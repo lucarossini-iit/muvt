@@ -19,6 +19,8 @@ find_package(cartesian_interface REQUIRED)
 
 find_package(g2o REQUIRED)
 
+find_package(fcl 0.6.1 QUIET)
+
 add_service_files(
     FILES
     SetObstacle.srv)
@@ -50,7 +52,7 @@ add_library(environment SHARED
             src/environment/edge_robot_vel.cpp
             src/environment/edge_joint_limits.cpp
             src/environment/edge_task.cpp)
-target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT)
+target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl)
 
 add_library(simulator SHARED
             src/simulator/simulator.cpp
@@ -96,3 +98,6 @@ install(DIRECTORY launch/
         FILES_MATCHING PATTERN "*.launch"
         PATTERN ".svn" EXCLUDE
         )
+
+install(DIRECTORY config/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)

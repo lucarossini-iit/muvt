@@ -4,7 +4,7 @@
     <param name="robot_description" textfile="$(find teleop_urdf)/urdf/teleop_fixed_base.urdf"/>
     <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf"/>
     <param name="collision_urdf" textfile="$(find teleop_urdf)/urdf/teleop_capsules.rviz"/>
-    <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/teb_test/config/problem/teleop_stack.yaml"/>
+    <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/src/teb_test/config/problem/teleop_stack.yaml"/>
     
     <node pkg="teb_test" type="optimizer" name="optimizer" output="screen" args="100">
         <param name="solver" value=""/>
@@ -26,6 +26,6 @@
     </include>
 
     <node pkg="rviz" type="rviz" name="rviz"
-        args="-d $(env ROBOTOLOGY_ROOT)/external/teb_test/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
+        args="-d $(find teb_test)/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
     
 </launch>
