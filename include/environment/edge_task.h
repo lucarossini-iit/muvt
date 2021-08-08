@@ -14,10 +14,14 @@ public:
     EdgeTask();
 
     bool read(std::istream& is)
-    {}
+    {
+        return true;
+    }
 
     bool write(std::ostream& os) const
-    {}
+    {
+        return true;
+    }
 
     void setReference(Eigen::VectorXd ref);
 
