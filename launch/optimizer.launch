@@ -15,6 +15,8 @@
 <!--         <param name="scenario" value="single_robot_pos"/>-->
         <param name="scenario" value="trj_robot_pos"/>
     </node>
+
+    <node pkg="teb_test" type="vision_node" name="vision_node" output="screen"/>
     
     <node pkg="tf" type="static_transform_publisher" name="world_connecter"
         args="0 0 0 0 0 0 world ci/world 100"/>

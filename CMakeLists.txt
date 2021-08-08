@@ -21,6 +21,8 @@ find_package(g2o REQUIRED)
 
 find_package(fcl 0.6.1 QUIET)
 
+find_package(PCL REQUIRED)
+
 add_service_files(
     FILES
     SetObstacle.srv)
@@ -42,6 +44,7 @@ include_directories(
     ${g2o_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     ${cartesian_interface_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
     )
 
 add_library(environment SHARED
@@ -67,6 +70,9 @@ target_link_libraries(simulator environment
                                 ${OpenSoT_LIBRARIES}
                                 yaml-cpp)
 
+add_executable(vision_node src/nodes/vision_node.cpp src/vision/point_cloud_manager.cpp)
+target_link_libraries(vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
 add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
@@ -89,6 +95,11 @@ install(TARGETS simulator
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
         
 install(TARGETS optimizer
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS vision_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
