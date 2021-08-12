@@ -79,6 +79,9 @@ target_link_libraries(main_test simulator environment g2o::solver_csparse ${catk
 add_executable(optimizer src/nodes/optimizer_node.cpp src/simulator/optimizer.cpp)
 target_link_libraries(optimizer simulator ${catkin_LIBRARIES})
 
+add_executable(object_recognition_test test/object_recognition_test.cpp)
+target_link_libraries(object_recognition_test ${PCL_LIBRARIES})
+
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -100,6 +103,11 @@ install(TARGETS optimizer
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS vision_node
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS object_recognition_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

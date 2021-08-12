@@ -24,7 +24,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: pointcloud
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -89,7 +89,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /point_cloud
+      Topic: /scene_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -161,6 +161,84 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        TCP:
+          Value: false
+        base_link:
+          Value: false
+        ci/TCP:
+          Value: false
+        ci/base_link:
+          Value: false
+        ci/com:
+          Value: false
+        ci/teleop_link0:
+          Value: false
+        ci/teleop_link1:
+          Value: false
+        ci/teleop_link2:
+          Value: false
+        ci/teleop_link3:
+          Value: false
+        ci/teleop_link4:
+          Value: false
+        ci/teleop_link5:
+          Value: false
+        ci/world:
+          Value: false
+        object:
+          Value: true
+        teleop_link0:
+          Value: false
+        teleop_link1:
+          Value: false
+        teleop_link2:
+          Value: false
+        teleop_link3:
+          Value: false
+        teleop_link4:
+          Value: false
+        teleop_link5:
+          Value: false
+        world:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          base_link:
+            teleop_link0:
+              teleop_link1:
+                teleop_link2:
+                  teleop_link3:
+                    teleop_link4:
+                      teleop_link5:
+                        TCP:
+                          {}
+          ci/world:
+            ci/base_link:
+              ci/teleop_link0:
+                ci/teleop_link1:
+                  ci/teleop_link2:
+                    ci/teleop_link3:
+                      ci/teleop_link4:
+                        ci/teleop_link5:
+                          ci/TCP:
+                            {}
+            ci/com:
+              {}
+          object:
+            {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -205,9 +283,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3803984224796295
+      Pitch: 0.04539851099252701
       Target Frame: <Fixed Frame>
-      Yaw: 3.938584804534912
+      Yaw: 4.048587322235107
     Saved: ~
 Window Geometry:
   Displays:
