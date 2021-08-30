@@ -33,8 +33,7 @@ float descr_rad_ (0.02f);
 float cg_size_ (0.01f);
 float cg_thresh_ (5.0f);
 
-void
-showHelp (char *filename)
+void showHelp (char *filename)
 {
   std::cout << std::endl;
   std::cout << "***************************************************************************" << std::endl;
@@ -182,6 +181,14 @@ main (int argc, char *argv[])
     std::cout << "Error loading scene cloud." << std::endl;
     showHelp (argv[0]);
     return (-1);
+  }
+
+
+  for (auto &point : model->points)
+  {
+      point.x += 0.1;
+      point.y += 0.2;
+      point.z -= 0.3;
   }
 
   //
