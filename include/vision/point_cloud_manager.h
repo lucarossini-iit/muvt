@@ -27,6 +27,7 @@ namespace XBot { namespace HyperGraph { namespace Utils {
 
 class PointCloudManager {
 public:
+    typedef std::shared_ptr<PointCloudManager> Ptr;
     enum class ExtractorType { OBJECT, EUCLIDEANCLUSTER };
 
     PointCloudManager(std::string topic_name,

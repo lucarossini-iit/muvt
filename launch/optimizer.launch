@@ -7,7 +7,7 @@
 
     <arg name="sensor" default="false"/>
     
-    <node pkg="teb_test" type="optimizer" name="optimizer" output="screen" args="100">
+    <node pkg="teb_test" type="optimizer" name="optimizer" output="screen" args="30">
         <param name="solver" value=""/>
         <param name="is_model_floating_base" value="false"/>
         <param name="n" value="100"/>
@@ -23,22 +23,21 @@
         </node>
 
         <include file="$(find zed_wrapper)/launch/zedm.launch"/>
+
+        <node pkg="rviz" type="rviz" name="rviz"
+            args="-d $(find teb_test)/config/rviz/simple_trj_optimizer_sensor.rviz" output="screen"/>
     </group>
 
-    <node unless="$(arg sensor)" pkg="teb_test" type="vision_node" name="vision_node" output="screen">
-        <param name="extractorType" value="euclidean_cluster"/>
-    </node>
-    
-    <node pkg="tf" type="static_transform_publisher" name="world_connecter"
-        args="0 0 0 0 0 0 world ci/world 100"/>
-    
-    <!--<include file="$(find cartesian_interface)/launch/cartesio.launch">
-        <arg name="enable_otg" value="false"/>
-        <arg name="is_model_floating_base" value="false"/>
-        <arg name="tf_prefix" value="ci"/>
-    </include>-->
+    <group unless="$(arg sensor)">
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen">
+            <param name="extractorType" value="euclidean_cluster"/>
+        </node>
 
-    <node pkg="rviz" type="rviz" name="rviz"
-        args="-d $(find teb_test)/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
+        <node pkg="rviz" type="rviz" name="rviz"
+            args="-d $(find teb_test)/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
+    </group>
     
+    <!--<node pkg="tf" type="static_transform_publisher" name="world_connecter"
+        args="0 0 0 0 0 0 world ci/world 200"/>-->
+
 </launch>
