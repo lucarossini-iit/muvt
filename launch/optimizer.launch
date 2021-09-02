@@ -1,14 +1,15 @@
 <launch>
     
-    <arg name="is_model_floating_base" default="false"/>
     <param name="robot_description" textfile="$(find teleop_urdf)/urdf/teleop_fixed_base.urdf"/>
     <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf"/>
     <param name="collision_urdf" textfile="$(find teleop_urdf)/urdf/teleop_capsules.rviz"/>
-    <param name="cartesian/problem_description" textfile="$(env ROBOTOLOGY_ROOT)/external/src/teb_test/config/problem/teleop_stack.yaml"/>
+    <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/teleop_stack.yaml"/>
+
+    <arg name="sensor" default="false"/>
     
     <node pkg="teb_test" type="optimizer" name="optimizer" output="screen" args="100">
         <param name="solver" value=""/>
-        <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+        <param name="is_model_floating_base" value="false"/>
         <param name="n" value="100"/>
         <param name="distance" value="2.0"/>
 <!--         <param name="scenario" value="xyz"/> -->
@@ -16,19 +17,26 @@
         <param name="scenario" value="trj_robot_pos"/>
     </node>
 
-    <node pkg="teb_test" type="vision_node" name="vision_node" output="screen">
+    <group if="$(arg sensor)">
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/zedm/zed_node/point_cloud/cloud_registered">
+            <param name="extractorType" value="euclidean_cluster"/>
+        </node>
+
+        <include file="$(find zed_wrapper)/launch/zedm.launch"/>
+    </group>
+
+    <node unless="$(arg sensor)" pkg="teb_test" type="vision_node" name="vision_node" output="screen">
         <param name="extractorType" value="euclidean_cluster"/>
-        <!--param name="extractorType" value="3d_object"/-->
     </node>
     
     <node pkg="tf" type="static_transform_publisher" name="world_connecter"
         args="0 0 0 0 0 0 world ci/world 100"/>
     
-    <include file="$(find cartesian_interface)/launch/cartesio.launch">
+    <!--<include file="$(find cartesian_interface)/launch/cartesio.launch">
         <arg name="enable_otg" value="false"/>
-        <arg name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+        <arg name="is_model_floating_base" value="false"/>
         <arg name="tf_prefix" value="ci"/>
-    </include>
+    </include>-->
 
     <node pkg="rviz" type="rviz" name="rviz"
         args="-d $(find teb_test)/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
