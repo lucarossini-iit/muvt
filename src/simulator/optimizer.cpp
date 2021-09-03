@@ -47,7 +47,7 @@ void Optimizer::run()
         _q_old_sol = vertex->estimate();
         _sol_model->setJointPosition(_q_old_sol);
         _sol_model->update();
-        _rspub->publishTransforms(ros::Time::now(), "");
+        _rspub->publishTransforms(ros::Time::now(), "robot/");
         
         _index += _incr;
         if (_simulator->getConfigurations().size() == 1)
