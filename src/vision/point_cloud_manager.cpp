@@ -1,4 +1,4 @@
-#include <vision/point_cloud_manager.h>
+ #include <vision/point_cloud_manager.h>
 
 using namespace XBot::HyperGraph::Utils;
 
@@ -295,8 +295,8 @@ void PointCloudManager::clusterExtraction()
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         ec.setClusterTolerance (0.02); // 2cm
-        ec.setMinClusterSize (500);
-        ec.setMaxClusterSize (100000);
+        ec.setMinClusterSize (100);
+        ec.setMaxClusterSize (10000);
         ec.setSearchMethod (tree);
         ec.setInputCloud (cloud_filtered);
         auto tic = std::chrono::high_resolution_clock::now();
@@ -314,7 +314,7 @@ void PointCloudManager::clusterExtraction()
             cloud_cluster->width = cloud_cluster->size ();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
-            cloud_cluster->header.frame_id = "world";
+            cloud_cluster->header.frame_id = "zedm_left_camera_frame";
 
             double x_mean = 0, y_mean = 0 , z_mean = 0;
             for (auto point : cloud_cluster->points)
@@ -328,12 +328,13 @@ void PointCloudManager::clusterExtraction()
             y_mean /= cloud_cluster->size();
             z_mean /= cloud_cluster->size();
 
-            tf::Transform t;
-            tf::Quaternion q;
-            q.setRPY(0, 0, 0);
-            t.setOrigin(tf::Vector3(x_mean, y_mean, z_mean));
-            t.setRotation(q);
-            _transform.push_back(t);
+            // This will broadcast a frame in the middle point of each cluster
+//            tf::Transform t;
+//            tf::Quaternion q;
+//            q.setRPY(0, 0, 0);
+//            t.setOrigin(tf::Vector3(x_mean, y_mean, z_mean));
+//            t.setRotation(q);
+//            _transform.push_back(t);
 
             // Create a publisher
             ros::Publisher pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("object_"+std::to_string(j), 1, true);
@@ -342,12 +343,65 @@ void PointCloudManager::clusterExtraction()
             _cluster_cloud.push_back(cloud_cluster);
             _cc_pub.push_back(pub);
 
-            // Reconstruct a convex hull from the cluster clouds
-    //        pcl::ConvexHull<pcl::PointXYZ>::Ptr convex_hull;
-    //        convex_hull->reconstruct(*cloud_cluster);
-
             j++;
         }
+
+        // This will create an oriented bounding box around each cluster
+        computeBoundingBoxes(_cluster_cloud);
+    }
+}
+
+void PointCloudManager::computeBoundingBoxes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> inputCloud)
+{
+    for (auto cloud : inputCloud)
+    {
+        // Compute principal directions
+        Eigen::Vector4f pcaCentroid;
+        pcl::compute3DCentroid(*cloud, pcaCentroid);
+        Eigen::Matrix3f covariance;
+        pcl::computeCovarianceMatrixNormalized(*cloud, pcaCentroid, covariance);
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigen_solver(covariance, Eigen::ComputeEigenvectors);
+        Eigen::Matrix3f eigenVectorsPCA = eigen_solver.eigenvectors();
+        eigenVectorsPCA.col(2) = eigenVectorsPCA.col(0).cross(eigenVectorsPCA.col(1));  /// This line is necessary for proper orientation in some cases. The numbers come out the same without it, but
+                                                                                        ///    the signs are different and the box doesn't get correctly oriented in some cases.
+        /* // Note that getting the eigenvectors can also be obtained via the PCL PCA interface with something like:
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPCAprojection (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PCA<pcl::PointXYZ> pca;
+        pca.setInputCloud(cloud);
+        pca.project(*cloudSegmented, *cloudPCAprojection);
+        std::cerr << std::endl << "EigenVectors: " << pca.getEigenVectors() << std::endl;
+        std::cerr << std::endl << "EigenValues: " << pca.getEigenValues() << std::endl;
+        // In this case, pca.getEigenVectors() gives similar eigenVectors to eigenVectorsPCA.
+        */
+
+        /// These eigenvectors are used to transform the point cloud to the origin point (0, 0, 0)
+        /// such that the eigenvectors correspond to the axes of the space. The minimum point, maximum point,
+        /// and the middle of the diagonal between these two points are calculated for the transformed cloud
+        /// (also referred to as the projected cloud when using PCL's PCA interface).
+        ///
+        // Transform the original cloud to the origin where the principal components correspond to the axes.
+        Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
+        projectionTransform.block<3,3>(0,0) = eigenVectorsPCA.transpose();
+        projectionTransform.block<3,1>(0,3) = -1.f * (projectionTransform.block<3,3>(0,0) * pcaCentroid.head<3>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPointsProjected (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::transformPointCloud(*cloud, *cloudPointsProjected, projectionTransform);
+        // Get the minimum and maximum points of the transformed cloud.
+        pcl::PointXYZ minPoint, maxPoint;
+        pcl::getMinMax3D(*cloudPointsProjected, minPoint, maxPoint);
+        const Eigen::Vector3f meanDiagonal = 0.5f*(maxPoint.getVector3fMap() + minPoint.getVector3fMap());
+
+        /// Compute the quaternion from the eigenvectors to re-orient the bounding box
+        // Final transform
+        const Eigen::Quaternionf bboxQuaternion(eigenVectorsPCA);
+        const Eigen::Quaterniond bboxQuaterniond(bboxQuaternion);
+        const Eigen::Vector3f bboxTransform = eigenVectorsPCA * meanDiagonal + pcaCentroid.head<3>();
+
+        tf::Transform t;
+        tf::Quaternion q;
+        tf::quaternionEigenToTF(bboxQuaterniond, q);
+        t.setOrigin(tf::Vector3(bboxTransform(0), bboxTransform(1), bboxTransform(2)));
+        t.setRotation(q);
+        _transform.push_back(t);
     }
 }
 
@@ -357,19 +411,19 @@ void PointCloudManager::run()
     _mc_pub.publish(_point_cloud);
     _transform.clear();
     _cc_pub.clear();
+    _cluster_cloud.clear();
 
     if (_extractor_type == ExtractorType::OBJECT)
     {
         extractObject();
 //        _broadcaster.sendTransform(tf::StampedTransform(_transform, ros::Time::now(), "world", "object"));
     }
-    else if (_extractor_type==ExtractorType::EUCLIDEANCLUSTER)
+    else if (_extractor_type == ExtractorType::EUCLIDEANCLUSTER)
     {
         clusterExtraction();
         for (int i = 0; i < _cc_pub.size(); i++)
             _cc_pub[i].publish(_cluster_cloud[i]);
         for (int i = 0; i < _transform.size(); i++)
-            _broadcaster.sendTransform(tf::StampedTransform(_transform[i], ros::Time::now(), "world", "object_" + std::to_string(i)));
+            _broadcaster.sendTransform(tf::StampedTransform(_transform[i], ros::Time::now(), "zedm_left_camera_frame", "object_" + std::to_string(i)));
     }
-
 }

@@ -8,6 +8,8 @@
 
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
+#include <pcl/common/transforms.h>
+#include <pcl/common/common.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/board.h>
@@ -44,6 +46,7 @@ private:
 
     void extractObject();
     void clusterExtraction();
+    void computeBoundingBoxes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> inputCloud);
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _pc_sub;
