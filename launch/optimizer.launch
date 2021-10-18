@@ -4,6 +4,7 @@
     <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf"/>
     <param name="collision_urdf" textfile="$(find teleop_urdf)/urdf/teleop_capsules.rviz"/>
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/teleop_stack.yaml"/>
+    <param name="use_sim_time" value="false"/>
 
     <arg name="sensor" default="false"/>
     
