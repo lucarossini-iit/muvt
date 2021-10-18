@@ -48,15 +48,13 @@ void Optimizer::run()
         _sol_model->setJointPosition(_q_old_sol);
         _sol_model->update();
         _rspub->publishTransforms(ros::Time::now(), "robot");
-        
+
         _index += _incr;
         if (_simulator->getConfigurations().size() == 1)
             _index = 0;
-        else if(_index == _simulator->getConfigurations().size()-1 || _index == 0)
-            _incr *= -1; 
+        else if(_index == _simulator->getConfigurations().size()-1 || _index == 0)        
+            _incr *= -1;
     }
-    
-    ros::spinOnce();
 }
 
 void Optimizer::publish()

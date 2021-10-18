@@ -11,5 +11,6 @@ int main(int argc, char** argv)
     {
         optimizer.run();
         rate.sleep();
+        ros::spinOnce();
     }
 }
