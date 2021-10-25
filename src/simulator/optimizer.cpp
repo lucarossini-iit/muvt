@@ -260,7 +260,7 @@ void Optimizer::load_edges()
              Eigen::VectorXd q(_model->getJointNum());
              _model->getJointPosition(q);
              e->setRef(q);
-             e->resize();
+             e->setDimension(_model->getJointNum());
              _optimizer.addEdge(e);
 
              auto e_jl = new EdgeJointLimits(_model);
@@ -268,7 +268,7 @@ void Optimizer::load_edges()
              info_jl.setIdentity(); info_jl *= 0.1;
              e_jl->vertices()[0] = _optimizer.vertex(0);
              e_jl->setInformation(info_jl);
-             e_jl->resize();
+             e_jl->setDimension(_model->getJointNum());
              _optimizer.addEdge(e_jl);
          }
 
