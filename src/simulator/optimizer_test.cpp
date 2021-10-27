@@ -1,4 +1,4 @@
-#include <simulator/optimizer.h>
+#include <simulator/optimizer_test.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

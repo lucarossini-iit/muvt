@@ -59,7 +59,7 @@ target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT
 
 add_library(simulator SHARED
             src/simulator/simulator.cpp
-            src/simulator/optimizer.cpp)
+            src/simulator/optimizer_test.cpp)
 target_link_libraries(simulator environment
                                 g2o::core 
                                 g2o::types_slam3d 
@@ -76,7 +76,7 @@ target_link_libraries(vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
-add_executable(optimizer src/nodes/optimizer_node.cpp src/simulator/optimizer.cpp)
+add_executable(optimizer src/nodes/optimizer_node.cpp src/simulator/optimizer_test.cpp)
 target_link_libraries(optimizer simulator ${catkin_LIBRARIES})
 
 add_executable(object_recognition_test test/object_recognition_test.cpp)

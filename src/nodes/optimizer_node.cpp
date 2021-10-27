@@ -1,4 +1,4 @@
-#include <simulator/optimizer.h>
+#include <simulator/optimizer_test.h>
 
 int main(int argc, char** argv)
 {
