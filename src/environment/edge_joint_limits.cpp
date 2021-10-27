@@ -12,8 +12,7 @@ void EdgeJointLimits::resize()
 {
     auto v1 = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
 
-    _error.conservativeResize(v1->estimateDimension());
-    _measurement.conservativeResize(v1->estimateDimension());
+    setDimension(v1->estimateDimension());
 }
 
 void EdgeJointLimits::computeError()

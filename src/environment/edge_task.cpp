@@ -17,8 +17,7 @@ void EdgeTask::resize()
     if (_ref.size() == 0)
         std::runtime_error("forgot to set the reference!");
 
-    _error.conservativeResize(_ref.size());
-    _measurement.conservativeResize(_ref.size());
+    setDimension(_ref.size());
 }
 
 Eigen::VectorXd EdgeTask::getError() const

@@ -19,8 +19,7 @@ void EdgeRobotVel::resize()
     if (v1 == nullptr)
         std::runtime_error("first set vertices, then resize!");
 
-    _error.conservativeResize(v1->estimateDimension());
-    _measurement.conservativeResize(v1->estimateDimension());
+    setDimension(v1->estimateDimension());
 }
 
 void EdgeRobotVel::computeError()

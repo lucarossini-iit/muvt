@@ -268,7 +268,7 @@ void Optimizer::load_edges()
              info_jl.setIdentity(); info_jl *= 0.1;
              e_jl->vertices()[0] = _optimizer.vertex(0);
              e_jl->setInformation(info_jl);
-             e_jl->setDimension(_model->getJointNum());
+             e_jl->resize();
              _optimizer.addEdge(e_jl);
          }
 
@@ -298,15 +298,15 @@ void Optimizer::load_edges()
              _optimizer.addEdge(e_jl);
 
              // reference trajectory task
-//             auto e_t = new EdgeTask();
-//             Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
-//             info_t.setIdentity(); info_t *= 0.1;
-//             e_t->setInformation(info_t);
-//             e_t->vertices()[0] = _optimizer.vertex(i);
-//             auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
-//             e_t->setReference(v->estimate());
-//             e_t->resize();
-//             _optimizer.addEdge(e_t);
+             auto e_t = new EdgeTask();
+             Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
+             info_t.setIdentity(); info_t *= 0.1;
+             e_t->setInformation(info_t);
+             e_t->vertices()[0] = _optimizer.vertex(i);
+             auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
+             e_t->setReference(v->estimate());
+             e_t->resize();
+             _optimizer.addEdge(e_t);
          }
     }
 
@@ -361,15 +361,21 @@ void Optimizer::update_edges(int index)
             auto edge = dynamic_cast<EdgeRobotPos*>(e);
             edge->updateObstacle(_obstacles[index], index);
 
-            // CASE 0: the vertex is still near enough to the obstacle and must be updated
             edge->computeError();
-            cum_err += edge->getError().norm();
+            double error = 0;
+            for (int i = 0; i < edge->getError().size(); i++)
+                error += pow(edge->getError()(i), 2);
+            cum_err += std::sqrt(error);
         }
 
         if (dynamic_cast<EdgeTask*>(e) != nullptr)
         {
             auto edge = dynamic_cast<EdgeTask*>(e);
-            cum_err += edge->getError().norm();
+            edge->computeError();
+            double error = 0;
+            for (int i = 0; i < edge->getError().size(); i++)
+                error += pow(edge->getError()(i), 2);
+            cum_err += std::sqrt(error);
         }
 
         double thresh = 1e-3;
@@ -513,72 +519,6 @@ void Optimizer::optimize()
     std::chrono::duration<float> fsec = toc - tic;
     std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
 
-//    std::cout << "final cost for each edge: " << std::endl;
-//    auto edges = _optimizer.edges();
-//    for (auto i : edges)
-//    {
-//        auto e1 = dynamic_cast<EdgeRobotPos*>(i);
-//        if (e1 != nullptr)
-//        {
-//            auto v1 = dynamic_cast<VertexRobotPos*>(e1->vertices()[0]);
-//            std::cout << "q1: " << v1->estimate().transpose() << std::endl;
-//            std::cout << "EdgeRobotPos error: " << e1->error().transpose() << std::endl;
-//            auto distances = e1->_dist->getLinkDistances();
-//            std::cout << "distances: ";
-//            for (auto d : distances)
-//                std::cout << d.getDistance() << "  ";
-//            std::cout << std::endl;
-//        }
-
-//        auto e2 = dynamic_cast<EdgeRobotVel*>(i);
-//        if (e2 != nullptr)
-//        {
-//            auto v1 = dynamic_cast<VertexRobotPos*>(e2->vertices()[0]);
-//            auto v2 = dynamic_cast<VertexRobotPos*>(e2->vertices()[1]);
-//            std::cout << "q1: " << v1->estimate().transpose() << std::endl;
-//            std::cout << "q2: " << v2->estimate().transpose() << std::endl;
-//            std::cout << "EdgeRobotVel error: " << e2->error().transpose() << std::endl;
-//        }
-
-//        auto e3 = dynamic_cast<EdgeRobotUnaryVel*>(i);
-//        if (e3 != nullptr)
-//        {
-//            auto v2 = dynamic_cast<VertexRobotPos*>(e3->vertices()[0]);
-//            Eigen::VectorXd v1(v2->estimateDimension());
-//            e3->getRef(v1);
-//            std::cout << "q_old: " << v1.transpose() << std::endl;
-//            std::cout << "q_new: " << v2->estimate().transpose() << std::endl;
-//            std::cout << "EdgeRobotUnaryEdge error: " << e3->error().transpose() << std::endl;
-//        }
-
-//        auto e4 = dynamic_cast<EdgeJointLimits*>(i);
-//        if (e4 != nullptr)
-//        {
-//            auto v = dynamic_cast<VertexRobotPos*>(e4->vertices()[0]);
-//            std::cout << "q: " << v->estimate().transpose() << std::endl;
-//            std::cout << "JointLimits error: " << e4->error().transpose() << std::endl;
-//        }
-//        auto e5 = dynamic_cast<EdgeTask*>(i);
-//        if (e5 != nullptr)
-//        {
-//            std::cout << "Reference: " << e5->getReference().transpose() << std::endl;
-//            auto v = dynamic_cast<VertexRobotPos*>(e5->vertices()[0]);
-//            std::cout << "q: " << v->estimate().transpose() << std::endl;
-//            std::cout << "Task Error: " << e5->error().transpose() << std::endl;
-//        }
-
-//    }
-
-//    auto edge = _optimizer.edges();
-//    auto vertex = _optimizer.vertices();
-//    auto v = dynamic_cast<VertexRobotPos*>(vertex[0]);
-//    for (auto i : edge)
-//    {
-//        auto e = dynamic_cast<EdgeRobotUnaryVel*>(i);
-
-//        if (e != nullptr)
-//            e->setRef(v->estimate());
-//    }
 }
 
 bool Optimizer::optimization_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)

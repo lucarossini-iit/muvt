@@ -18,8 +18,6 @@ _max_pair_link(max_pair_link)
     else
         ROS_ERROR("unable to find collision_urdf");
     
-//     _error.resize(_max_pair_link);
-//     _measurement.resize(_max_pair_link);
 }
 
 void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, int id)
