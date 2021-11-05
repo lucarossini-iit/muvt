@@ -3,6 +3,6 @@
 <arg name="model" default="$(find teb_test)/config/pcd/milk.pcd"/>
 <arg name="scene" default="$(find teb_test)/config/pcd/milk_cartoon_all_small_clorox.pcd"/>
 
-<node pkg="teb_test" name="object_recognition_test" type="object_recognition_test" output="screen" args="$(arg model) $(arg scene)"/>
+<node pkg="teb_test" name="object_recognition_test" type="object_recognition_test" output="screen" args="$(arg model) $(arg scene) -k -c"/>
 
 </launch>

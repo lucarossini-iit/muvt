@@ -1,5 +1,5 @@
-#ifndef OPTIMIZER_TEST_H
-#define OPTIMIZER_TEST_H
+#ifndef OPTIMIZER_H
+#define OPTIMIZER_H
 
 #include <ros/ros.h>
 #include <ros/service.h>
@@ -45,51 +45,12 @@ namespace XBot { namespace HyperGraph {
 
 class Optimizer {
 public:
-    Optimizer();
-    
-    void publish();
-    
-    void run();
+    Optimizer(ModelInterface::Ptr model);
 
 private:
-    void init_load_model();
-    void init_load_simulator();
-    void init_load_optimizer();
-    void load_vertices();
-    void load_edges();
-    void add_edges(int index);
-    void update_edges(int index);
-    void clear_edges();
-    void optimize();
-    
-    void publishCartesianReferences(int index);
-    
-    bool create_obstacle_service(teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res);
-    bool optimization_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-
-    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-    
-
-    ros::NodeHandle _nhpr, _nh;
-    ros::ServiceServer _create_obs_srv, _opt_srv;
-    ros::Publisher _trj_pub, _obs_pub, _ref_pub;
-    
-    XBot::ModelInterface::Ptr _model, _sol_model;
-    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
-    
-    std::vector<Eigen::Vector3d> _obstacles;
-    std::vector<Eigen::Vector3d> _trajectory;
-
-    Simulator::Ptr _simulator;
-
-    g2o::SparseOptimizer _optimizer;
-
-    std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
-    
-    int _index, _incr;
-    
-    Eigen::VectorXd _q_old_sol;
+    ModelInterface::Ptr _model;
 };
-} }
 
-#endif // OPTIMIZER_TEST_H
+}}
+
+#endif // OPTIMIZER_H
