@@ -24,6 +24,9 @@
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 
+#include <OpenSoT/utils/collision_utils.h>
+#include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
+
 #include <simulator/simulator.h>
 #include <environment/edge_xyz.h>
 #include <environment/robot_pos.h>
@@ -32,6 +35,8 @@
 #include <environment/edge_robot_vel.h>
 #include <environment/edge_joint_limits.h>
 #include <environment/edge_task.h>
+#include <environment/edge_collision.h>
+#include <environment/obstacle.h>
 
 #include <teb_test/SetObstacle.h>
 #include <std_srvs/Empty.h>
@@ -40,15 +45,52 @@
 #include <visualization_msgs/InteractiveMarker.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
+#include <teb_test/ObjectMessageString.h>
 
 namespace XBot { namespace HyperGraph {
 
 class Optimizer {
 public:
-    Optimizer(ModelInterface::Ptr model);
+    typedef std::vector<obstacle> obstacles;
+    Optimizer();
+    Optimizer(std::vector<Eigen::VectorXd> vertices);
+
+    void setVertices(std::vector<Eigen::VectorXd> vertices);
 
 private:
+    /* Macro for option parsing */
+    #define YAML_PARSE_OPTION(yaml, name, type, default_value) \
+    type name = default_value; \
+    if(yaml[#name]) \
+    { \
+        type value = yaml[#name].as<type>(); \
+        std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
+        name = value; \
+        } \
+        else { \
+        std::cout << "No option '" #name "' specified, using default" << std::endl; \
+    } \
+    /* End macro for option parsing */
+
+    void init_load_model();
+    void init_load_config();
+    void init_optimizer();
+    void init_vertices();
+    void init_load_edges();
+
+    void object_callback(const teb_test::ObjectMessageStringConstPtr& msg);
+
+    ros::NodeHandle _nh, _nhpr;
+
     ModelInterface::Ptr _model;
+
+    YAML::Node _optimizer_config;
+
+    g2o::SparseOptimizer _optimizer;
+    std::vector<Eigen::VectorXd> _vertices;
+    std::shared_ptr<ComputeLinksDistance> _cld;
+    obstacles _obstacles;
+    unsigned int _number_obs;
 };
 
 }}

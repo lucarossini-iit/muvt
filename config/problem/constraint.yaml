@@ -1,0 +1,7 @@
+constraints:
+    - collisions
+    - joint_limits
+    - velocity_limits
+
+collisions:
+    - max_pair_link: 100

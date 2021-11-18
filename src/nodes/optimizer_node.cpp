@@ -9,7 +9,6 @@ int main(int argc, char** argv)
     ros::Rate rate(std::atof(argv[1]));
     while (ros::ok())
     {
-        optimizer.run();
         rate.sleep();
         ros::spinOnce();
     }

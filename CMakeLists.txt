@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
     visualization_msgs
     geometry_msgs
     eigen_conversions
+    urdf
     )
     
 find_package(cartesian_interface REQUIRED)
@@ -23,13 +24,19 @@ find_package(fcl 0.6.1 QUIET)
 
 find_package(PCL REQUIRED)
 
+add_message_files(
+    FILES
+    ObjectMessage.msg
+    ObjectMessageString.msg)
+
 add_service_files(
     FILES
     SetObstacle.srv)
     
 generate_messages(
     DEPENDENCIES
-    std_msgs geometry_msgs# Or other packages containing msgs
+    std_msgs
+    geometry_msgs
     )
 
 catkin_package(
@@ -52,6 +59,7 @@ add_library(environment SHARED
             src/environment/robot_pos.cpp
             src/environment/vertex_robot_pos.cpp
             src/environment/edge_robot_pos.cpp
+            src/environment/edge_collision.cpp
             src/environment/edge_robot_vel.cpp
             src/environment/edge_joint_limits.cpp
             src/environment/edge_task.cpp)
@@ -82,6 +90,13 @@ target_link_libraries(optimizer_test simulator ${catkin_LIBRARIES})
 add_executable(object_recognition_test test/object_recognition_test.cpp)
 target_link_libraries(object_recognition_test ${PCL_LIBRARIES})
 
+add_executable(optimizer src/nodes/optimizer_node.cpp src/optimizer/optimizer.cpp)
+target_link_libraries(optimizer environment
+                                ${catkin_LIBRARIES}
+                                g2o::core
+                                g2o::types_slam3d
+                                g2o::solver_csparse)
+
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -108,6 +123,11 @@ install(TARGETS vision_node
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS object_recognition_test
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS optimizer
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

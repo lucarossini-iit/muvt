@@ -20,7 +20,7 @@ _max_pair_link(max_pair_link)
     
 }
 
-void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, int id)
+void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, Eigen::Vector3d size, int id)
 {
     moveit_msgs::PlanningSceneWorld wc;
     moveit_msgs::CollisionObject coll;
@@ -30,8 +30,8 @@ void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, int id)
     
     coll.operation = moveit_msgs::CollisionObject::ADD;
     coll.primitives.resize(1);
-    coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
-    coll.primitives[0].dimensions = {0.2}; 
+    coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+    coll.primitives[0].dimensions = {size(0), size(1), size(2)};
     
     geometry_msgs::Pose p;
     p.position.x = ob(0);
@@ -45,6 +45,8 @@ void EdgeRobotPos::addObstacle(Eigen::Vector3d ob, int id)
     
     wc.collision_objects.push_back(coll);
     _dist->setWorldCollisions(wc);
+
+    ID = id;
 }
 
 void EdgeRobotPos::updateObstacle(Eigen::Vector3d ob, int ind)

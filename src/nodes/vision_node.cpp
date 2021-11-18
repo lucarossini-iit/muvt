@@ -7,17 +7,13 @@ int main(int argc, char** argv)
 
     XBot::HyperGraph::Utils::PointCloudManager::Ptr pc_manager;
 
-    if (argc == 2)
-    {
-        std::string topic_name(argv[1]);
-        pc_manager = std::make_shared<XBot::HyperGraph::Utils::PointCloudManager>(topic_name, nh);
-    }
-    else
-    {
-        pc_manager = std::make_shared<XBot::HyperGraph::Utils::PointCloudManager>(Eigen::Vector3d(0.0, 0.0, 0.0), nh);
-    }
+    if (argc != 2)
+        ROS_ERROR("please specify a topic name for the input PointCloud!");
 
-    ros::Rate rate(30);
+    std::string topic_name(argv[1]);
+    pc_manager = std::make_shared<XBot::HyperGraph::Utils::PointCloudManager>(topic_name, nh);
+
+    ros::Rate rate(10);
     while (ros::ok())
     {
         pc_manager->run();

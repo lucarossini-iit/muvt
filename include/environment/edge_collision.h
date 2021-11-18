@@ -1,5 +1,5 @@
-#ifndef EDGE_ROBOT_POS_H
-#define EDGE_ROBOT_POS_H
+#ifndef EDGE_COLLISION_H
+#define EDGE_COLLISION_H
 
 #include <g2o/core/base_unary_edge.h>
 
@@ -7,24 +7,30 @@
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
+#include <eigen_conversions/eigen_msg.h>
+
 #include <environment/vertex_robot_pos.h>
+#include <environment/obstacle.h>
 
 using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
-    
-class EdgeRobotPos : public BaseUnaryEdge<30, Eigen::VectorXd, VertexRobotPos> {
+
+class EdgeCollision : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    
-    EdgeRobotPos(XBot::ModelInterface::Ptr& model,
-                 int max_pair_link);
-    
+
+    typedef std::vector<obstacle> obstacles;
+
+    EdgeCollision(XBot::ModelInterface::Ptr& model,
+                  std::shared_ptr<ComputeLinksDistance> dist,
+                  int max_pair_link);
+
     bool read(std::istream& is)
     {
         return true;
     }
-    
+
     bool write(std::ostream& os) const
     {
         Eigen::VectorXd p = measurement();
@@ -32,22 +38,19 @@ public:
 
         return os.good();
     }
-        
-    void addObstacle(Eigen::Vector3d ob, Eigen::Vector3d size, int id);
-    void updateObstacle(Eigen::Vector3d ob, int ind);
-    
+
+    void setObstacles(obstacles obs);
+    void resize(int size);
     void computeError();
-    
+
     Eigen::VectorXd getError() const;
 
-    std::shared_ptr<ComputeLinksDistance> _dist;
-
     unsigned int ID;
-    
+
 private:
     XBot::ModelInterface::Ptr _model;
-    int _max_pair_link;
+    std::shared_ptr<ComputeLinksDistance> _cld;
 
 }; } }
 
-#endif
+#endif // EDGE_COLLISION_H

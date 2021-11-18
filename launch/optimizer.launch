@@ -1,47 +1,23 @@
 <launch>
-    
+
     <param name="robot_description" textfile="$(find teleop_urdf)/urdf/teleop_fixed_base.urdf"/>
     <param name="robot_description_semantic" textfile="$(find teleop_srdf)/srdf/teleop_fixed_base.srdf"/>
     <param name="collision_urdf" textfile="$(find teleop_urdf)/urdf/teleop_capsules.rviz"/>
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/teleop_stack.yaml"/>
     <param name="use_sim_time" value="false"/>
 
-    <arg name="sensor" default="false"/>
-    
-    <node pkg="teb_test" type="optimizer" name="optimizer" output="screen" args="30">
-        <param name="solver" value=""/>
-        <param name="is_model_floating_base" value="false"/>
-        <param name="n" value="100"/>
-        <param name="distance" value="2.0"/>
-<!--         <param name="scenario" value="xyz"/> -->
-<!--         <param name="scenario" value="single_robot_pos"/>-->
-        <param name="scenario" value="trj_robot_pos"/>
+    <!-- zedm ros wrapper -->
+     <include file="$(find zed_wrapper)/launch/zedm.launch"/>
+
+    <!-- optimizer node -->
+    <node pkg="teb_test" type="optimizer" name="optimizer" output="screen">
+        <param name="optimizer_config" textfile="$(find teb_test)/config/problem/constraint.yaml"/>
     </node>
 
-    <group if="$(arg sensor)">
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/zedm/zed_node/point_cloud/cloud_registered">
-            <param name="extractorType" value="euclidean_cluster"/>
-        </node>
+    <!-- vision node -->
+    <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/zedm/zed_node/point_cloud/cloud_registered"/>
 
-        <include file="$(find zed_wrapper)/launch/zedm.launch"/>
-
-        <node pkg="rviz" type="rviz" name="rviz"
-            args="-d $(find teb_test)/config/rviz/simple_trj_optimizer_sensor.rviz" output="screen"/>
-
-        <node pkg="tf" type="static_transform_publisher" name="world_connecter"
-            args="0 0 0 0 0 0 world map 30"/>
-    </group>
-
-    <group unless="$(arg sensor)">
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen">
-            <param name="extractorType" value="euclidean_cluster"/>
-        </node>
-
-        <node pkg="rviz" type="rviz" name="rviz"
-            args="-d $(find teb_test)/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
-    </group>
-    
-    <node pkg="tf" type="static_transform_publisher" name="world_connecter_robot"
-        args="0 0 0 0 0 0 world robot/world 30"/>
+    <!-- rviz -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find teb_test)/config/rviz/simple_trj_optimizer.rviz" output="screen"/>
 
 </launch>

@@ -335,14 +335,14 @@ void Optimizer::add_edges(int index)
     {
         ConfigurationGrid configurations = _simulator->getConfigurations();
 
-        for (int i = 0; i < configurations.size(); i ++)
-        {
-            auto e = new EdgeRobotPos(_model, 30);
-            e->setInformation(Eigen::Matrix<double, 30, 30>::Identity());
-            e->vertices()[0] = _optimizer.vertex(i);
-            e->addObstacle(_obstacles[index], index);
-            _optimizer.addEdge(e);
-        }
+//        for (int i = 0; i < configurations.size(); i ++)
+//        {
+//            auto e = new EdgeRobotPos(_model, 30);
+//            e->setInformation(Eigen::Matrix<double, 30, 30>::Identity());
+//            e->vertices()[0] = _optimizer.vertex(i);
+//            e->addObstacle(_obstacles[index], index);
+//            _optimizer.addEdge(e);
+//        }
     }
 
     std::cout << "#vertices: " << _optimizer.vertices().size() << std::endl;
