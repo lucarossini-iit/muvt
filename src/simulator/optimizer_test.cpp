@@ -1,6 +1,6 @@
 #include <simulator/optimizer_test.h>
 
-using namespace XBot::HyperGraph;
+using namespace XBot::HyperGraph::Test;
 using namespace g2o;
 
 Optimizer::Optimizer():

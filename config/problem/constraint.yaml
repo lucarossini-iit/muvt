@@ -5,3 +5,6 @@ constraints:
 
 collisions:
     - max_pair_link: 100
+
+optimizer:
+    - iterations: 10

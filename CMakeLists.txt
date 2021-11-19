@@ -84,18 +84,22 @@ target_link_libraries(vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
 
-add_executable(optimizer_test src/nodes/optimizer_node.cpp src/simulator/optimizer_test.cpp)
-target_link_libraries(optimizer_test simulator ${catkin_LIBRARIES})
+#add_executable(optimizer_test src/nodes/optimizer_node.cpp src/simulator/optimizer_test.cpp)
+#target_link_libraries(optimizer_test simulator ${catkin_LIBRARIES})
 
 add_executable(object_recognition_test test/object_recognition_test.cpp)
 target_link_libraries(object_recognition_test ${PCL_LIBRARIES})
 
 add_executable(optimizer src/nodes/optimizer_node.cpp src/optimizer/optimizer.cpp)
 target_link_libraries(optimizer environment
+                                simulator
                                 ${catkin_LIBRARIES}
                                 g2o::core
                                 g2o::types_slam3d
                                 g2o::solver_csparse)
+
+add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
+target_link_libraries(robot_controller_node environment ${cartesian_interface_LIBRARIES})
 
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -112,10 +116,10 @@ install(TARGETS simulator
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
         
-install(TARGETS optimizer_test
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+#install(TARGETS optimizer_test
+#        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS vision_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -128,6 +132,11 @@ install(TARGETS object_recognition_test
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS optimizer
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS robot_controller_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

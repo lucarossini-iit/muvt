@@ -18,7 +18,8 @@ int main(int argc, char** argv)
 
     goal = qhome;
     goal(0) = 1.0;
-
+    
+    // TODO remove simulator
     auto simulator = std::make_shared<XBot::HyperGraph::Simulator>(100, start, goal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
     std::vector<Eigen::VectorXd> q_init;
     auto configurations =  simulator->getConfigurations();

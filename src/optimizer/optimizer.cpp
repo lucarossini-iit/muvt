@@ -3,7 +3,7 @@
 using namespace XBot::HyperGraph;
 
 Optimizer::Optimizer():
-_nh(""),
+_nh("optimizer"),
 _nhpr("~"),
 _number_obs(0)
 {
@@ -12,7 +12,7 @@ _number_obs(0)
 }
 
 Optimizer::Optimizer(std::vector<Eigen::VectorXd> vertices):
-_nh(""),
+_nh("optimizer"),
 _nhpr("~"),
 _vertices(vertices),
 _number_obs(0)
@@ -22,7 +22,6 @@ _number_obs(0)
     init_optimizer();
     init_vertices();
 
-    _nh.subscribe("/obstacles", 10, &Optimizer::object_callback, this);
 }
 
 void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg)
@@ -79,6 +78,11 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
     }
 }
 
+void Optimizer::run()
+{
+    optimize();
+}
+
 void Optimizer::init_load_model()
 {
     auto cfg = XBot::ConfigOptionsFromParamServer();
@@ -118,6 +122,10 @@ void Optimizer::init_load_config()
     _nhpr.getParam("planner_config", optimizer_config_string);
 
     _optimizer_config = YAML::Load(optimizer_config_string);
+
+    // advertise and subscribe to topics
+    _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
+    _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
 }
 
 void Optimizer::init_optimizer()
@@ -218,4 +226,36 @@ void Optimizer::setVertices(std::vector<Eigen::VectorXd> vertices)
 {
     _vertices = vertices;
     init_vertices();
+}
+
+void Optimizer::optimize()
+{
+    YAML_PARSE_OPTION(_optimizer_config["optimizer"], iterations, int, 10);
+
+    auto tic = std::chrono::high_resolution_clock::now();
+
+//    _optimizer.verifyInformationMatrices(true);
+    _optimizer.initializeOptimization();
+    _optimizer.optimize(iterations);
+
+    auto toc = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> fsec = toc - tic;
+    std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
+
+    // save and publish solution
+    auto vertices = _optimizer.vertices();
+    trajectory_msgs::JointTrajectory solution;
+    solution.joint_names = _model->getEnabledJointNames();
+    for (int i = 0; i < vertices.size(); i++)
+    {
+        auto v = dynamic_cast<VertexRobotPos*>(vertices[i]);
+        if (v == nullptr)
+            ROS_WARN("unable to cast vertex while saving solution!");
+        std::vector<double> q(v->estimate().data(), v->estimate().data() + v->estimate().size());
+        trajectory_msgs::JointTrajectoryPoint point;
+        point.positions = q;
+        solution.points.push_back(point);
+    }
+
+    _sol_pub.publish(solution);
 }

@@ -38,14 +38,14 @@
 #include <environment/edge_collision.h>
 #include <environment/obstacle.h>
 
-#include <teb_test/SetObstacle.h>
-#include <std_srvs/Empty.h>
-
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
+#include <trajectory_msgs/JointTrajectory.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <teb_test/ObjectMessageString.h>
+#include <teb_test/SetObstacle.h>
+#include <std_srvs/Empty.h>
 
 namespace XBot { namespace HyperGraph {
 
@@ -56,6 +56,8 @@ public:
     Optimizer(std::vector<Eigen::VectorXd> vertices);
 
     void setVertices(std::vector<Eigen::VectorXd> vertices);
+
+    void run();
 
 private:
     /* Macro for option parsing */
@@ -78,9 +80,13 @@ private:
     void init_vertices();
     void init_load_edges();
 
+    void optimize();
+
     void object_callback(const teb_test::ObjectMessageStringConstPtr& msg);
 
     ros::NodeHandle _nh, _nhpr;
+    ros::Subscriber _obj_sub;
+    ros::Publisher _sol_pub;
 
     ModelInterface::Ptr _model;
 

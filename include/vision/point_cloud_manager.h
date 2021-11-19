@@ -24,6 +24,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 
 #include <teb_test/ObjectMessageString.h>
@@ -58,9 +59,12 @@ private:
 
     bool _isCallbackDone;
 
-    std::vector<tf::Transform> _transform;
+    std::vector<tf::Transform> _transforms;
     tf::TransformBroadcaster _broadcaster;
+    tf::StampedTransform _transform;
     teb_test::ObjectMessageString _objects;
+
+    Eigen::Affine3d _w_T_cam;
 };
 } } }
 #endif // POINT_CLOUD_MANAGER_H

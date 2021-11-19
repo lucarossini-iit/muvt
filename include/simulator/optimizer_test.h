@@ -41,7 +41,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
 
-namespace XBot { namespace HyperGraph {
+namespace XBot { namespace HyperGraph { namespace Test {
 
 class Optimizer {
 public:
@@ -90,6 +90,6 @@ private:
     
     Eigen::VectorXd _q_old_sol;
 };
-} }
+} } }
 
 #endif // OPTIMIZER_TEST_H

@@ -18,11 +18,31 @@ _isCallbackDone(false)
     _pc_filt_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("voxel", 10, true);
     _pc_filt2_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("outlier", 10, true);
     _ma_pub = _nh.advertise<visualization_msgs::MarkerArray>("markers", 10, true);
+
+    // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
+    // the lookupTransform in the callback)
+    tf::TransformListener listener;
+    try
+    {
+        listener.waitForTransform("world", "zedm_left_camera_frame", ros::Time::now(), ros::Duration(10.0));
+        listener.lookupTransform("world", "zedm_left_camera_frame", ros::Time::now(), _transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s",ex.what());
+    }
+
+    tf::transformTFToEigen(_transform, _w_T_cam);
 }
 
 void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr &msg)
 {
-    _point_cloud = msg;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pc (new pcl::PointCloud<pcl::PointXYZ>);
+    pc = msg;
+    pcl::transformPointCloud(*pc, *_point_cloud, _w_T_cam.matrix());
+
+    std::cout << _point_cloud->points[500].x << " " << _point_cloud->points[500].y << " " << _point_cloud->points[500].z << std::endl;
+
 //    _point_cloud->header.frame_id = "world";
 
     // Filter cloud from NaN
@@ -94,7 +114,7 @@ void PointCloudManager::clusterExtraction()
             q.setRPY(0, 0, 0);
             t.setOrigin(tf::Vector3(x_mean, y_mean, z_mean));
             t.setRotation(q);
-            _transform.push_back(t);
+            _transforms.push_back(t);
 
             // Create a publisher
             ros::Publisher pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("object_"+std::to_string(j), 1, true);
@@ -105,7 +125,6 @@ void PointCloudManager::clusterExtraction()
 
             j++;
         }
-    std::cout << "cc_pub size: " << _cc_pub.size() << std::endl;
     generateObjectMsg();
     }
 }
@@ -122,7 +141,7 @@ void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZ>::Ptr input
 
 void PointCloudManager::generateObjectMsg()
 {
-    for (int i = 0 ; i < _transform.size(); i++)
+    for (int i = 0 ; i < _transforms.size(); i++)
     {
         teb_test::ObjectMessage msg;
         msg.header.frame_id = "zedm_left_camera_frame";
@@ -131,9 +150,9 @@ void PointCloudManager::generateObjectMsg()
 
         msg.name.data = "object_" + std::to_string(i);
 
-        msg.pose.position.x = _transform[i].getOrigin()[0];
-        msg.pose.position.y = _transform[i].getOrigin()[1];
-        msg.pose.position.z = _transform[i].getOrigin()[2];
+        msg.pose.position.x = _transforms[i].getOrigin()[0];
+        msg.pose.position.y = _transforms[i].getOrigin()[1];
+        msg.pose.position.z = _transforms[i].getOrigin()[2];
 
         // TODO: fix orientation!
         msg.pose.orientation.x = 0;
@@ -192,7 +211,7 @@ void PointCloudManager::publishObjectMarkers()
 void PointCloudManager::run()
 {
     _pc_pub.publish(_point_cloud);
-    _transform.clear();
+    _transforms.clear();
     _cc_pub.clear();
     _cluster_cloud.clear();
     _objects.objects.clear();
@@ -200,11 +219,10 @@ void PointCloudManager::run()
     clusterExtraction();
     for (int i = 0; i < _cc_pub.size(); i++)
     {
-        std::cout << "point in cluster " << i << ": " << _cluster_cloud[i]->width << std::endl;
         _cc_pub[i].publish(_cluster_cloud[i]);
         _obj_pub.publish(_objects);
         publishObjectMarkers();
-        _broadcaster.sendTransform(tf::StampedTransform(_transform[i], ros::Time::now(), "zedm_left_camera_frame", "object_" + std::to_string(i)));
+        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), "zedm_left_camera_frame", "object_" + std::to_string(i)));
     }
 
     _pc_filt_pub.publish(_cloud_filtered);
