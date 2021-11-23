@@ -36,6 +36,8 @@ public:
 
     void computeError();
 
+    Eigen::VectorXd getError() const;
+
 private:
     XBot::ModelInterface::Ptr _model;
 };

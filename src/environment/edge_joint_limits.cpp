@@ -24,12 +24,17 @@ void EdgeJointLimits::computeError()
    _error.setZero(v1->estimateDimension());
 
     double eps = 0.1;
-    double S = 3;
-    int n = 2;
+    double S = 6;
+    int n = 0.0000000001;
 
     for (int i = 0; i < v1->estimateDimension(); i++)
     {
-        double value = 1/exp(S*v1->estimate()(i) - min(i)) + exp(S*v1->estimate()(i) - max(i));
+        double value = (1/exp(S*v1->estimate()(i) - min(i)) + exp(S*v1->estimate()(i) - max(i)))*n;
         _error(i) = value;
     }
+}
+
+Eigen::VectorXd EdgeJointLimits::getError() const
+{
+    return _error;
 }
