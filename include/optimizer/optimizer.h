@@ -97,6 +97,7 @@ private:
     std::shared_ptr<ComputeLinksDistance> _cld;
     obstacles _obstacles;
     unsigned int _number_obs;
+    int _iterations;
 };
 
 }}

@@ -21,7 +21,7 @@ _number_obs(0)
     init_load_config();
     init_optimizer();
     init_vertices();
-
+    init_load_edges();
 }
 
 void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg)
@@ -40,42 +40,54 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
         tf::quaternionMsgToEigen(object.pose.orientation, obs.orientation);
         obs.T.translation() = obs.position;
         obs.T.linear() = obs.orientation.toRotationMatrix();
-
+        tf::vectorMsgToEigen(object.size, obs.size);
         obs.frame_id = object.header.frame_id;
         obs.id = object.header.seq;
-
         _obstacles.push_back(obs);
     }
 
-    auto edges = _optimizer.edges();
-    double cum_err = 0;
-
-    for (auto e : edges)
+    auto vertices = _optimizer.vertices();
+    for (auto vertex : vertices)
     {
-        if (dynamic_cast<EdgeCollision*>(e) != nullptr)
+        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
+        double cum_err = 0;
+        double error = 0;
+        for (auto edge : v->edges())
         {
-            auto edge = dynamic_cast<EdgeCollision*>(e);
-            edge->setObstacles(_obstacles);
-            edge->computeError();
-
-            double error = 0;
-            for (int i = 0; i < edge->getError().size(); i++)
-                error += pow(edge->getError()(i), 2);
-            cum_err += std::sqrt(error);
+            if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
+            {
+                std::cout << "EdgeCollision found!" << std::endl;
+                auto e = dynamic_cast<EdgeCollision*>(edge);
+                e->setObstacles(_obstacles);
+                e->computeError();
+                error = 0;
+                for (int i = 0; i < e->getError().size(); i++)
+                    error += e->getError()(i) * e->getError()(i);
+                cum_err += std::sqrt(error);
+//                std::cout << "EdgeCollision error: " << std::sqrt(error) << std::endl;
+            }
+            else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
+            {
+                std::cout << "EdgeTask found!" << std::endl;
+                auto e = dynamic_cast<EdgeTask*>(edge);
+                e->computeError();
+                error = 0;
+                for (int i = 0; i < e->getError().size(); i++)
+                    error += e->getError()(i) * e->getError()(i);
+                cum_err += std::sqrt(error);
+                if (std::sqrt(error) > 1e-1)
+                    std::cout << "EdgeTask error: " << std::sqrt(error) << std::endl;
+            }
 
             double thresh = 1e-3;
             if (cum_err > thresh)
-            {
-                auto v = dynamic_cast<VertexRobotPos*>(e->vertices()[0]);
                 v->setFixed(false);
-            }
             else
-            {
-                auto v = dynamic_cast<VertexRobotPos*>(e->vertices()[0]);
                 v->setFixed(true);
-            }
         }
     }
+
+
 }
 
 void Optimizer::run()
@@ -119,9 +131,12 @@ void Optimizer::init_load_config()
 
     // load planner config file (yaml)
     std::string optimizer_config_string;
-    _nhpr.getParam("planner_config", optimizer_config_string);
+    _nhpr.getParam("optimizer_config", optimizer_config_string);
 
     _optimizer_config = YAML::Load(optimizer_config_string);
+
+    YAML_PARSE_OPTION(_optimizer_config["optimizer"], iterations, int, 10);
+    _iterations = iterations;
 
     // advertise and subscribe to topics
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
@@ -130,7 +145,7 @@ void Optimizer::init_load_config()
 
 void Optimizer::init_optimizer()
 {
-    auto linearSolver = g2o::make_unique<LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>>();
+    auto linearSolver = g2o::make_unique<LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>>();
     auto blockSolver = g2o::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
     g2o::OptimizationAlgorithm *algorithm = new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver));
 
@@ -156,11 +171,9 @@ void Optimizer::init_load_edges()
 {
     if(!_optimizer_config["constraints"])
     {
-        std::cout << "No constraints were defined" << std::endl;
+        ROS_WARN("No constraints were defined");
         return;
     }
-
-    // I think it is useless to init edges for collision avoidance since the sensor is not initialized yet
 
     for(auto vc : _optimizer_config["constraints"])
     {
@@ -182,16 +195,48 @@ void Optimizer::init_load_edges()
         }
         else if (vc_name == "velocity_limits")
         {
-            for (int i = 0; i < _vertices.size() - 1; i++)
+            if (_vertices.size() == 1)
             {
-                auto e_vel = new EdgeRobotVel(_model);
+                auto e_vel = new EdgeRobotUnaryVel(_model);
                 Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
                 info.setIdentity(); info *= 0.1;
                 e_vel->setInformation(info);
-                e_vel->vertices()[0] = _optimizer.vertex(i);
-                e_vel->vertices()[1] = _optimizer.vertex(i+1);
+                e_vel->vertices()[0] = _optimizer.vertex(0);
                 e_vel->resize();
+                auto v = dynamic_cast<VertexRobotPos*>(_optimizer.vertex(0));
+                e_vel->setRef(v->estimate());
                 _optimizer.addEdge(e_vel);
+            }
+            else
+            {
+                for (int i = 0; i < _vertices.size() - 1; i++)
+                {
+                    auto e_vel = new EdgeRobotVel(_model);
+                    Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+                    info.setIdentity(); info *= 0.1;
+                    e_vel->setInformation(info);
+                    e_vel->vertices()[0] = _optimizer.vertex(i);
+                    e_vel->vertices()[1] = _optimizer.vertex(i+1);
+                    e_vel->resize();
+                    _optimizer.addEdge(e_vel);
+                }
+            }
+        }
+        else if (vc_name == "nominal_trajectory")
+        {
+            YAML_PARSE_OPTION(_optimizer_config["nominal_trajectory"], weight, double, 1);
+            for (int i = 0; i < _vertices.size(); i++)
+            {
+                auto e_t = new EdgeTask();
+                Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
+                info_t.setIdentity();
+                info_t *= weight;
+                e_t->setInformation(info_t);
+                e_t->vertices()[0] = _optimizer.vertex(i);
+                auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
+                e_t->setReference(v->estimate());
+                e_t->resize();
+                _optimizer.addEdge(e_t);
             }
         }
         else if (vc_name == "collisions")
@@ -204,12 +249,14 @@ void Optimizer::init_load_edges()
             else
                 ROS_ERROR("unable to find collision_urdf");
 
-            YAML_PARSE_OPTION(_optimizer_config[vc_name]["max_pair_link"], max_pair_link, int, 1e6);
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], max_pair_link, int, 1e2);
+            YAML_PARSE_OPTION(_optimizer_config["collisions"], weight, double, 1);
             for (int i = 0; i < _vertices.size(); i++)
             {
                 auto e_coll = new EdgeCollision(_model, _cld, max_pair_link);
                 Eigen::MatrixXd info(max_pair_link, max_pair_link);
                 info.setIdentity();
+                info *= weight;
                 e_coll->setInformation(info);
                 e_coll->vertices()[0] = _optimizer.vertex(i);
                 _optimizer.addEdge(e_coll);
@@ -226,24 +273,37 @@ void Optimizer::setVertices(std::vector<Eigen::VectorXd> vertices)
 {
     _vertices = vertices;
     init_vertices();
+
+    if (_optimizer.edges().size() > 0)
+        _optimizer.edges().clear();
+    init_load_edges();
 }
 
 void Optimizer::optimize()
 {
-    YAML_PARSE_OPTION(_optimizer_config["optimizer"], iterations, int, 10);
-
+    auto vertices = _optimizer.vertices();
+    unsigned int counter_non_active = 0;
+    unsigned int counter_active = 0;
+    for (const auto vertex : vertices)
+    {
+        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
+        if (v->fixed())
+            counter_non_active++;
+        else
+            counter_active++;
+    }
+    std::cout << "fixed: " << counter_non_active << std::endl;
+    std::cout << "active: " << counter_active << std::endl;
     auto tic = std::chrono::high_resolution_clock::now();
 
-//    _optimizer.verifyInformationMatrices(true);
     _optimizer.initializeOptimization();
-    _optimizer.optimize(iterations);
+    _optimizer.optimize(_iterations);
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
     std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
 
     // save and publish solution
-    auto vertices = _optimizer.vertices();
     trajectory_msgs::JointTrajectory solution;
     solution.joint_names = _model->getEnabledJointNames();
     for (int i = 0; i < vertices.size(); i++)
@@ -255,6 +315,18 @@ void Optimizer::optimize()
         trajectory_msgs::JointTrajectoryPoint point;
         point.positions = q;
         solution.points.push_back(point);
+        if (vertices.size() == 1)
+        {
+            solution.points.push_back(point);
+            for (auto edge : _optimizer.edges())
+            {
+                if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
+                {
+                    auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
+                    e->setRef(v->estimate());
+                }
+            }
+        }
     }
 
     _sol_pub.publish(solution);

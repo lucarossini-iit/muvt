@@ -2,9 +2,14 @@ constraints:
     - collisions
     - joint_limits
     - velocity_limits
+    - nominal_trajectory
 
 collisions:
-    - max_pair_link: 100
+    max_pair_link: 100
+    weight: 100
 
 optimizer:
-    - iterations: 10
+    iterations: 20
+
+nominal_trajectory:
+    weight: 10.

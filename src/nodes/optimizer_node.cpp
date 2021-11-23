@@ -19,15 +19,16 @@ int main(int argc, char** argv)
     goal = qhome;
     goal(0) = 1.0;
 
+    // TODO remove simulator
     auto simulator = std::make_shared<XBot::HyperGraph::Simulator>(100, start, goal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
     std::vector<Eigen::VectorXd> q_init;
-    auto configurations =  simulator->getConfigurations();
-    for (auto configuration : configurations)
-    {
-        q_init.push_back(configuration.q);
-    }
+//    auto configurations =  simulator->getConfigurations();
+//    for (auto configuration : configurations)
+//    {
+//        q_init.push_back(configuration.q);
+//    }
+    q_init.push_back(qhome);
     XBot::HyperGraph::Optimizer opt(q_init);
-//    opt.setVertices(q_init);
 
     ros::Rate rate(10);
     while (ros::ok())

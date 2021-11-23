@@ -8,7 +8,7 @@ BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos>(),
 _model(model)
 {
     _model->getVelocityLimits(_vel_max);
-    _vel_max = _vel_max;
+    _vel_max = _vel_max/10;
     _vel_min = -_vel_max;
 }
 
@@ -32,15 +32,13 @@ void EdgeRobotVel::computeError()
     q2 = v2->estimate();
    _error.setZero(v1->estimateDimension());
 
-    double eps = 0.005;
-    double S = 3;
-    double r = 0.2;
-    int n = 2;
-    diff = (q2/0.01 - q1/0.01);
+    double S = 6;
+    int n = 0.0000000001;
+    diff = (q2/0.05 - q1/0.05);
 
     for (int i = 0; i < q1.size(); i++)
     {
-        double value = 1/exp(S*diff(i) - _vel_min(i)) + exp(S*diff(i) - _vel_max(i));
+        double value = (1/exp(S*diff(i) - _vel_min(i)) + exp(S*diff(i) - _vel_max(i)))*n;
         _error(i) = value;
     }
 }
@@ -57,8 +55,8 @@ void EdgeRobotUnaryVel::resize()
     if (v1 == nullptr)
         std::runtime_error("first set vertices, then resize!");
 
-    _error.conservativeResize(v1->estimateDimension());
-    _measurement.conservativeResize(v1->estimateDimension());
+    setDimension(v1->estimateDimension());
+    _ref.resize(v1->estimateDimension());
 }
 
 void EdgeRobotUnaryVel::setRef(Eigen::VectorXd ref)
@@ -86,7 +84,7 @@ void EdgeRobotUnaryVel::computeError()
     double S = 0.05;
     double r = 0.2;
     int n = 2;
-    diff = (_ref/0.01 - q1/0.01);
+    diff = (_ref/0.05 - q1/0.05);
 
     for (int i = 0; i < q1.size(); i++)
     {

@@ -1,4 +1,4 @@
-#include <environment/edge_collision.h>
+    #include <environment/edge_collision.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;
@@ -25,7 +25,7 @@ void EdgeCollision::setObstacles(obstacles obs)
         moveit_msgs::CollisionObject coll;
         coll.header.frame_id = obstacle.frame_id;
         coll.header.stamp = ros::Time::now();
-        coll.id = "obstacle" + obstacle.frame_id;
+        coll.id = "obstacle_" + std::to_string(obstacle.id);
 
         coll.operation = moveit_msgs::CollisionObject::ADD;
         coll.primitives.resize(1);
@@ -65,14 +65,17 @@ void EdgeCollision::computeError()
 
     for (auto i : distances)
     {
-        double distance = 0;
-        distance += i.getDistance();
-        if (distance > r + eps)
-            _error(index) = 0;
-        else
+        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
         {
-            double value = pow((-distance-(-r-eps))/S, n);
-            _error(index) = value;
+            double distance = 0;
+            distance += i.getDistance();
+            if (distance > r + eps)
+                _error(index) = 0;
+            else
+            {
+                double value = pow((-distance-(-r-eps))/S, n);
+                _error(index) = value;
+            }
         }
     index++;
     }

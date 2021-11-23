@@ -5,18 +5,20 @@ using namespace XBot::HyperGraph::Utils;
 PointCloudManager::PointCloudManager(std::string topic_name, ros::NodeHandle nh):
 _nh(nh),
 _nhpr("~"),
-_point_cloud(new pcl::PointCloud<pcl::PointXYZ>),
-_cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>),
-_cloud_filtered2(new pcl::PointCloud<pcl::PointXYZ>),
+_point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>),
+_cloud_voxel_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
+_cloud_without_outliers(new pcl::PointCloud<pcl::PointXYZRGB>),
+_cloud_planar_segmented(new pcl::PointCloud<pcl::PointXYZRGB>),
 _isCallbackDone(false)
 {
     // Subscribe to point cloud topic
     _pc_sub = _nh.subscribe(topic_name, 1, &PointCloudManager::callback, this);
 
     // Advertise object topic
-    _obj_pub = _nh.advertise<teb_test::ObjectMessageString>("objects", 10, true);
-    _pc_filt_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("voxel", 10, true);
-    _pc_filt2_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("outlier", 10, true);
+    _obj_pub = _nh.advertise<teb_test::ObjectMessageString>("optimizer/obstacles", 10, true);
+    _pc_voxel_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("voxel", 10, true);
+    _pc_planar_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("planar", 10, true);
+    _pc_outlier_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("outlier", 10, true);
     _ma_pub = _nh.advertise<visualization_msgs::MarkerArray>("markers", 10, true);
 
     // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
@@ -35,15 +37,13 @@ _isCallbackDone(false)
     tf::transformTFToEigen(_transform, _w_T_cam);
 }
 
-void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr &msg)
+void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr pc (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc (new pcl::PointCloud<pcl::PointXYZRGB>);
     pc = msg;
     pcl::transformPointCloud(*pc, *_point_cloud, _w_T_cam.matrix());
 
-    std::cout << _point_cloud->points[500].x << " " << _point_cloud->points[500].y << " " << _point_cloud->points[500].z << std::endl;
-
-//    _point_cloud->header.frame_id = "world";
+    _point_cloud->header.frame_id = "world";
 
     // Filter cloud from NaN
     std::vector<int> indices;
@@ -58,43 +58,45 @@ void PointCloudManager::clusterExtraction()
 {
     if (_isCallbackDone)
     {
-        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+        pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
         tree->setInputCloud(_point_cloud);
 
         // Create the filtering object: downsample the dataset using a leaf size of 1cm
-        pcl::VoxelGrid<pcl::PointXYZ> vg;
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::VoxelGrid<pcl::PointXYZRGB> vg;
         vg.setInputCloud (_point_cloud);
         vg.setLeafSize (0.02f, 0.02f, 0.02f);
-        vg.filter (*_cloud_filtered);
+        vg.filter (*_cloud_voxel_filtered);
 
         // outliers removal
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered2 (new pcl::PointCloud<pcl::PointXYZ>);
-        outlierRemoval(_cloud_filtered, _cloud_filtered2);
+//        outlierRemoval(_cloud_voxel_filtered, _cloud_without_outliers);
+
+        // planar segmentation and remotion
+//        planarSegmentation(_cloud_without_outliers, _cloud_planar_segmented);
+        planarSegmentation(_cloud_voxel_filtered, _cloud_planar_segmented);
+        outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
 
         std::vector<pcl::PointIndices> cluster_indices;
-        pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+        pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
         ec.setClusterTolerance (0.05);
-        ec.setMinClusterSize (50);
-        ec.setMaxClusterSize (500);
+        ec.setMinClusterSize (25);
+        ec.setMaxClusterSize (300);
         ec.setSearchMethod (tree);
-        ec.setInputCloud (_cloud_filtered2);
-        auto tic = std::chrono::high_resolution_clock::now();
+//        ec.setInputCloud (_cloud_planar_segmented);
+        ec.setInputCloud(_cloud_without_outliers);
         ec.extract (cluster_indices);
-        auto toc = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> fsec = toc - tic;
 
         int j = 0;
         for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
         {
             // Extract i-th cluster from the scene_cloud
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-                cloud_cluster->push_back ((*_cloud_filtered2)[*pit]); //*
+//                cloud_cluster->push_back ((*_cloud_planar_segmented)[*pit]);
+                cloud_cluster->push_back ((*_cloud_without_outliers)[*pit]);
             cloud_cluster->width = cloud_cluster->size ();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
-            cloud_cluster->header.frame_id = "zedm_left_camera_frame";
+            cloud_cluster->header.frame_id = "world";
 
             double x_mean = 0, y_mean = 0 , z_mean = 0;
             for (auto point : cloud_cluster->points)
@@ -117,7 +119,7 @@ void PointCloudManager::clusterExtraction()
             _transforms.push_back(t);
 
             // Create a publisher
-            ros::Publisher pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("object_"+std::to_string(j), 1, true);
+            ros::Publisher pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("object_"+std::to_string(j), 1, true);
 
             // push_back
             _cluster_cloud.push_back(cloud_cluster);
@@ -129,14 +131,63 @@ void PointCloudManager::clusterExtraction()
     }
 }
 
-void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZ>::Ptr input, pcl::PointCloud<pcl::PointXYZ>::Ptr output)
+void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output)
 {
     // Create the filtering object
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud (input);
-    sor.setMeanK (25);
-    sor.setStddevMulThresh (1.);
+    sor.setMeanK (50);
+    sor.setStddevMulThresh (0.8);
     sor.filter (*output);
+}
+
+void PointCloudManager::planarSegmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output)
+{
+    // perform ransac planar filtration to remove table top
+      pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr output_before (new pcl::PointCloud<pcl::PointXYZRGB>);
+      pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+      // Create the segmentation object
+      pcl::SACSegmentation<pcl::PointXYZRGB> seg1;
+      // Optional
+      seg1.setOptimizeCoefficients (true);
+      // Mandatory
+      seg1.setModelType (pcl::SACMODEL_PLANE);
+      seg1.setMethodType (pcl::SAC_RANSAC);
+      seg1.setDistanceThreshold (0.05);
+
+      seg1.setInputCloud (input);
+      seg1.segment (* inliers, * coefficients);
+
+
+      // Create the filtering object
+      pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+
+      extract.setInputCloud (input);
+      extract.setIndices (inliers);
+      extract.setNegative (true);
+      extract.filter (* output_before);
+
+      removePointsBelowPlane(output_before, output, coefficients);
+}
+
+void PointCloudManager::removePointsBelowPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output, pcl::ModelCoefficients::Ptr coefficients)
+{
+    pcl::PointIndices::Ptr indices (new pcl::PointIndices);
+    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+
+    // TODO: this can be replaced by a std::for_each to speed up the code
+    for (int i = 0; i < input->size(); i++)
+    {
+        double value = coefficients->values[0] * input->points[i].x + coefficients->values[1] * input->points[i].y + coefficients->values[2] * input->points[i].z + coefficients->values[3];
+        if (value < 0)
+            indices->indices.push_back(i);
+    }
+
+    extract.setInputCloud(input);
+    extract.setIndices(indices);
+    extract.setNegative(true);
+    extract.filter(*output);
 }
 
 void PointCloudManager::generateObjectMsg()
@@ -144,7 +195,7 @@ void PointCloudManager::generateObjectMsg()
     for (int i = 0 ; i < _transforms.size(); i++)
     {
         teb_test::ObjectMessage msg;
-        msg.header.frame_id = "zedm_left_camera_frame";
+        msg.header.frame_id = "world";
         msg.header.seq = i;
         msg.header.stamp = ros::Time::now();
 
@@ -222,9 +273,10 @@ void PointCloudManager::run()
         _cc_pub[i].publish(_cluster_cloud[i]);
         _obj_pub.publish(_objects);
         publishObjectMarkers();
-        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), "zedm_left_camera_frame", "object_" + std::to_string(i)));
+        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), "world", "object_" + std::to_string(i)));
     }
 
-    _pc_filt_pub.publish(_cloud_filtered);
-    _pc_filt2_pub.publish(_cloud_filtered2);
+    _pc_voxel_pub.publish(_cloud_voxel_filtered);
+    _pc_planar_pub.publish(_cloud_planar_segmented);
+    _pc_outlier_pub.publish(_cloud_without_outliers);
 }

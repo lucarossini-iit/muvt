@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     int index = 0;
     int incr = 1;
 
-    ros::Rate r(10);
+    ros::Rate r(50);
     while (ros::ok())
     {
         if (isCallbackDone)

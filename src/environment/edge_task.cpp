@@ -34,13 +34,12 @@ void EdgeTask::computeError()
 {
     auto v = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
 
-    double S = 2;
+    double S = 4;
     Eigen::VectorXd diff = v->estimate() - _ref;
 //    std::cout << "v: " << v->estimate().transpose() << " ref: " << _ref.transpose() << "    = " << diff.transpose() << std::endl;
     for (int i = 0; i < v->estimate().size(); i++)
     {
-        double value = sqrt(pow(20*diff(i), S*2));
+        double value = sqrt(pow(diff(i), S));
         _error(i) = value;
     }
-//    _error = 1000 * diff.cwiseProduct(diff);
 }

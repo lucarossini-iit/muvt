@@ -22,6 +22,9 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/extract_indices.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
@@ -42,20 +45,22 @@ public:
     void run();
 
 private:
-    void callback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& msg);
+    void callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& msg);
 
     void clusterExtraction();
-    void outlierRemoval(pcl::PointCloud<pcl::PointXYZ>::Ptr input, pcl::PointCloud<pcl::PointXYZ>::Ptr output);
+    void outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output);
+    void planarSegmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output);
+    void removePointsBelowPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output, pcl::ModelCoefficients::Ptr coefficients);
     void generateObjectMsg();
     void publishObjectMarkers();
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _pc_sub;
-    ros::Publisher _pc_pub, _pc_filt_pub, _pc_filt2_pub, _obj_pub, _ma_pub;
+    ros::Publisher _pc_pub, _pc_voxel_pub, _pc_outlier_pub, _pc_planar_pub, _pc_above_plane, _obj_pub, _ma_pub;
     std::vector<ros::Publisher> _cc_pub;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr _point_cloud, _cloud_filtered, _cloud_filtered2;
-    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _cluster_cloud;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr _point_cloud, _cloud_voxel_filtered, _cloud_planar_segmented, _cloud_without_outliers, _cloud_above_plane;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> _cluster_cloud;
 
     bool _isCallbackDone;
 
