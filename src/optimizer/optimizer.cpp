@@ -56,7 +56,7 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
         {
             if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
             {
-                std::cout << "EdgeCollision found!" << std::endl;
+//                std::cout << "EdgeCollision found!" << std::endl;
                 auto e = dynamic_cast<EdgeCollision*>(edge);
                 e->setObstacles(_obstacles);
                 e->computeError();
@@ -68,15 +68,25 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
             }
             else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
             {
-                std::cout << "EdgeTask found!" << std::endl;
+//                std::cout << "EdgeTask found!" << std::endl;
                 auto e = dynamic_cast<EdgeTask*>(edge);
                 e->computeError();
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
-                if (std::sqrt(error) > 1e-1)
-                    std::cout << "EdgeTask error: " << std::sqrt(error) << std::endl;
+//                if (std::sqrt(error) > 1e-1)
+//                    std::cout << "EdgeTask error: " << std::sqrt(error) << std::endl;
+            }
+            if (vertices.size() == 1)
+            {
+                if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
+                {
+                    auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
+                    e->setRef(v->estimate());
+                    e->computeError();
+                    std::cout << "EdgeRobotUnaryVel error: " << e->getError().transpose() << std::endl;
+                }
             }
 
             double thresh = 1e-3;
@@ -318,14 +328,6 @@ void Optimizer::optimize()
         if (vertices.size() == 1)
         {
             solution.points.push_back(point);
-            for (auto edge : _optimizer.edges())
-            {
-                if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
-                {
-                    auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
-                    e->setRef(v->estimate());
-                }
-            }
         }
     }
 

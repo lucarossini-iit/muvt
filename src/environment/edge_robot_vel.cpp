@@ -69,6 +69,11 @@ void EdgeRobotUnaryVel::getRef(Eigen::VectorXd ref) const
     ref = _ref;
 }
 
+Eigen::VectorXd EdgeRobotUnaryVel::getError() const
+{
+    return _error;
+}
+
 void EdgeRobotUnaryVel::computeError()
 {
     auto v1 = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
