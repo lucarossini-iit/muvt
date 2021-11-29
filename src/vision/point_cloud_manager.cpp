@@ -58,28 +58,28 @@ void PointCloudManager::clusterExtraction()
 {
     if (_isCallbackDone)
     {
-        // planar segmentation
-        auto tic_segmentation = std::chrono::high_resolution_clock::now();
-        planarSegmentation(_point_cloud, _cloud_planar_segmented);
-        auto toc_segmentation = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> duration_segmentation = toc_segmentation - tic_segmentation;
-
         // voxel filtering
         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-        tree->setInputCloud(_cloud_planar_segmented);
+        tree->setInputCloud(_point_cloud);
 
         // Create the filtering object: downsample the dataset using a leaf size of 1cm
         pcl::VoxelGrid<pcl::PointXYZRGB> vg;
-        vg.setInputCloud (_cloud_planar_segmented);
-        vg.setLeafSize (0.01, 0.01, 0.01);
+        vg.setInputCloud (_point_cloud);
+        vg.setLeafSize (0.02, 0.02, 0.02);
         auto tic_voxel = std::chrono::high_resolution_clock::now();
         vg.filter (*_cloud_voxel_filtered);
         auto toc_voxel = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> duration_voxel = toc_voxel - tic_voxel;
 
+        // planar segmentation
+        auto tic_segmentation = std::chrono::high_resolution_clock::now();
+        planarSegmentation(_cloud_voxel_filtered, _cloud_planar_segmented);
+        auto toc_segmentation = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<float> duration_segmentation = toc_segmentation - tic_segmentation;
+
         // outliers statistical removal
         auto tic_outliers = std::chrono::high_resolution_clock::now();
-        outlierRemoval(_cloud_voxel_filtered, _cloud_without_outliers);
+        outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
         auto toc_outliers = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> duration_outliers = toc_outliers - tic_outliers;
 
@@ -91,8 +91,8 @@ void PointCloudManager::clusterExtraction()
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
         ec.setClusterTolerance (0.05);
-        ec.setMinClusterSize (100);
-        ec.setMaxClusterSize (1000);
+        ec.setMinClusterSize (50);
+        ec.setMaxClusterSize (500);
         ec.setSearchMethod (tree);
         ec.setInputCloud(_cloud_without_outliers);
         ec.extract (cluster_indices);
@@ -148,7 +148,7 @@ void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in
     // Create the filtering object
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud (input);
-    sor.setMeanK (50);
+    sor.setMeanK (20);
     sor.setStddevMulThresh (0.8);
     sor.filter (*output);
 }
@@ -166,7 +166,7 @@ void PointCloudManager::planarSegmentation(pcl::PointCloud<pcl::PointXYZRGB>::Pt
       // Mandatory
       seg1.setModelType (pcl::SACMODEL_PLANE);
       seg1.setMethodType (pcl::SAC_RANSAC);
-      seg1.setDistanceThreshold (0.01);
+      seg1.setDistanceThreshold (0.03);
 
       seg1.setInputCloud (input);
       seg1.segment (* inliers, * coefficients);
