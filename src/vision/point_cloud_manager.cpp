@@ -273,7 +273,6 @@ void PointCloudManager::publishObjectMarkers()
 
 void PointCloudManager::run()
 {
-    _pc_pub.publish(_point_cloud);
     _transforms.clear();
     _cc_pub.clear();
     _cluster_cloud.clear();
