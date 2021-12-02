@@ -96,8 +96,6 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 v->setFixed(true);
         }
     }
-
-
 }
 
 void Optimizer::run()

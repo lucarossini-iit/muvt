@@ -60,7 +60,7 @@ void PointCloudManager::clusterExtraction()
     {
         // voxel filtering
         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-        tree->setInputCloud(_point_cloud);
+//        tree->setInputCloud(_point_cloud);
 
         // Create the filtering object: downsample the dataset using a leaf size of 1cm
         pcl::VoxelGrid<pcl::PointXYZRGB> vg;
@@ -83,10 +83,10 @@ void PointCloudManager::clusterExtraction()
         auto toc_outliers = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> duration_outliers = toc_outliers - tic_outliers;
 
-        std::cout << "Requested time for perception: " << std::endl;
-        std::cout << "voxel filtering: " << duration_voxel.count() << std::endl;
-        std::cout << "planar segmentation: " << duration_segmentation.count() << std::endl;
-        std::cout << "outliers removal: " << duration_outliers.count() << std::endl;
+//        std::cout << "Requested time for perception: " << std::endl;
+//        std::cout << "voxel filtering: " << duration_voxel.count() << std::endl;
+//        std::cout << "planar segmentation: " << duration_segmentation.count() << std::endl;
+//        std::cout << "outliers removal: " << duration_outliers.count() << std::endl;
 
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
@@ -253,22 +253,30 @@ void PointCloudManager::publishObjectMarkers()
     visualization_msgs::MarkerArray ma;
     visualization_msgs::Marker m;
 
-    for (auto object : _objects.objects)
+    if (_objects.objects.size() == 0)
     {
-        m.header = object.header;
-        m.id = object.header.seq;
-        m.pose = object.pose;
-
-        m.action = visualization_msgs::Marker::ADD;
-        m.type = visualization_msgs::Marker::CUBE;
-
-        m.scale = object.size;
-
-        m.color.r = 1;  m.color.g = 0;  m.color.b = 0;  m.color.a = 0.3;
-
-        ma.markers.push_back(m);
+        _ma_pub.publish(ma);
     }
-    _ma_pub.publish(ma);
+
+    else
+    {
+    for (auto object : _objects.objects)
+        {
+            m.header = object.header;
+            m.id = object.header.seq;
+            m.pose = object.pose;
+
+            m.action = visualization_msgs::Marker::ADD;
+            m.type = visualization_msgs::Marker::CUBE;
+
+            m.scale = object.size;
+
+            m.color.r = 1;  m.color.g = 0;  m.color.b = 0;  m.color.a = 0.3;
+
+            ma.markers.push_back(m);
+        }
+        _ma_pub.publish(ma);
+    }
 }
 
 void PointCloudManager::run()
@@ -279,9 +287,10 @@ void PointCloudManager::run()
     _objects.objects.clear();
 
     clusterExtraction();
+    if (_cc_pub.size() == 0)
+        _obj_pub.publish(_objects);
     for (int i = 0; i < _cc_pub.size(); i++)
     {
-        _cc_pub[i].publish(_cluster_cloud[i]);
         _obj_pub.publish(_objects);
         publishObjectMarkers();
         _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), "world", "object_" + std::to_string(i)));
