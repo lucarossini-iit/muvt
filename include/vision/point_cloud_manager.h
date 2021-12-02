@@ -56,7 +56,7 @@ private:
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _pc_sub;
-    ros::Publisher _pc_pub, _pc_voxel_pub, _pc_outlier_pub, _pc_planar_pub, _pc_above_plane, _obj_pub, _ma_pub;
+    ros::Publisher _pc_pub, _pc_voxel_pub, _pc_outlier_pub, _pc_planar_pub, _obj_pub, _ma_pub;
     std::vector<ros::Publisher> _cc_pub;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr _point_cloud, _cloud_voxel_filtered, _cloud_planar_segmented, _cloud_without_outliers, _cloud_above_plane;
