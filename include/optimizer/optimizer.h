@@ -84,6 +84,8 @@ private:
 
     void object_callback(const teb_test::ObjectMessageStringConstPtr& msg);
 
+    void print();
+
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _obj_sub;
     ros::Publisher _sol_pub;

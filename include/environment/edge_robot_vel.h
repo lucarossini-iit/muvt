@@ -41,10 +41,13 @@
 
      void computeError();
 
+     Eigen::VectorXd getError() const;
+     Eigen::VectorXd getVelocities() const;
+
  private:
      XBot::ModelInterface::Ptr _model;
 
-     Eigen::VectorXd _vel_min, _vel_max;
+     Eigen::VectorXd _vel_min, _vel_max, _vel;
 
 
 

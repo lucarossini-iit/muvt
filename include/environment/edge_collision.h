@@ -33,14 +33,16 @@ public:
 
     bool write(std::ostream& os) const
     {
-        Eigen::VectorXd p = measurement();
-        os << p;
+        auto v = dynamic_cast<VertexRobotPos*>(_vertices[0]);
+        os << "vertex: " << v->estimate().transpose() << std::endl;
+        os << "error: " << _error.transpose() << std::endl;
 
         return os.good();
     }
 
     void setObstacles(obstacles obs);
     void resize(int size);
+    void clear();
     void computeError();
 
     Eigen::VectorXd getError() const;

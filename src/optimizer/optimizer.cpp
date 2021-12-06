@@ -56,7 +56,6 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
         {
             if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
             {
-//                std::cout << "EdgeCollision found!" << std::endl;
                 auto e = dynamic_cast<EdgeCollision*>(edge);
                 e->setObstacles(_obstacles);
                 e->computeError();
@@ -64,19 +63,24 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
-//                std::cout << "EdgeCollision error: " << std::sqrt(error) << std::endl;
             }
             else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
             {
-//                std::cout << "EdgeTask found!" << std::endl;
                 auto e = dynamic_cast<EdgeTask*>(edge);
                 e->computeError();
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
-//                if (std::sqrt(error) > 1e-1)
-//                    std::cout << "EdgeTask error: " << std::sqrt(error) << std::endl;
+            }
+            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
+            {
+                auto e = dynamic_cast<EdgeRobotVel*>(edge);
+                e->computeError();
+                error = 0;
+                for (int i = 0; i < e->getError().size(); i++)
+                    error += e->getError()(i) * e->getError()(i);
+                cum_err += std::sqrt(error);
             }
             if (vertices.size() == 1)
             {
@@ -85,11 +89,10 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                     auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
                     e->setRef(v->estimate());
                     e->computeError();
-                    std::cout << "EdgeRobotUnaryVel error: " << e->getError().transpose() << std::endl;
                 }
             }
 
-            double thresh = 1e-3;
+            double thresh = 1e-5;
             if (cum_err > thresh)
                 v->setFixed(false);
             else
@@ -203,11 +206,13 @@ void Optimizer::init_load_edges()
         }
         else if (vc_name == "velocity_limits")
         {
+            YAML_PARSE_OPTION(_optimizer_config["velocity_limits"], weight, double, 1);
             if (_vertices.size() == 1)
             {
                 auto e_vel = new EdgeRobotUnaryVel(_model);
                 Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-                info.setIdentity(); info *= 0.1;
+                info.setIdentity();
+                info *= weight;
                 e_vel->setInformation(info);
                 e_vel->vertices()[0] = _optimizer.vertex(0);
                 e_vel->resize();
@@ -306,6 +311,8 @@ void Optimizer::optimize()
 
     _optimizer.initializeOptimization();
     _optimizer.optimize(_iterations);
+//    print();
+//    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
@@ -330,4 +337,52 @@ void Optimizer::optimize()
     }
 
     _sol_pub.publish(solution);
+}
+
+void Optimizer::print()
+{
+    auto vertices = _optimizer.vertices();
+
+    for (auto vertex : vertices)
+    {
+        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
+//        std::cout << "------------------------" << std::endl;
+//        std::cout << "VERTEX " << v->id() << std::endl;
+//        std::cout << "q: " << v->estimate().transpose() << std::endl;
+//        std::cout << "------------------------" << std::endl;
+
+//        std::cout << "EDGES:" << std::endl;
+        auto edges = v->edges();
+        for (auto edge : edges)
+        {
+            if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
+            {
+//                auto e = dynamic_cast<EdgeCollision*>(edge);
+//                std::cout << "EdgeCollision: " << std::endl;
+//                std::cout << "error: " << e->getError().transpose() << std::endl;
+            }
+            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
+            {
+                auto e = dynamic_cast<EdgeRobotVel*>(edge);
+                Eigen::VectorXd zero(_model->getJointNum());
+                zero.setZero();
+                if (e->getError() != zero)
+                {
+                    std::cout << "EdgeRobotVel: " << std::endl;
+                    auto v0 = dynamic_cast<VertexRobotPos*>(e->vertex(0));
+                    auto v1 = dynamic_cast<VertexRobotPos*>(e->vertex(1));
+                    std::cout << "vertex0: " << v0->estimate() << std::endl;
+                    std::cout << "vertex1: " << v1->estimate() << std::endl;
+                    std::cout << "velocities: " << e->getVelocities().transpose() << std::endl;
+                    std::cout << "error: " << e->getError().transpose() << std::endl;
+                }
+            }
+            else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
+            {
+//                auto e = dynamic_cast<EdgeTask*>(edge);
+//                std::cout << "EdgeTask: " << std::endl;
+//                std::cout << "error: " << e->getError().transpose() << std::endl;
+            }
+        }
+    }
 }

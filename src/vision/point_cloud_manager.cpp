@@ -91,7 +91,7 @@ void PointCloudManager::clusterExtraction()
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
         ec.setClusterTolerance (0.05);
-        ec.setMinClusterSize (50);
+        ec.setMinClusterSize (25);
         ec.setMaxClusterSize (500);
         ec.setSearchMethod (tree);
         ec.setInputCloud(_cloud_without_outliers);
@@ -255,6 +255,9 @@ void PointCloudManager::publishObjectMarkers()
 
     if (_objects.objects.size() == 0)
     {
+        m.id = 0;
+        m.action = visualization_msgs::Marker::DELETEALL;
+        ma.markers.push_back(m);
         _ma_pub.publish(ma);
     }
 

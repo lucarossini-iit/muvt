@@ -16,9 +16,15 @@ void EdgeCollision::resize(int size)
     setDimension(size);
 }
 
+void EdgeCollision::clear()
+{
+    _cld->removeAllWorldCollision();
+}
+
 void EdgeCollision::setObstacles(obstacles obs)
 {
     _cld->removeAllWorldCollision();
+
     moveit_msgs::PlanningSceneWorld wc;
     for (auto obstacle : obs)
     {
@@ -39,6 +45,7 @@ void EdgeCollision::setObstacles(obstacles obs)
 
         wc.collision_objects.push_back(coll);
     }
+
     _cld->setWorldCollisions(wc);
 }
 
