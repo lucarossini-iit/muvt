@@ -1,0 +1,23 @@
+solver_options:
+    regularization: 1e-2
+    back_end: "qpoases"
+
+
+stack:
+    - ["LeftHand"]
+
+constraints: ["JointLimits"] #, "VelocityLimits"]
+
+JointLimits:
+    type: "JointLimits"
+
+VelocityLimits:
+    type: "VelocityLimits"
+    
+# ------------------------------------------------------------------------------------------------------------- 
+LeftHand:
+    type: "Cartesian"
+    distal_link: "ball1_tip"
+    base_link: "pelvis"
+    
+
