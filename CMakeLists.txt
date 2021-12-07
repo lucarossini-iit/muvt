@@ -24,6 +24,8 @@ find_package(fcl 0.6.1 QUIET)
 
 find_package(PCL REQUIRED)
 
+find_package(urdf REQUIRED)
+
 add_message_files(
     FILES
     ObjectMessage.msg
@@ -101,6 +103,9 @@ target_link_libraries(optimizer environment
 add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
 target_link_libraries(robot_controller_node environment ${cartesian_interface_LIBRARIES})
 
+add_executable(urdf_parser_test_node test/urdf_parser_test_node.cpp)
+target_link_libraries(urdf_parser_test_node ${catkin_LIBRARIES} ${urdf_LIBRARIES} ${XBotInterface_LIBRARIES})
+
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -137,6 +142,11 @@ install(TARGETS optimizer
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS robot_controller_node
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS urdf_parser_test_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
