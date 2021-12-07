@@ -9,7 +9,9 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "urdf_parser_test_node");
     ros::NodeHandle nh("");
+    ros::NodeHandle nhpr("~");
 
+    // Parse URDF
     urdf::Model urdf_model;
     if (!urdf_model.initParam("robot_description"))
     {
@@ -18,20 +20,19 @@ int main(int argc, char** argv)
     }
     ROS_INFO("Successfully parsed the urdf!");
 
-    std::map<std::string, double> fixed_joint_map = {{"j_arm2_1", 0.5201490},
-                                                     {"j_arm2_2", -0.320865},
-                                                     {"j_arm2_3", -0.274669},
-                                                     {"j_arm2_4", -2.236040},
-                                                     {"j_arm2_5", -0.050082},
-                                                     {"j_arm2_6", -0.781461},
-                                                     {"j_arm2_7", 0.0567608}};
+    // Load map from param server
+    auto fixed_joint_map = nhpr.param<std::map<std::string, double>>("fixed_joints", std::map<std::string, double>());
+    std::cout << "Loaded fixed_joint_map: " << std::endl;
+    for (auto joint_pair : fixed_joint_map)
+        std::cout << joint_pair.first << ": " << joint_pair.second << std::endl;
 
+    // Fix joints
     for (auto joint_pair : fixed_joint_map)
     {
         auto joint = std::const_pointer_cast<urdf::Joint>(urdf_model.getJoint(joint_pair.first));
         if (joint->type == urdf::Joint::FIXED)
         {
-            std::cout << "Joint " << joint->name << " is already fixed, ignoring." << std::endl;
+            ROS_INFO("Joint %s is already fixed, ignoring.", joint->name);
             continue;
         }
         else if (joint->type == urdf::Joint::REVOLUTE)
@@ -46,6 +47,11 @@ int main(int argc, char** argv)
             Eigen::Quaternion<double> q_eigen(joint_angle.toRotationMatrix());
             fixed_pose.rotation.setFromQuaternion(q_eigen.x(), q_eigen.y(), q_eigen.z(), q_eigen.w());
             joint->parent_to_joint_origin_transform = fixed_pose;
+        }
+        else
+        {
+            ROS_WARN("Joint %s type not supported, ignoring", joint->name);
+            continue;
         }
     }
 
