@@ -35,7 +35,7 @@ int main(int argc, char** argv)
             ROS_INFO("Joint %s is already fixed, ignoring.", joint->name);
             continue;
         }
-        else if (joint->type == urdf::Joint::REVOLUTE)
+        else if (joint->type == urdf::Joint::REVOLUTE || joint->type == urdf::Joint::CONTINUOUS)
         {
             joint->type = urdf::Joint::FIXED;
 
