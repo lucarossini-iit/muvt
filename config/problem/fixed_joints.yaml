@@ -5,3 +5,7 @@ j_arm2_4: -2.236040
 j_arm2_5: -0.050082
 j_arm2_6: -0.781461
 j_arm2_7: 0.0567608
+neck_pitch: 0.2
+neck_yaw: 0.0
+neck_velodyne: 0.0
+torso_yaw: 0.0
