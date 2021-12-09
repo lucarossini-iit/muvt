@@ -45,7 +45,9 @@ int main(int argc, char** argv)
             eigen_axis.norm();
             Eigen::AngleAxisd joint_angle(joint_pair.second, eigen_axis);
             Eigen::Quaternion<double> q_eigen(joint_angle.toRotationMatrix());
-            fixed_pose.rotation.setFromQuaternion(q_eigen.x(), q_eigen.y(), q_eigen.z(), q_eigen.w());
+            urdf::Pose rotation_offset;
+            rotation_offset.rotation.setFromQuaternion(q_eigen.x(), q_eigen.y(),q_eigen.z(), q_eigen.w());
+            fixed_pose.rotation = fixed_pose.rotation * rotation_offset.rotation;
             joint->parent_to_joint_origin_transform = fixed_pose;
         }
         else
