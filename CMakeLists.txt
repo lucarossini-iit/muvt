@@ -15,7 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
     eigen_conversions
     urdf
     )
-    
+
+find_package(cartesio_planning REQUIRED)
+
 find_package(cartesian_interface REQUIRED)
 
 find_package(g2o REQUIRED)
@@ -25,6 +27,8 @@ find_package(fcl 0.6.1 QUIET)
 find_package(PCL REQUIRED)
 
 find_package(urdf REQUIRED)
+
+find_package(ompl 1.5.0 REQUIRED)
 
 add_message_files(
     FILES
@@ -50,9 +54,11 @@ catkin_package(
     
 include_directories(
     include    
+    ${OMPL_INCLUDE_DIRS}
     ${g2o_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     ${cartesian_interface_INCLUDE_DIRS}
+    ${cartesio_planning_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     )
 
@@ -65,7 +71,7 @@ add_library(environment SHARED
             src/environment/edge_robot_vel.cpp
             src/environment/edge_joint_limits.cpp
             src/environment/edge_task.cpp)
-target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl)
+target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl g2o::types_slam3d)
 
 add_library(simulator SHARED
             src/simulator/simulator.cpp
@@ -96,8 +102,8 @@ add_executable(optimizer src/nodes/optimizer_node.cpp src/optimizer/optimizer.cp
 target_link_libraries(optimizer environment
                                 simulator
                                 ${catkin_LIBRARIES}
+                                ${cartesio_planning_LIBRARIES}
                                 g2o::core
-                                g2o::types_slam3d
                                 g2o::solver_csparse)
 
 add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
