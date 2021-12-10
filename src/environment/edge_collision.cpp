@@ -65,7 +65,7 @@ void EdgeCollision::computeError()
 
     _error.setZero();
 
-    auto dist = _cld->getLinkDistances();
+    auto dist = _cld->getLinkDistances(r);
     auto end = std::next(dist.begin(), _error.size());
     std::list<LinkPairDistance> distances(dist.begin(), end);
     int index = 0;
