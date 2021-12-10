@@ -104,6 +104,9 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
 void Optimizer::run()
 {
     optimize();
+//    auto coll_obj = _cld->getCollisionObjects();
+//    for (auto obj : coll_obj)
+//        std::cout << obj.first << std::endl;
 }
 
 void Optimizer::init_load_model()
@@ -258,7 +261,25 @@ void Optimizer::init_load_edges()
             if (collision_urdf->initParam("collision_urdf"))
             {
                 _cld = std::make_shared<ComputeLinksDistance>(*_model, collision_urdf);
+
+                // remove useless link pairs
+                auto link_distances = _cld->getLinkDistances();
+                std::list<LinkPairDistance::LinksPair> black_list;
+                std::vector<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7",};
+                for (auto link_distance : link_distances)
+                {
+                    if (std::find(links.begin(), links.end(), link_distance.getLinkNames().first) == links.end() &&
+                        std::find(links.begin(), links.end(), link_distance.getLinkNames().first) == links.end())
+                    {
+                        black_list.push_back(link_distance.getLinkNames());
+                    }
+                }
+                _cld->setCollisionBlackList(black_list);
+                auto coll_links = _cld->getLinkDistances();
+                for (auto link : coll_links)
+                    std::cout << link.getLinkNames().first << "   " << link.getLinkNames().second << std::endl;
             }
+
             else
                 ROS_ERROR("unable to find collision_urdf");
 

@@ -32,7 +32,7 @@ int main(int argc, char** argv)
         auto joint = std::const_pointer_cast<urdf::Joint>(urdf_model.getJoint(joint_pair.first));
         if (joint->type == urdf::Joint::FIXED)
         {
-            ROS_INFO("Joint %s is already fixed, ignoring.", joint->name);
+            ROS_INFO("Joint %s is already fixed, ignoring.", joint->name.c_str());
             continue;
         }
         else if (joint->type == urdf::Joint::REVOLUTE || joint->type == urdf::Joint::CONTINUOUS)
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            ROS_WARN("Joint %s type not supported, ignoring", joint->name);
+            ROS_WARN("Joint %s type not supported, ignoring", joint->name.c_str());
             continue;
         }
     }

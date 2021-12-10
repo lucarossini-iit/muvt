@@ -2,26 +2,35 @@
   <name>teb_test</name>
   <version>1.2.4</version>
   <description>
-  test with teb_local_planner package
+  test with g2o package
   </description>
   <maintainer email="luca.rossini@iit.it">luca</maintainer>
   <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
+
   <build_depend>cartesian_interface</build_depend>
-  <build_depend>roscpp</build_depend>
   <build_export_depend>cartesian_interface</build_export_depend>
-  <build_export_depend>roscpp</build_export_depend>
   <exec_depend>cartesian_interface</exec_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
+
+  <build_depend>cartesio_planning</build_depend>
+  <build_export_depend>cartesio_planning</build_export_depend>
+  <exec_depend>cartesio_planning</exec_depend>
+
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
+
   <build_depend>geometry_msgs</build_depend>
   <exec_depend>geometry_msgs</exec_depend>
+
   <build_depend>std_msgs</build_depend>
   <exec_depend>std_msgs</exec_depend>
+
   <build_depend>geometry_msgs</build_depend>
   <exec_depend>geometry_msgs</exec_depend>
 
