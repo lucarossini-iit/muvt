@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -490,6 +490,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -501,7 +505,8 @@ Visualization Manager:
       Marker Topic: /start_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        collision: true
+        visual: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -509,8 +514,400 @@ Visualization Manager:
       Marker Topic: /goal_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        collision: true
+        visual: true
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /zedm/zed_node/point_cloud/cloud_registered
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /markers
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        D435i_camera_accel_frame:
+          Value: false
+        D435i_camera_accel_optical_frame:
+          Value: false
+        D435i_camera_bottom_screw_frame:
+          Value: false
+        D435i_camera_color_frame:
+          Value: false
+        D435i_camera_color_optical_frame:
+          Value: false
+        D435i_camera_depth_frame:
+          Value: false
+        D435i_camera_depth_optical_frame:
+          Value: false
+        D435i_camera_gyro_frame:
+          Value: false
+        D435i_camera_gyro_optical_frame:
+          Value: false
+        D435i_camera_left_ir_frame:
+          Value: false
+        D435i_camera_left_ir_optical_frame:
+          Value: false
+        D435i_camera_link:
+          Value: false
+        D435i_camera_right_ir_frame:
+          Value: false
+        D435i_camera_right_ir_optical_frame:
+          Value: false
+        D435i_head_camera_accel_frame:
+          Value: false
+        D435i_head_camera_accel_optical_frame:
+          Value: false
+        D435i_head_camera_bottom_screw_frame:
+          Value: false
+        D435i_head_camera_color_frame:
+          Value: false
+        D435i_head_camera_color_optical_frame:
+          Value: false
+        D435i_head_camera_depth_frame:
+          Value: false
+        D435i_head_camera_depth_optical_frame:
+          Value: false
+        D435i_head_camera_gyro_frame:
+          Value: false
+        D435i_head_camera_gyro_optical_frame:
+          Value: false
+        D435i_head_camera_left_ir_frame:
+          Value: false
+        D435i_head_camera_left_ir_optical_frame:
+          Value: false
+        D435i_head_camera_link:
+          Value: false
+        D435i_head_camera_right_ir_frame:
+          Value: false
+        D435i_head_camera_right_ir_optical_frame:
+          Value: false
+        T265_camera_accel_frame:
+          Value: false
+        T265_camera_accel_optical_frame:
+          Value: false
+        T265_camera_fisheye1_optical_frame:
+          Value: false
+        T265_camera_fisheye1_rgb_frame:
+          Value: false
+        T265_camera_fisheye2_optical_frame:
+          Value: false
+        T265_camera_fisheye2_rgb_frame:
+          Value: false
+        T265_camera_gyro_frame:
+          Value: false
+        T265_camera_gyro_optical_frame:
+          Value: false
+        T265_camera_link:
+          Value: false
+        T265_camera_pose_frame:
+          Value: false
+        ankle1_1:
+          Value: false
+        ankle1_2:
+          Value: false
+        ankle1_3:
+          Value: false
+        ankle1_4:
+          Value: false
+        ankle2_1:
+          Value: false
+        ankle2_2:
+          Value: false
+        ankle2_3:
+          Value: false
+        ankle2_4:
+          Value: false
+        arm1_1:
+          Value: false
+        arm1_2:
+          Value: false
+        arm1_3:
+          Value: false
+        arm1_4:
+          Value: false
+        arm1_5:
+          Value: false
+        arm1_6:
+          Value: false
+        arm1_7:
+          Value: false
+        arm1_8:
+          Value: false
+        arm2_1:
+          Value: false
+        arm2_2:
+          Value: false
+        arm2_3:
+          Value: false
+        arm2_4:
+          Value: false
+        arm2_5:
+          Value: false
+        arm2_6:
+          Value: false
+        arm2_7:
+          Value: false
+        arm2_8:
+          Value: false
+        ball1:
+          Value: false
+        ball1_tip:
+          Value: false
+        ball2:
+          Value: false
+        ball2_tip:
+          Value: false
+        base_link:
+          Value: false
+        contact_1:
+          Value: false
+        contact_2:
+          Value: false
+        contact_3:
+          Value: false
+        contact_4:
+          Value: false
+        ft_arm1:
+          Value: false
+        ft_arm2:
+          Value: false
+        hip1_1:
+          Value: false
+        hip1_2:
+          Value: false
+        hip1_3:
+          Value: false
+        hip1_4:
+          Value: false
+        hip2_1:
+          Value: false
+        hip2_2:
+          Value: false
+        hip2_3:
+          Value: false
+        hip2_4:
+          Value: false
+        imu_link:
+          Value: false
+        knee_1:
+          Value: false
+        knee_2:
+          Value: false
+        knee_3:
+          Value: false
+        knee_4:
+          Value: false
+        neck_1:
+          Value: false
+        neck_2:
+          Value: false
+        neck_3:
+          Value: false
+        object_0:
+          Value: true
+        pelvis:
+          Value: false
+        torso_2:
+          Value: false
+        wheel_1:
+          Value: false
+        wheel_2:
+          Value: false
+        wheel_3:
+          Value: false
+        wheel_4:
+          Value: false
+        world:
+          Value: false
+        zedm_camera_center:
+          Value: false
+        zedm_left_camera_frame:
+          Value: false
+        zedm_left_camera_optical_frame:
+          Value: false
+        zedm_right_camera_frame:
+          Value: false
+        zedm_right_camera_optical_frame:
+          Value: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          object_0:
+            {}
+          pelvis:
+            D435i_camera_bottom_screw_frame:
+              D435i_camera_link:
+                D435i_camera_accel_frame:
+                  D435i_camera_accel_optical_frame:
+                    {}
+                D435i_camera_depth_frame:
+                  D435i_camera_color_frame:
+                    D435i_camera_color_optical_frame:
+                      {}
+                  D435i_camera_depth_optical_frame:
+                    {}
+                  D435i_camera_left_ir_frame:
+                    D435i_camera_left_ir_optical_frame:
+                      {}
+                  D435i_camera_right_ir_frame:
+                    D435i_camera_right_ir_optical_frame:
+                      {}
+                D435i_camera_gyro_frame:
+                  D435i_camera_gyro_optical_frame:
+                    {}
+            T265_camera_pose_frame:
+              T265_camera_link:
+                T265_camera_accel_frame:
+                  T265_camera_accel_optical_frame:
+                    {}
+                T265_camera_fisheye1_rgb_frame:
+                  T265_camera_fisheye1_optical_frame:
+                    {}
+                T265_camera_fisheye2_rgb_frame:
+                  T265_camera_fisheye2_optical_frame:
+                    {}
+                T265_camera_gyro_frame:
+                  T265_camera_gyro_optical_frame:
+                    {}
+            base_link:
+              {}
+            hip1_1:
+              hip2_1:
+                knee_1:
+                  ankle1_1:
+                    ankle2_1:
+                      contact_1:
+                        {}
+                      wheel_1:
+                        {}
+            hip1_2:
+              hip2_2:
+                knee_2:
+                  ankle1_2:
+                    ankle2_2:
+                      contact_2:
+                        {}
+                      wheel_2:
+                        {}
+            hip1_3:
+              hip2_3:
+                knee_3:
+                  ankle1_3:
+                    ankle2_3:
+                      contact_3:
+                        {}
+                      wheel_3:
+                        {}
+            hip1_4:
+              hip2_4:
+                knee_4:
+                  ankle1_4:
+                    ankle2_4:
+                      contact_4:
+                        {}
+                      wheel_4:
+                        {}
+            imu_link:
+              {}
+            torso_2:
+              arm1_1:
+                arm1_2:
+                  arm1_3:
+                    arm1_4:
+                      arm1_5:
+                        arm1_6:
+                          arm1_7:
+                            ball1:
+                              arm1_8:
+                                {}
+                              ball1_tip:
+                                {}
+                            ft_arm1:
+                              {}
+              arm2_1:
+                arm2_2:
+                  arm2_3:
+                    arm2_4:
+                      arm2_5:
+                        arm2_6:
+                          arm2_7:
+                            ball2:
+                              arm2_8:
+                                {}
+                              ball2_tip:
+                                {}
+                            ft_arm2:
+                              {}
+              neck_1:
+                neck_2:
+                  D435i_head_camera_bottom_screw_frame:
+                    D435i_head_camera_link:
+                      D435i_head_camera_accel_frame:
+                        D435i_head_camera_accel_optical_frame:
+                          {}
+                      D435i_head_camera_depth_frame:
+                        D435i_head_camera_color_frame:
+                          D435i_head_camera_color_optical_frame:
+                            {}
+                        D435i_head_camera_depth_optical_frame:
+                          {}
+                        D435i_head_camera_left_ir_frame:
+                          D435i_head_camera_left_ir_optical_frame:
+                            {}
+                        D435i_head_camera_right_ir_frame:
+                          D435i_head_camera_right_ir_optical_frame:
+                            {}
+                      D435i_head_camera_gyro_frame:
+                        D435i_head_camera_gyro_optical_frame:
+                          {}
+              neck_3:
+                {}
+          zedm_camera_center:
+            zedm_left_camera_frame:
+              zedm_left_camera_optical_frame:
+                {}
+            zedm_right_camera_frame:
+              zedm_right_camera_optical_frame:
+                {}
+      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
@@ -540,25 +937,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.053501844406128
+      Distance: 3.274298906326294
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.005536200013011694
-        Y: -0.06884638220071793
-        Z: -0.21590173244476318
+        X: -0.0064520277082920074
+        Y: 0.06371494382619858
+        Z: -0.12027226388454437
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7103980183601379
+      Pitch: 0.21539819240570068
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.39539819955825806
+      Yaw: 0.425398588180542
     Saved: ~
 Window Geometry:
   Displays:

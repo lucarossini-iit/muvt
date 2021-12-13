@@ -5,7 +5,7 @@ constraints:
     - nominal_trajectory
 
 collisions:
-    max_pair_link: 100
+    max_pair_link: 20
     weight: 100
 
 optimizer:

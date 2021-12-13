@@ -1,6 +1,6 @@
 state_validity_check:
     - self-collision
-    - ground_collision
+    # - ground_collision
 
 self-collision:
     type: "CollisionCheck"
@@ -25,7 +25,6 @@ state_space:
     floating_base_pos_max: [ 10,  10,  10]
     type: "Atlas"
     alpha: 0.5233
-    rho: 0.5
-    epsilon: 0.5
+    rho: 0.1
+    epsilon: 0.1
     exploration: 0.5
-

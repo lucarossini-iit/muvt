@@ -4,14 +4,18 @@
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
     <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/capsule/centauro_capsules.urdf"/>
 
+    <arg name="vision" default="true"/>
+
 
     <arg name="vision" default="true"/>
     <arg name="is_model_floating_base" value="false"/>
 
     <!-- include robot_description -->
     <include file="$(find centauro_gazebo)/launch/centauro_world.launch">
+        <arg name="upper_body" value="true"/>
         <arg name="legs" value="true"/>
         <arg name="realsense" value="true"/>
+        <arg name="velodyne" value="false"/>
         <arg name="gazebo" value="false"/>
     </include>
 
@@ -19,6 +23,20 @@
     <node pkg="teb_test" type="urdf_parser_test_node" name="urdf_parser_test_node" output="screen">
         <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
     </node>
+
+    <!-- zedm ros wrapper -->
+    <group if="$(arg vision)">
+        <include file="$(find zed_wrapper)/launch/zedm.launch">
+            <arg name="cam_pos_x" value="0.7"/>
+            <arg name="cam_pos_y" value="0.0"/>
+            <arg name="cam_pos_z" value="0.75"/>
+            <arg name="cam_pitch" value="1.5"/>
+            <arg name="base_frame" value="world"/>
+        </include>
+
+        <!-- vision node -->
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/zedm/zed_node/point_cloud/cloud_registered"/>
+    </group>
 
     <!-- optimizer node -->
     <node pkg="teb_test" type="optimizer" name="optimizer" output="screen">

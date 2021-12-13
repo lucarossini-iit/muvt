@@ -59,6 +59,8 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 auto e = dynamic_cast<EdgeCollision*>(edge);
                 e->setObstacles(_obstacles);
                 e->computeError();
+                if (e->getError().norm() > 1e-2)
+                    std::cout << "EdgeCollision related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
@@ -69,6 +71,8 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 auto e = dynamic_cast<EdgeTask*>(edge);
                 e->computeError();
                 error = 0;
+                if (e->getError().norm() > 1e-2)
+                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
@@ -77,6 +81,8 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
             {
                 auto e = dynamic_cast<EdgeRobotVel*>(edge);
                 e->computeError();
+                if (e->getError().norm() > 1e-2)
+                    std::cout << "EdgeRobotVel related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
@@ -92,7 +98,7 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 }
             }
 
-            double thresh = 1e-5;
+            double thresh = 1e-2;
             if (cum_err > thresh)
                 v->setFixed(false);
             else
@@ -268,8 +274,8 @@ void Optimizer::init_load_edges()
                 std::vector<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7",};
                 for (auto link_distance : link_distances)
                 {
-                    if (std::find(links.begin(), links.end(), link_distance.getLinkNames().first) == links.end() &&
-                        std::find(links.begin(), links.end(), link_distance.getLinkNames().first) == links.end())
+                    if (std::find(links.begin(), links.end(), link_distance.getLinkNames().first) == links.end() ||
+                        std::find(links.begin(), links.end(), link_distance.getLinkNames().second) == links.end())
                     {
                         black_list.push_back(link_distance.getLinkNames());
                     }

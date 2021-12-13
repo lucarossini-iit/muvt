@@ -61,6 +61,9 @@ int main(int argc, char** argv)
     goal_model->setJointPosition(q_goal);
     goal_model->update();
 
+    model->setJointPosition(q_start);
+    model->update();
+
     planner.setStartAndGoalStates(q_start, q_goal);
 
     // set validity checker
@@ -75,7 +78,7 @@ int main(int argc, char** argv)
     };
 
     planner.setStateValidityPredicate(validity_predicate);
-    planner.solve(1.0, "RRTstar");
+    planner.solve(2.0, "RRTstar");
 
     // interpolate
     auto interpolator = std::make_shared<CartesianTrajectoryInterpolation>();
@@ -89,7 +92,7 @@ int main(int argc, char** argv)
 
         interpolator->compute(raw_trajectory);
         double time = 0.;
-        const double interpolation_time = 0.05;
+        const double interpolation_time = 0.03;
         while(time <= interpolator->getTrajectoryEndTime())
         {
             trajectory.push_back(interpolator->evaluate(time));
