@@ -79,6 +79,7 @@ private:
     void init_optimizer();
     void init_vertices();
     void init_load_edges();
+    void update_edges();
 
     void optimize();
 

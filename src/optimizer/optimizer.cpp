@@ -45,7 +45,11 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
         obs.id = object.header.seq;
         _obstacles.push_back(obs);
     }
+    update_edges();
+}
 
+void Optimizer::update_edges()
+{
     auto vertices = _optimizer.vertices();
     for (auto vertex : vertices)
     {
@@ -59,8 +63,8 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 auto e = dynamic_cast<EdgeCollision*>(edge);
                 e->setObstacles(_obstacles);
                 e->computeError();
-                if (e->getError().norm() > 1e-2)
-                    std::cout << "EdgeCollision related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
+//                if (e->getError().norm() > 1e-2)
+//                    std::cout << "EdgeCollision related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
@@ -71,8 +75,8 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
                 auto e = dynamic_cast<EdgeTask*>(edge);
                 e->computeError();
                 error = 0;
-                if (e->getError().norm() > 1e-2)
-                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
+//                if (e->getError().norm() > 1e-2)
+//                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
@@ -81,8 +85,8 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
             {
                 auto e = dynamic_cast<EdgeRobotVel*>(edge);
                 e->computeError();
-                if (e->getError().norm() > 1e-2)
-                    std::cout << "EdgeRobotVel related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
+//                if (e->getError().norm() > 1e-2)
+//                    std::cout << "EdgeRobotVel related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
@@ -109,6 +113,7 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
 
 void Optimizer::run()
 {
+    update_edges();
     optimize();
 //    auto coll_obj = _cld->getCollisionObjects();
 //    for (auto obj : coll_obj)
@@ -304,7 +309,7 @@ void Optimizer::init_load_edges()
         }
         else
         {
-            ROS_WARN("%s not found!",vc_name);
+            ROS_WARN("%s not found!", vc_name.c_str());
         }
     }
 }

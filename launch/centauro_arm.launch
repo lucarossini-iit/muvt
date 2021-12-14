@@ -12,6 +12,7 @@
 
     <!-- include robot_description -->
     <include file="$(find centauro_gazebo)/launch/centauro_world.launch">
+        <arg name="floating_base" value="false"/>
         <arg name="upper_body" value="true"/>
         <arg name="legs" value="true"/>
         <arg name="realsense" value="true"/>
@@ -29,7 +30,7 @@
         <include file="$(find zed_wrapper)/launch/zedm.launch">
             <arg name="cam_pos_x" value="0.7"/>
             <arg name="cam_pos_y" value="0.0"/>
-            <arg name="cam_pos_z" value="0.75"/>
+            <arg name="cam_pos_z" value="0.55"/>
             <arg name="cam_pitch" value="1.5"/>
             <arg name="base_frame" value="world"/>
         </include>
