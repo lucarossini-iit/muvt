@@ -1,6 +1,6 @@
 <launch>
 
-    <param name="use_sim_time" value="false"/>
+    <param name="use_sim_time" value="true"/>
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
     <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/capsule/centauro_capsules.urdf"/>
 
@@ -12,12 +12,12 @@
 
     <!-- include robot_description -->
     <include file="$(find centauro_gazebo)/launch/centauro_world.launch">
-        <arg name="floating_base" value="false"/>
+        <arg name="floating_base" value="true"/>
         <arg name="upper_body" value="true"/>
         <arg name="legs" value="true"/>
         <arg name="realsense" value="true"/>
         <arg name="velodyne" value="false"/>
-        <arg name="gazebo" value="false"/>
+        <arg name="gazebo" value="true"/>
     </include>
 
     <!-- URDF joint fixer -->
@@ -54,5 +54,9 @@
     <!-- rviz -->
     <node pkg="rviz" name="rviz" type="rviz" output="screen"
         args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/>
+
+    <!-- static transformers -->
+<!--    <node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
+        args="0 0 0 0 0 0 pelvis simulation/pelvis 30"/>-->
 
 </launch>

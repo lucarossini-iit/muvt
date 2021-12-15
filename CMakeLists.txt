@@ -106,7 +106,7 @@ target_link_libraries(optimizer environment
                                 g2o::core
                                 g2o::solver_csparse)
 
-add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
+add_executable(robot_controller_node src/nodes/robot_controller_node.cpp src/controller/robot_controller.cpp)
 target_link_libraries(robot_controller_node environment ${cartesian_interface_LIBRARIES})
 
 add_executable(urdf_parser_test_node test/urdf_parser_test_node.cpp)
