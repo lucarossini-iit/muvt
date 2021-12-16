@@ -167,7 +167,7 @@ void RobotController::run()
     {
         _robot->sense();
         _model->syncFrom(*_robot);
-        _rspub->publishTransforms(ros::Time::now(), "sim");
+//        _rspub->publishTransforms(ros::Time::now(), "sim");
     }
     else
         _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));

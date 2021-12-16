@@ -57,9 +57,18 @@
     <!-- urdf cloud filter -->
     <node pkg="realtime_urdf_filter" type="realtime_urdf_filter" name="realtime_urdf_filter" output="screen">
         <remap from="~input_depth" to="/D435i/D435i_head_camera/aligned_depth_to_color/image_raw"/>
-        <remap from="~output_depth" to="/urdf_filtered_point_cloud"/>
+        <remap from="~output_depth" to="/urdf_filtered_depth_image"/>
         <remap from="~output_mask" to="/urdf_filtered_mask"/>
         <rosparam command="load" file="$(find realtime_urdf_filter)/launch/filter_parameters.yaml"/>
+    </node>
+
+    <!-- depth image to pointcloud converter -->
+    <node pkg="nodelet" type="nodelet" args="manager" name="nodelet_depth_to_pointcloud_converter_manager" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="depth_to_pointcloud_converter"
+        args="load depth_image_proc/point_cloud_xyz nodelet_depth_to_pointcloud_converter_manager" output="screen">
+            <remap from="camera_info" to="/D435i/D435i_head_camera/aligned_depth_to_color/camera_info"/>
+            <remap from="image_rect" to="/urdf_filtered_depth_image"/>
+            <remap from="points" to="/urdf_filtered_point_cloud"/>
     </node>
 
     <!-- rviz -->
@@ -70,7 +79,7 @@
     <node pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
 
     <!-- static transformers -->
-    <node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
-        args="0 0 0 0 0 0 pelvis sim/pelvis 30"/>
+    <!--<node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
+        args="0 0 0 0 0 0 pelvis sim/pelvis 30"/>-->
 
 </launch>
