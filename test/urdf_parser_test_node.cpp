@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     urdf->Accept(&printer);
 
     std::string xmltext = printer.CStr();
-    nh.setParam("robot_description", xmltext);
+    nh.setParam("robot_description_reduced", xmltext);
 
     ROS_INFO("URDF modified!");
 
