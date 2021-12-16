@@ -1,10 +1,11 @@
 <launch>
 
-    <param name="use_sim_time" value="true"/>
+    <param name="use_sim_time" value="false"/>
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
     <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/capsule/centauro_capsules.urdf"/>
+    <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
 
-    <arg name="vision" default="true"/>
+    <arg name="vision" default="false"/>
 
 
     <arg name="vision" default="true"/>
@@ -47,16 +48,29 @@
     </node>
 
     <!-- robot control node -->
-    <node pkg="teb_test" type="robot_controller_node" name="robot_controller_node" output="screen">
+    <node pkg="teb_test" type="robot_controller_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
+        <param name="model_type" value="RBDL"/>
+        <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
+    </node>
+
+    <!-- urdf cloud filter -->
+    <node pkg="realtime_urdf_filter" type="realtime_urdf_filter" name="realtime_urdf_filter" output="screen">
+        <remap from="~input_depth" to="/D435i/D435i_head_camera/aligned_depth_to_color/image_raw"/>
+        <remap from="~output_depth" to="/urdf_filtered_point_cloud"/>
+        <remap from="~output_mask" to="/urdf_filtered_mask"/>
+        <rosparam command="load" file="$(find realtime_urdf_filter)/launch/filter_parameters.yaml"/>
     </node>
 
     <!-- rviz -->
     <node pkg="rviz" name="rviz" type="rviz" output="screen"
         args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/>
 
+    <!-- xbotcore -->
+    <node pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
+
     <!-- static transformers -->
-<!--    <node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
-        args="0 0 0 0 0 0 pelvis simulation/pelvis 30"/>-->
+    <node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
+        args="0 0 0 0 0 0 pelvis sim/pelvis 30"/>
 
 </launch>

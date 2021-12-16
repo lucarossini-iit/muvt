@@ -165,3 +165,6 @@ install(DIRECTORY launch/
 
 install(DIRECTORY config/
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+
+install(PROGRAMS scripts/xbotcore.sh
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
