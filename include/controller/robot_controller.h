@@ -13,6 +13,7 @@
 #include <trajectory_msgs/JointTrajectory.h>
 
 #include <std_srvs/Empty.h>
+#include <std_srvs/SetBool.h>
 
 namespace XBot { namespace HyperGraph { namespace Controller {
 
@@ -30,10 +31,12 @@ private:
     void trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg);
 
     bool init_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+    bool replay_service(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response & res);
 
-    ros::NodeHandle _nh;
+    ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _trj_sub;
-    ros::ServiceServer _init_srv;
+    ros::ServiceServer _init_srv, _replay_srv;
+    std::shared_ptr<ros::Rate> _r;
 
     XBot::ModelInterface::Ptr _model;
     XBot::RobotInterface::Ptr _robot;
@@ -42,6 +45,10 @@ private:
     trajectory_msgs::JointTrajectory _trajectory;
 
     std::vector<std::string> _keys;
+
+    bool _replay;
+
+    int _index, _incr;
 
 
 };

@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -490,10 +490,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        world:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -505,8 +501,7 @@ Visualization Manager:
       Marker Topic: /start_markers
       Name: MarkerArray
       Namespaces:
-        collision: true
-        visual: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -514,8 +509,7 @@ Visualization Manager:
       Marker Topic: /goal_markers
       Name: MarkerArray
       Namespaces:
-        collision: true
-        visual: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -551,7 +545,7 @@ Visualization Manager:
       Marker Topic: /markers
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -737,8 +731,6 @@ Visualization Manager:
           Value: false
         neck_3:
           Value: false
-        object_0:
-          Value: true
         pelvis:
           Value: false
         torso_2:
@@ -751,169 +743,147 @@ Visualization Manager:
           Value: false
         wheel_4:
           Value: false
-        world:
-          Value: false
-        zedm_camera_center:
-          Value: false
-        zedm_left_camera_frame:
-          Value: false
-        zedm_left_camera_optical_frame:
-          Value: false
-        zedm_right_camera_frame:
-          Value: false
-        zedm_right_camera_optical_frame:
-          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          object_0:
+        pelvis:
+          D435i_camera_bottom_screw_frame:
+            D435i_camera_link:
+              D435i_camera_accel_frame:
+                D435i_camera_accel_optical_frame:
+                  {}
+              D435i_camera_depth_frame:
+                D435i_camera_color_frame:
+                  D435i_camera_color_optical_frame:
+                    {}
+                D435i_camera_depth_optical_frame:
+                  {}
+                D435i_camera_left_ir_frame:
+                  D435i_camera_left_ir_optical_frame:
+                    {}
+                D435i_camera_right_ir_frame:
+                  D435i_camera_right_ir_optical_frame:
+                    {}
+              D435i_camera_gyro_frame:
+                D435i_camera_gyro_optical_frame:
+                  {}
+          T265_camera_pose_frame:
+            T265_camera_link:
+              T265_camera_accel_frame:
+                T265_camera_accel_optical_frame:
+                  {}
+              T265_camera_fisheye1_rgb_frame:
+                T265_camera_fisheye1_optical_frame:
+                  {}
+              T265_camera_fisheye2_rgb_frame:
+                T265_camera_fisheye2_optical_frame:
+                  {}
+              T265_camera_gyro_frame:
+                T265_camera_gyro_optical_frame:
+                  {}
+          base_link:
             {}
-          pelvis:
-            D435i_camera_bottom_screw_frame:
-              D435i_camera_link:
-                D435i_camera_accel_frame:
-                  D435i_camera_accel_optical_frame:
-                    {}
-                D435i_camera_depth_frame:
-                  D435i_camera_color_frame:
-                    D435i_camera_color_optical_frame:
+          hip1_1:
+            hip2_1:
+              knee_1:
+                ankle1_1:
+                  ankle2_1:
+                    contact_1:
                       {}
-                  D435i_camera_depth_optical_frame:
-                    {}
-                  D435i_camera_left_ir_frame:
-                    D435i_camera_left_ir_optical_frame:
+                    wheel_1:
                       {}
-                  D435i_camera_right_ir_frame:
-                    D435i_camera_right_ir_optical_frame:
+          hip1_2:
+            hip2_2:
+              knee_2:
+                ankle1_2:
+                  ankle2_2:
+                    contact_2:
                       {}
-                D435i_camera_gyro_frame:
-                  D435i_camera_gyro_optical_frame:
-                    {}
-            T265_camera_pose_frame:
-              T265_camera_link:
-                T265_camera_accel_frame:
-                  T265_camera_accel_optical_frame:
-                    {}
-                T265_camera_fisheye1_rgb_frame:
-                  T265_camera_fisheye1_optical_frame:
-                    {}
-                T265_camera_fisheye2_rgb_frame:
-                  T265_camera_fisheye2_optical_frame:
-                    {}
-                T265_camera_gyro_frame:
-                  T265_camera_gyro_optical_frame:
-                    {}
-            base_link:
-              {}
-            hip1_1:
-              hip2_1:
-                knee_1:
-                  ankle1_1:
-                    ankle2_1:
-                      contact_1:
-                        {}
-                      wheel_1:
-                        {}
-            hip1_2:
-              hip2_2:
-                knee_2:
-                  ankle1_2:
-                    ankle2_2:
-                      contact_2:
-                        {}
-                      wheel_2:
-                        {}
-            hip1_3:
-              hip2_3:
-                knee_3:
-                  ankle1_3:
-                    ankle2_3:
-                      contact_3:
-                        {}
-                      wheel_3:
-                        {}
-            hip1_4:
-              hip2_4:
-                knee_4:
-                  ankle1_4:
-                    ankle2_4:
-                      contact_4:
-                        {}
-                      wheel_4:
-                        {}
-            imu_link:
-              {}
-            torso_2:
-              arm1_1:
-                arm1_2:
-                  arm1_3:
-                    arm1_4:
-                      arm1_5:
-                        arm1_6:
-                          arm1_7:
-                            ball1:
-                              arm1_8:
-                                {}
-                              ball1_tip:
-                                {}
-                            ft_arm1:
+                    wheel_2:
+                      {}
+          hip1_3:
+            hip2_3:
+              knee_3:
+                ankle1_3:
+                  ankle2_3:
+                    contact_3:
+                      {}
+                    wheel_3:
+                      {}
+          hip1_4:
+            hip2_4:
+              knee_4:
+                ankle1_4:
+                  ankle2_4:
+                    contact_4:
+                      {}
+                    wheel_4:
+                      {}
+          imu_link:
+            {}
+          torso_2:
+            arm1_1:
+              arm1_2:
+                arm1_3:
+                  arm1_4:
+                    arm1_5:
+                      arm1_6:
+                        arm1_7:
+                          ball1:
+                            arm1_8:
                               {}
-              arm2_1:
-                arm2_2:
-                  arm2_3:
-                    arm2_4:
-                      arm2_5:
-                        arm2_6:
-                          arm2_7:
-                            ball2:
-                              arm2_8:
-                                {}
-                              ball2_tip:
-                                {}
-                            ft_arm2:
+                            ball1_tip:
                               {}
-              neck_1:
-                neck_2:
-                  D435i_head_camera_bottom_screw_frame:
-                    D435i_head_camera_link:
-                      D435i_head_camera_accel_frame:
-                        D435i_head_camera_accel_optical_frame:
-                          {}
-                      D435i_head_camera_depth_frame:
-                        D435i_head_camera_color_frame:
-                          D435i_head_camera_color_optical_frame:
+                          ft_arm1:
                             {}
-                        D435i_head_camera_depth_optical_frame:
-                          {}
-                        D435i_head_camera_left_ir_frame:
-                          D435i_head_camera_left_ir_optical_frame:
+            arm2_1:
+              arm2_2:
+                arm2_3:
+                  arm2_4:
+                    arm2_5:
+                      arm2_6:
+                        arm2_7:
+                          ball2:
+                            arm2_8:
+                              {}
+                            ball2_tip:
+                              {}
+                          ft_arm2:
                             {}
-                        D435i_head_camera_right_ir_frame:
-                          D435i_head_camera_right_ir_optical_frame:
-                            {}
-                      D435i_head_camera_gyro_frame:
-                        D435i_head_camera_gyro_optical_frame:
+            neck_1:
+              neck_2:
+                D435i_head_camera_bottom_screw_frame:
+                  D435i_head_camera_link:
+                    D435i_head_camera_accel_frame:
+                      D435i_head_camera_accel_optical_frame:
+                        {}
+                    D435i_head_camera_depth_frame:
+                      D435i_head_camera_color_frame:
+                        D435i_head_camera_color_optical_frame:
                           {}
-              neck_3:
-                {}
-          zedm_camera_center:
-            zedm_left_camera_frame:
-              zedm_left_camera_optical_frame:
-                {}
-            zedm_right_camera_frame:
-              zedm_right_camera_optical_frame:
-                {}
+                      D435i_head_camera_depth_optical_frame:
+                        {}
+                      D435i_head_camera_left_ir_frame:
+                        D435i_head_camera_left_ir_optical_frame:
+                          {}
+                      D435i_head_camera_right_ir_frame:
+                        D435i_head_camera_right_ir_optical_frame:
+                          {}
+                    D435i_head_camera_gyro_frame:
+                      D435i_head_camera_gyro_optical_frame:
+                        {}
+            neck_3:
+              {}
       Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: pelvis
     Frame Rate: 30
   Name: root
   Tools:

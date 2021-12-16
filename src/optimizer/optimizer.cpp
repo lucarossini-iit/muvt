@@ -24,6 +24,19 @@ _number_obs(0)
     init_load_edges();
 }
 
+Optimizer::Optimizer(std::vector<Eigen::VectorXd> vertices, XBot::ModelInterface::Ptr model):
+_nh("optimizer"),
+_nhpr("~"),
+_vertices(vertices),
+_number_obs(0),
+_model(model)
+{
+    init_load_config();
+    init_optimizer();
+    init_vertices();
+    init_load_edges();
+}
+
 void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg)
 {
     if (_obstacles.size() > 0)

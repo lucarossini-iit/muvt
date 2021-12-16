@@ -54,6 +54,7 @@ public:
     typedef std::vector<obstacle> obstacles;
     Optimizer();
     Optimizer(std::vector<Eigen::VectorXd> vertices);
+    Optimizer(std::vector<Eigen::VectorXd> vertices, XBot::ModelInterface::Ptr model);
 
     void setVertices(std::vector<Eigen::VectorXd> vertices);
 

@@ -10,8 +10,50 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "optimizer_node");
     ros::NodeHandle nh(""), nhpr("~");
 
+    std::string urdf, srdf, jidmap;
+
     // create ModelInterface
-    auto cfg = XBot::ConfigOptionsFromParamServer();
+    XBot::ConfigOptions cfg;
+    if(nh.hasParam("robot_description_reduced") && nh.getParam("robot_description_reduced", urdf))
+    {
+        cfg.set_urdf(urdf);
+    }
+    else
+    {
+        throw std::runtime_error("robot_description parameter not set");
+    }
+
+    if(nh.hasParam("robot_description_semantic_reduced") && nh.getParam("robot_description_semantic_reduced", srdf))
+    {
+        cfg.set_srdf(srdf);
+    }
+    else
+    {
+        throw std::runtime_error("robot_description_semantic parameter not set");
+    }
+
+    if(nh.hasParam("robot_description_joint_id_map") && nh.getParam("robot_description_joint_id_map", jidmap))
+    {
+        cfg.set_jidmap(jidmap);
+    }
+    else
+    {
+        //success = false;
+        if(!cfg.generate_jidmap())
+            throw std::runtime_error("robot_description_joint_id_map parameter not set, failed to auto-generate jid_map");
+    }
+
+
+
+    std::string model_type;
+    bool is_model_floating_base;
+
+    cfg.set_parameter("model_type", nhpr.param<std::string>("model_type", "RBDL"));
+
+    cfg.set_parameter("is_model_floating_base", nhpr.param<bool>("is_model_floating_base", false));
+
+    cfg.set_parameter<std::string>("framework", "ROS");
+
     auto model = XBot::ModelInterface::getModel(cfg);
     auto start_model = XBot::ModelInterface::getModel(cfg);;
     auto goal_model = XBot::ModelInterface::getModel(cfg);;
@@ -81,7 +123,7 @@ int main(int argc, char** argv)
     planner.solve(2.0, "RRTstar");
 
     // interpolate
-    auto interpolator = std::make_shared<CartesianTrajectoryInterpolation>();
+    auto interpolator = std::make_shared<CartesianTrajectoryInterpolation>(model);
 
     std::vector<Eigen::VectorXd> raw_trajectory, trajectory;
     std::cout << "[cartesio_planning]: start interpolating" << std::endl;
@@ -100,7 +142,7 @@ int main(int argc, char** argv)
         }
     }
 
-    XBot::HyperGraph::Optimizer opt(trajectory);
+    XBot::HyperGraph::Optimizer opt(trajectory, model);
 
     // TODO remove simulator
 //    auto simulator = std::make_shared<XBot::HyperGraph::Simulator>(100, start, goal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
