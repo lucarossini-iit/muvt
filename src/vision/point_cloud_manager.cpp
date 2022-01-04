@@ -9,7 +9,8 @@ _point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_voxel_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_without_outliers(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_planar_segmented(new pcl::PointCloud<pcl::PointXYZRGB>),
-_isCallbackDone(false)
+_isCallbackDone(false),
+_frame_id("pelvis")
 {
     // Subscribe to point cloud topic
     _pc_sub = _nh.subscribe(topic_name, 1, &PointCloudManager::callback, this);
@@ -23,27 +24,27 @@ _isCallbackDone(false)
 
     // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
     // the lookupTransform in the callback)
-    tf::TransformListener listener;
-    try
-    {
-        listener.waitForTransform("world", "zedm_left_camera_frame", ros::Time::now(), ros::Duration(10.0));
-        listener.lookupTransform("world", "zedm_left_camera_frame", ros::Time::now(), _transform);
-    }
-    catch (tf::TransformException ex)
-    {
-        ROS_ERROR("%s",ex.what());
-    }
+//    tf::TransformListener listener;
+//    try
+//    {
+//        listener.waitForTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), ros::Duration(10.0));
+//        listener.lookupTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), _transform);
+//    }
+//    catch (tf::TransformException ex)
+//    {
+//        ROS_ERROR("%s",ex.what());
+//    }
 
-    tf::transformTFToEigen(_transform, _w_T_cam);
+//    tf::transformTFToEigen(_transform, _w_T_cam);
 }
 
 void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pc = msg;
-    pcl::transformPointCloud(*pc, *_point_cloud, _w_T_cam.matrix());
+    _point_cloud = msg;
+//    pcl::transformPointCloud(*pc, *_point_cloud, _w_T_cam.matrix());
 
-    _point_cloud->header.frame_id = "world";
+//    _point_cloud->header.frame_id = _frame_id;
 
     // Filter cloud from NaN
     std::vector<int> indices;
@@ -58,30 +59,37 @@ void PointCloudManager::clusterExtraction()
 {
     if (_isCallbackDone)
     {
+         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
         // voxel filtering
-        pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-//        tree->setInputCloud(_point_cloud);
-
-        // Create the filtering object: downsample the dataset using a leaf size of 1cm
-        pcl::VoxelGrid<pcl::PointXYZRGB> vg;
-        vg.setInputCloud (_point_cloud);
-        vg.setLeafSize (0.02, 0.02, 0.02);
-        auto tic_voxel = std::chrono::high_resolution_clock::now();
-        vg.filter (*_cloud_voxel_filtered);
-        auto toc_voxel = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> duration_voxel = toc_voxel - tic_voxel;
+        if (_point_cloud->size() > 0)
+        {
+            // Create the filtering object: downsample the dataset using a leaf size of 1cm
+            pcl::VoxelGrid<pcl::PointXYZRGB> vg;
+            vg.setInputCloud (_point_cloud);
+            vg.setLeafSize (0.02, 0.02, 0.02);
+            auto tic_voxel = std::chrono::high_resolution_clock::now();
+            vg.filter (*_cloud_voxel_filtered);
+            auto toc_voxel = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> duration_voxel = toc_voxel - tic_voxel;
+        }
 
         // planar segmentation
-        auto tic_segmentation = std::chrono::high_resolution_clock::now();
-        planarSegmentation(_cloud_voxel_filtered, _cloud_planar_segmented);
-        auto toc_segmentation = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> duration_segmentation = toc_segmentation - tic_segmentation;
+        if (_cloud_voxel_filtered->size() > 0)
+        {
+            auto tic_segmentation = std::chrono::high_resolution_clock::now();
+            planarSegmentation(_cloud_voxel_filtered, _cloud_planar_segmented);
+            auto toc_segmentation = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> duration_segmentation = toc_segmentation - tic_segmentation;
+        }
 
         // outliers statistical removal
-        auto tic_outliers = std::chrono::high_resolution_clock::now();
-        outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
-        auto toc_outliers = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> duration_outliers = toc_outliers - tic_outliers;
+        if (_cloud_planar_segmented->size() > 0)
+        {
+            auto tic_outliers = std::chrono::high_resolution_clock::now();
+            outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
+            auto toc_outliers = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> duration_outliers = toc_outliers - tic_outliers;
+        }
 
 //        std::cout << "Requested time for perception: " << std::endl;
 //        std::cout << "voxel filtering: " << duration_voxel.count() << std::endl;
@@ -89,13 +97,17 @@ void PointCloudManager::clusterExtraction()
 //        std::cout << "outliers removal: " << duration_outliers.count() << std::endl;
 
         std::vector<pcl::PointIndices> cluster_indices;
-        pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-        ec.setClusterTolerance (0.05);
-        ec.setMinClusterSize (25);
-        ec.setMaxClusterSize (500);
-        ec.setSearchMethod (tree);
-        ec.setInputCloud(_cloud_without_outliers);
-        ec.extract (cluster_indices);
+
+        if (_cloud_without_outliers->size() > 0)
+        {
+            pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
+            ec.setClusterTolerance (0.05);
+            ec.setMinClusterSize (25);
+            ec.setMaxClusterSize (500);
+            ec.setSearchMethod (tree);
+            ec.setInputCloud(_cloud_without_outliers);
+            ec.extract (cluster_indices);
+        }
 
         int j = 0;
         for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
@@ -108,7 +120,8 @@ void PointCloudManager::clusterExtraction()
             cloud_cluster->width = cloud_cluster->size ();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
-            cloud_cluster->header.frame_id = "world";
+//            cloud_cluster->header.frame_id = _frame_id;
+            cloud_cluster->header.frame_id = _point_cloud->header.frame_id;
 
             double x_mean = 0, y_mean = 0 , z_mean = 0;
             for (auto point : cloud_cluster->points)
@@ -207,7 +220,7 @@ void PointCloudManager::generateObjectMsg()
     for (int i = 0 ; i < _transforms.size(); i++)
     {
         teb_test::ObjectMessage msg;
-        msg.header.frame_id = "world";
+        msg.header.frame_id = _point_cloud->header.frame_id;
         msg.header.seq = i;
         msg.header.stamp = ros::Time::now();
 
@@ -296,7 +309,7 @@ void PointCloudManager::run()
     {
         _obj_pub.publish(_objects);
         publishObjectMarkers();
-        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), "world", "object_" + std::to_string(i)));
+        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), _point_cloud->header.frame_id, "object_" + std::to_string(i)));
     }
 
     _pc_voxel_pub.publish(_cloud_voxel_filtered);
