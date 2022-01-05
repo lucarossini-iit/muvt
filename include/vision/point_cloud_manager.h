@@ -46,7 +46,9 @@ public:
 
 private:
     void callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& msg);
+    void callback_robot_filtered(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& msg);
 
+    void voxelFiltering();
     void clusterExtraction();
     void outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output);
     void planarSegmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output);
@@ -55,15 +57,15 @@ private:
     void publishObjectMarkers();
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Subscriber _pc_sub;
+    ros::Subscriber _pc_sub, _pc_robot_filtered_sub;
     ros::Publisher _pc_voxel_pub, _pc_outlier_pub, _pc_planar_pub, _obj_pub, _ma_pub;
     std::vector<ros::Publisher> _cc_pub;
     std::string _frame_id;
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr _point_cloud, _cloud_voxel_filtered, _cloud_planar_segmented, _cloud_without_outliers, _cloud_above_plane;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr _point_cloud, _cloud_voxel_filtered, _cloud_self_robot_filtered, _cloud_planar_segmented, _cloud_without_outliers, _cloud_above_plane;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> _cluster_cloud;
 
-    bool _isCallbackDone;
+    bool _isCallbackDone, _isCallbackRobotFilteredDone;
 
     std::vector<tf::Transform> _transforms;
     tf::TransformBroadcaster _broadcaster;

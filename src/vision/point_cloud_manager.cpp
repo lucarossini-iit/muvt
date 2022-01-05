@@ -7,6 +7,7 @@ _nh(nh),
 _nhpr("~"),
 _point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_voxel_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
+_cloud_self_robot_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_without_outliers(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_planar_segmented(new pcl::PointCloud<pcl::PointXYZRGB>),
 _isCallbackDone(false),
@@ -14,6 +15,7 @@ _frame_id("pelvis")
 {
     // Subscribe to point cloud topic
     _pc_sub = _nh.subscribe(topic_name, 1, &PointCloudManager::callback, this);
+    _pc_robot_filtered_sub = _nh.subscribe("cloud_filtered", 1, &PointCloudManager::callback_robot_filtered, this);
 
     // Advertise object topic
     _obj_pub = _nh.advertise<teb_test::ObjectMessageString>("optimizer/obstacles", 10, true);
@@ -54,47 +56,46 @@ void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &m
         _isCallbackDone = true;
 }
 
+void PointCloudManager::callback_robot_filtered(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
+{
+    _cloud_self_robot_filtered = msg;
+    std::vector<int> indices;
+    pcl::removeNaNFromPointCloud(*_cloud_self_robot_filtered, *_cloud_self_robot_filtered, indices);
+}
 
-void PointCloudManager::clusterExtraction()
+void PointCloudManager::voxelFiltering()
 {
     if (_isCallbackDone)
     {
-         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
-        // voxel filtering
         if (_point_cloud->size() > 0)
         {
             // Create the filtering object: downsample the dataset using a leaf size of 1cm
             pcl::VoxelGrid<pcl::PointXYZRGB> vg;
             vg.setInputCloud (_point_cloud);
             vg.setLeafSize (0.02, 0.02, 0.02);
-            auto tic_voxel = std::chrono::high_resolution_clock::now();
             vg.filter (*_cloud_voxel_filtered);
-            auto toc_voxel = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<float> duration_voxel = toc_voxel - tic_voxel;
         }
+    }
+}
+
+
+void PointCloudManager::clusterExtraction()
+{
+    if (_isCallbackDone)
+    {
+         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);        
 
         // planar segmentation
-        if (_cloud_voxel_filtered->size() > 0)
+        if (_cloud_self_robot_filtered->size() > 0)
         {
-            auto tic_segmentation = std::chrono::high_resolution_clock::now();
-            planarSegmentation(_cloud_voxel_filtered, _cloud_planar_segmented);
-            auto toc_segmentation = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<float> duration_segmentation = toc_segmentation - tic_segmentation;
+            planarSegmentation(_cloud_self_robot_filtered, _cloud_planar_segmented);
         }
 
         // outliers statistical removal
         if (_cloud_planar_segmented->size() > 0)
         {
-            auto tic_outliers = std::chrono::high_resolution_clock::now();
             outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
-            auto toc_outliers = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<float> duration_outliers = toc_outliers - tic_outliers;
         }
-
-//        std::cout << "Requested time for perception: " << std::endl;
-//        std::cout << "voxel filtering: " << duration_voxel.count() << std::endl;
-//        std::cout << "planar segmentation: " << duration_segmentation.count() << std::endl;
-//        std::cout << "outliers removal: " << duration_outliers.count() << std::endl;
 
         std::vector<pcl::PointIndices> cluster_indices;
 
@@ -103,7 +104,7 @@ void PointCloudManager::clusterExtraction()
             pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
             ec.setClusterTolerance (0.05);
             ec.setMinClusterSize (25);
-            ec.setMaxClusterSize (500);
+            ec.setMaxClusterSize (1000);
             ec.setSearchMethod (tree);
             ec.setInputCloud(_cloud_without_outliers);
             ec.extract (cluster_indices);
@@ -161,8 +162,8 @@ void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in
     // Create the filtering object
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud (input);
-    sor.setMeanK (20);
-    sor.setStddevMulThresh (0.8);
+    sor.setMeanK (50);
+    sor.setStddevMulThresh (1.0);
     sor.filter (*output);
 }
 
@@ -302,6 +303,7 @@ void PointCloudManager::run()
     _cluster_cloud.clear();
     _objects.objects.clear();
 
+    voxelFiltering();
     clusterExtraction();
     if (_cc_pub.size() == 0)
         _obj_pub.publish(_objects);
