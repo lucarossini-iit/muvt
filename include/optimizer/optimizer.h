@@ -93,6 +93,7 @@ private:
     ros::Publisher _sol_pub;
 
     ModelInterface::Ptr _model;
+    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
     YAML::Node _optimizer_config;
 
@@ -102,6 +103,7 @@ private:
     obstacles _obstacles;
     unsigned int _number_obs;
     int _iterations;
+    bool _isJointCallbackDone;
 };
 
 }}

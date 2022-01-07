@@ -5,7 +5,8 @@ using namespace XBot::HyperGraph;
 Optimizer::Optimizer():
 _nh("optimizer"),
 _nhpr("~"),
-_number_obs(0)
+_number_obs(0),
+_isJointCallbackDone(false)
 {
     init_load_model();
     init_optimizer();
@@ -15,7 +16,8 @@ Optimizer::Optimizer(std::vector<Eigen::VectorXd> vertices):
 _nh("optimizer"),
 _nhpr("~"),
 _vertices(vertices),
-_number_obs(0)
+_number_obs(0),
+_isJointCallbackDone(false)
 {
     init_load_model();
     init_load_config();
@@ -29,7 +31,8 @@ _nh("optimizer"),
 _nhpr("~"),
 _vertices(vertices),
 _number_obs(0),
-_model(model)
+_model(model),
+_isJointCallbackDone(false)
 {
     init_load_config();
     init_optimizer();
@@ -128,9 +131,9 @@ void Optimizer::run()
 {
     update_edges();
     optimize();
-//    auto coll_obj = _cld->getCollisionObjects();
-//    for (auto obj : coll_obj)
-//        std::cout << obj.first << std::endl;
+
+//    if (_isJointCallbackDone)
+//        _rspub->publishTransforms(ros::Time::now(), "optimizer");
 }
 
 void Optimizer::init_load_model()
@@ -158,6 +161,8 @@ void Optimizer::init_load_model()
         else
             ROS_ERROR("world_frame_link %s does not exists, keeping original world!", world_frame_link.c_str());
     }
+
+    _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
 }
 
 void Optimizer::init_load_config()

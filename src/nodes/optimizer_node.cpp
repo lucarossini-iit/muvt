@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        throw std::runtime_error("robot_description parameter not set");
+        throw std::runtime_error("robot_description_reduced parameter not set");
     }
 
     if(nh.hasParam("robot_description_semantic_reduced") && nh.getParam("robot_description_semantic_reduced", srdf))
@@ -29,10 +29,10 @@ int main(int argc, char** argv)
     }
     else
     {
-        throw std::runtime_error("robot_description_semantic parameter not set");
+        throw std::runtime_error("robot_description_semantic_reduced parameter not set");
     }
 
-    if(nh.hasParam("robot_description_joint_id_map") && nh.getParam("robot_description_joint_id_map", jidmap))
+    if(nh.hasParam("robot_description_joint_id_map_reduced") && nh.getParam("robot_description_joint_id_map_reduced", jidmap))
     {
         cfg.set_jidmap(jidmap);
     }
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     {
         //success = false;
         if(!cfg.generate_jidmap())
-            throw std::runtime_error("robot_description_joint_id_map parameter not set, failed to auto-generate jid_map");
+            throw std::runtime_error("robot_description_joint_id_map_reduced parameter not set, failed to auto-generate jid_map");
     }
 
 

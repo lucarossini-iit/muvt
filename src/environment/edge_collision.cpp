@@ -75,9 +75,9 @@ void EdgeCollision::computeError()
     {
         if (distance.getLinkNames().first == "arm1_7" && distance.getLinkNames().second.substr(0,14) == "world/obstacle")
         {
-            std::cout << "link0: " << distance.getLinkNames().first << "    link1: " << distance.getLinkNames().second << std::endl;
-            std::cout << "point0: " << distance.getClosestPoints().first.p << "     point1: " << distance.getClosestPoints().second.p << std::endl;
-            std::cout << "distance: " << distance.getDistance() << std::endl;
+//            std::cout << "link0: " << distance.getLinkNames().first << "    link1: " << distance.getLinkNames().second << std::endl;
+//            std::cout << "point0: " << distance.getClosestPoints().first.p << "     point1: " << distance.getClosestPoints().second.p << std::endl;
+//            std::cout << "distance: " << distance.getDistance() << std::endl;
 
             visualization_msgs::Marker m1, m2;
             m1.header.frame_id = "D435i_head_camera_color_optical_frame";
