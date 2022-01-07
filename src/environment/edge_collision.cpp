@@ -1,4 +1,5 @@
-    #include <environment/edge_collision.h>
+#include <environment/edge_collision.h>
+#include <visualization_msgs/MarkerArray.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;
@@ -9,6 +10,10 @@ _model(model),
 _cld(cld)
 {
     resize(max_pair_link);
+    ros::NodeHandle nh;
+
+    _point1_pub = nh.advertise<visualization_msgs::Marker>("point1", 1, true);
+    _point2_pub = nh.advertise<visualization_msgs::Marker>("point2", 1, true);
 }
 
 void EdgeCollision::resize(int size)
@@ -65,6 +70,44 @@ void EdgeCollision::computeError()
 
     _error.setZero();
 
+    auto distance_check = _cld->getLinkDistances();
+    for (auto distance : distance_check)
+    {
+        if (distance.getLinkNames().first == "arm1_7" && distance.getLinkNames().second.substr(0,14) == "world/obstacle")
+        {
+            std::cout << "link0: " << distance.getLinkNames().first << "    link1: " << distance.getLinkNames().second << std::endl;
+            std::cout << "point0: " << distance.getClosestPoints().first.p << "     point1: " << distance.getClosestPoints().second.p << std::endl;
+            std::cout << "distance: " << distance.getDistance() << std::endl;
+
+            visualization_msgs::Marker m1, m2;
+            m1.header.frame_id = "D435i_head_camera_color_optical_frame";
+            m1.header.stamp = ros::Time::now();
+            m1.header.seq = 0;
+            m1.type = visualization_msgs::Marker::CUBE;
+            m1.pose.position.x = distance.getClosestPoints().first.p(0);
+            m1.pose.position.y = distance.getClosestPoints().first.p(1);
+            m1.pose.position.z = distance.getClosestPoints().first.p(2);
+            m1.pose.orientation.x = 0; m1.pose.orientation.y = 0; m1.pose.orientation.z = 0; m1.pose.orientation.w = 1;
+            m1.color.r = 0; m1.color.g = 0; m1.color.b = 1; m1.color.a = 1;
+            m1.action = visualization_msgs::Marker::ADD;
+            m1.scale.x = 0.05; m1.scale.y = 0.05; m1.scale.z = 0.05;
+            _point1_pub.publish(m1);
+
+            m2.header.frame_id = "D435i_head_camera_color_optical_frame";
+            m2.header.stamp = ros::Time::now();
+            m2.header.seq = 1;
+            m2.type = visualization_msgs::Marker::CUBE;
+            m2.pose.position.x = distance.getClosestPoints().second.p(0);
+            m2.pose.position.y = distance.getClosestPoints().second.p(1);
+            m2.pose.position.z = distance.getClosestPoints().second.p(2);
+            m2.pose.orientation.x = 0; m2.pose.orientation.y = 0; m2.pose.orientation.z = 0; m2.pose.orientation.w = 1;
+            m2.color.r = 0; m2.color.g = 0; m2.color.b = 1; m2.color.a = 1;
+            m2.action = visualization_msgs::Marker::ADD;
+            m2.scale.x = 0.05; m2.scale.y = 0.05; m2.scale.z = 0.05;
+            _point2_pub.publish(m2);
+
+        }
+    }
     auto dist = _cld->getLinkDistances(r);
     auto end = std::next(dist.begin(), _error.size());
     std::list<LinkPairDistance> distances(dist.begin(), end);
@@ -74,6 +117,7 @@ void EdgeCollision::computeError()
     {
         if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
         {
+//            std::cout << "link0: " << i.getLinkNames().first << "   link2: " << i.getLinkNames().second << "    distance: " << i.getDistance() << std::endl;
             double distance = 0;
             distance += i.getDistance();
             if (distance > r + eps)

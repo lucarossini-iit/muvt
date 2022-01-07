@@ -67,6 +67,5 @@ int main(int argc, char** argv)
 
     ROS_INFO("URDF modified!");
 
-
     return 1;
 }

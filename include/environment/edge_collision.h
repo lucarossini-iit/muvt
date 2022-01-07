@@ -53,6 +53,8 @@ private:
     XBot::ModelInterface::Ptr _model;
     std::shared_ptr<ComputeLinksDistance> _cld;
 
+    ros::Publisher _point1_pub, _point2_pub;
+
 }; } }
 
 #endif // EDGE_COLLISION_H

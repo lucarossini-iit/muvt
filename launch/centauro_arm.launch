@@ -28,16 +28,16 @@
 
     <!-- zedm ros wrapper -->
     <group if="$(arg vision)">
-        <include file="$(find zed_wrapper)/launch/zedm.launch">
+        <!--<include file="$(find zed_wrapper)/launch/zedm.launch">
             <arg name="cam_pos_x" value="0.7"/>
             <arg name="cam_pos_y" value="0.0"/>
             <arg name="cam_pos_z" value="0.55"/>
             <arg name="cam_pitch" value="1.5"/>
             <arg name="base_frame" value="world"/>
-        </include>
+        </include>-->
 
         <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/zedm/zed_node/point_cloud/cloud_registered"/>
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435i/D435i_head_camera/depth/color/points"/>
     </group>
 
     <!-- optimizer node -->
@@ -55,20 +55,9 @@
     </node>
 
     <!-- urdf cloud filter -->
-    <node pkg="realtime_urdf_filter" type="realtime_urdf_filter" name="realtime_urdf_filter" output="screen">
-        <remap from="~input_depth" to="/D435i/D435i_head_camera/aligned_depth_to_color/image_raw"/>
-        <remap from="~output_depth" to="/urdf_filtered_depth_image"/>
-        <remap from="~output_mask" to="/urdf_filtered_mask"/>
-        <rosparam command="load" file="$(find realtime_urdf_filter)/launch/filter_parameters.yaml"/>
-    </node>
-
-    <!-- depth image to pointcloud converter -->
-    <node pkg="nodelet" type="nodelet" args="manager" name="nodelet_depth_to_pointcloud_converter_manager" output="screen"/>
-    <node pkg="nodelet" type="nodelet" name="depth_to_pointcloud_converter"
-        args="load depth_image_proc/point_cloud_xyz nodelet_depth_to_pointcloud_converter_manager" output="screen">
-            <remap from="camera_info" to="/D435i/D435i_head_camera/aligned_depth_to_color/camera_info"/>
-            <remap from="image_rect" to="/urdf_filtered_depth_image"/>
-            <remap from="points" to="/urdf_filtered_point_cloud"/>
+    <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">
+      <rosparam command="load" file="$(find robot_body_filter_node)/config/config.yaml" />
+      <remap from="cloud_in" to="/voxel" />
     </node>
 
     <!-- rviz -->

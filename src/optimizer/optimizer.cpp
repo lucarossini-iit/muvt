@@ -285,11 +285,13 @@ void Optimizer::init_load_edges()
             if (collision_urdf->initParam("collision_urdf"))
             {
                 _cld = std::make_shared<ComputeLinksDistance>(*_model, collision_urdf);
+                _cld->setBaseLink("D435i_head_camera_color_optical_frame");
 
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::vector<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7",};
+                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7",};
+                _cld->setLinksVsEnvironment(links);
                 for (auto link_distance : link_distances)
                 {
                     if (std::find(links.begin(), links.end(), link_distance.getLinkNames().first) == links.end() ||
