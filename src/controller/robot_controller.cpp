@@ -12,12 +12,11 @@ _incr(1)
     init_load_model();
 
     _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotController::trajectory_callback, this);
-    _joint_pub = _nh.advertise<sensor_msgs::JointState>("joint_state", 1, true);
 
     _init_srv = _nh.advertiseService("init_service", &RobotController::init_service, this);
     _replay_srv = _nh.advertiseService("replay_service", &RobotController::replay_service, this);
 
-    int rate = _nhpr.param("rate", 30);
+    int rate = _nhpr.param("rate", 10);
     _r = std::make_shared<ros::Rate>(rate);
 }
 
@@ -34,7 +33,7 @@ void RobotController::init_load_model()
     }
     else
     {
-        throw std::runtime_error("robot_description parameter not set");
+        throw std::runtime_error("robot_description_reduced parameter not set");
     }
 
     if(_nh.hasParam("robot_description_semantic_reduced") && _nh.getParam("robot_description_semantic_reduced", srdf))
@@ -43,7 +42,7 @@ void RobotController::init_load_model()
     }
     else
     {
-        throw std::runtime_error("robot_description_semantic parameter not set");
+        throw std::runtime_error("robot_description_semantic_reduced parameter not set");
     }
 
     if(_nh.hasParam("robot_description_joint_id_map") && _nh.getParam("robot_description_joint_id_map", jidmap))
@@ -195,15 +194,5 @@ void RobotController::run()
 
         _r->sleep();
     }
-
-    // publish joint_state for optimizer node
-    sensor_msgs::JointState joint_state;
-    joint_state.name = _model->getEnabledJointNames();
-    Eigen::VectorXd joint_eigen;
-    _model->getJointPosition(joint_eigen);
-    std::vector<double> joint_vector(joint_eigen.data(), joint_eigen.data() + joint_eigen.size());
-    joint_state.position = joint_vector;
-    _joint_pub.publish(joint_state);
-
     ros::spinOnce();
 }

@@ -62,17 +62,7 @@ int main(int argc, char** argv)
     XBot::Cartesian::Planning::RobotViz start_viz(start_model, "start_markers", nh);
     start_viz.setRGBA(Eigen::Vector4d(0.0, 0.0, 1.0, 0.5));
     XBot::Cartesian::Planning::RobotViz goal_viz(goal_model, "goal_markers", nh);
-    
-    // create Optimizer
-    // TODO: remove Simulator
-    Eigen::VectorXd start(model->getJointNum()), goal(model->getJointNum()), qhome(model->getJointNum());
-    model->getRobotState("home", qhome);
-
-    start = qhome;
-    start(0) = -1.0;
-
-    goal = qhome;
-    goal(0) = 1.0;
+    goal_viz.setRGBA(Eigen::Vector4d(0.0, 1.0, 0.0, 0.5));
 
     // cartesio_planning
     // load planner config file (yaml)
@@ -134,7 +124,7 @@ int main(int argc, char** argv)
 
         interpolator->compute(raw_trajectory);
         double time = 0.;
-        const double interpolation_time = 0.03;
+        const double interpolation_time = 0.1;
         while(time <= interpolator->getTrajectoryEndTime())
         {
             trajectory.push_back(interpolator->evaluate(time));
@@ -160,7 +150,7 @@ int main(int argc, char** argv)
 
 //    XBot::HyperGraph::Optimizer opt(q_init);
 
-    ros::Rate rate(10);
+    ros::Rate rate(50);
     while (ros::ok())
     {
         start_viz.publishMarkers(ros::Time::now(), {});

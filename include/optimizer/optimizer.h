@@ -20,6 +20,7 @@
 #include <g2o/types/slam3d/vertex_pointxyz.h>
 
 #include <XBotInterface/ModelInterface.h>
+#include <XBotInterface/RobotInterface.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
@@ -90,9 +91,10 @@ private:
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _obj_sub;
-    ros::Publisher _sol_pub;
+    ros::Publisher _sol_pub, _ee_trj_pub;
 
     ModelInterface::Ptr _model;
+    RobotInterface::Ptr _robot;
     std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
     YAML::Node _optimizer_config;

@@ -84,6 +84,8 @@ void Optimizer::update_edges()
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
+                if (std::sqrt(error) > 1e-2)
+                    std::cout << "EdgeCollision exceeded" << std::endl;
                 cum_err += std::sqrt(error);
             }
             else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
@@ -95,6 +97,8 @@ void Optimizer::update_edges()
 //                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
+                if (std::sqrt(error) > 1e-2)
+                    std::cout << "EdgeTask exceeded" << std::endl;
                 cum_err += std::sqrt(error);
             }
             else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
@@ -107,6 +111,8 @@ void Optimizer::update_edges()
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
+                if (std::sqrt(error) > 1e-2)
+                    std::cout << "EdgeRobotVel exceeded" << std::endl;
             }
             if (vertices.size() == 1)
             {
@@ -131,13 +137,11 @@ void Optimizer::run()
 {
     update_edges();
     optimize();
-
-//    if (_isJointCallbackDone)
-//        _rspub->publishTransforms(ros::Time::now(), "optimizer");
 }
 
 void Optimizer::init_load_model()
 {
+    // ModelInterface
     auto cfg = XBot::ConfigOptionsFromParamServer();
     _model = XBot::ModelInterface::getModel(cfg);
 
@@ -184,6 +188,7 @@ void Optimizer::init_load_config()
     // advertise and subscribe to topics
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
+    _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
 }
 
 void Optimizer::init_optimizer()
@@ -346,6 +351,9 @@ void Optimizer::setVertices(std::vector<Eigen::VectorXd> vertices)
 
 void Optimizer::optimize()
 {
+    XBot::JointNameMap jmap;
+    _model->getJointPosition(jmap);
+    visualization_msgs::MarkerArray ma;
     auto vertices = _optimizer.vertices();
     unsigned int counter_non_active = 0;
     unsigned int counter_active = 0;
@@ -363,8 +371,6 @@ void Optimizer::optimize()
 
     _optimizer.initializeOptimization();
     _optimizer.optimize(_iterations);
-//    print();
-//    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
@@ -386,8 +392,27 @@ void Optimizer::optimize()
         {
             solution.points.push_back(point);
         }
+
+
+        _model->setJointPosition(v->estimate());
+        _model->update();
+        Eigen::Affine3d T;
+        _model->getPose("arm1_7", T);
+        visualization_msgs::Marker m;
+        m.header.frame_id = "pelvis";
+        m.header.stamp = ros::Time::now();
+        m.id = v->id();
+        m.action = visualization_msgs::Marker::ADD;
+        m.type = visualization_msgs::Marker::SPHERE;
+        m.color.r = 0; m.color.g = 1; m.color.b = 0; m.color.a = 1;
+        m.scale.x = 0.01; m.scale.y = 0.01; m.scale.z = 0.01;
+        m.pose.position.x = T.translation()(0);
+        m.pose.position.y = T.translation()(1);
+        m.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m);
     }
 
+    _ee_trj_pub.publish(ma);
     _sol_pub.publish(solution);
 }
 

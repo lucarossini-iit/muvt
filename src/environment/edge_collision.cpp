@@ -4,9 +4,8 @@
 using namespace XBot::HyperGraph;
 using namespace g2o;
 
-EdgeCollision::EdgeCollision(XBot::ModelInterface::Ptr& model, std::shared_ptr<ComputeLinksDistance> cld, int max_pair_link):
-BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos>(),
-_model(model),
+EdgeCollision::EdgeCollision(XBot::ModelInterface::Ptr model, std::shared_ptr<ComputeLinksDistance> cld, int max_pair_link):
+UnaryEdge(model),
 _cld(cld)
 {
     resize(max_pair_link);
@@ -80,9 +79,10 @@ void EdgeCollision::computeError()
 //            std::cout << "distance: " << distance.getDistance() << std::endl;
 
             visualization_msgs::Marker m1, m2;
-            m1.header.frame_id = "D435i_head_camera_color_optical_frame";
+            m1.header.frame_id = "pelvis";
             m1.header.stamp = ros::Time::now();
             m1.header.seq = 0;
+            m1.id = 1;
             m1.type = visualization_msgs::Marker::CUBE;
             m1.pose.position.x = distance.getClosestPoints().first.p(0);
             m1.pose.position.y = distance.getClosestPoints().first.p(1);
@@ -93,9 +93,10 @@ void EdgeCollision::computeError()
             m1.scale.x = 0.05; m1.scale.y = 0.05; m1.scale.z = 0.05;
             _point1_pub.publish(m1);
 
-            m2.header.frame_id = "D435i_head_camera_color_optical_frame";
+            m2.header.frame_id = "pelvis";
             m2.header.stamp = ros::Time::now();
             m2.header.seq = 1;
+            m2.id = 2;
             m2.type = visualization_msgs::Marker::CUBE;
             m2.pose.position.x = distance.getClosestPoints().second.p(0);
             m2.pose.position.y = distance.getClosestPoints().second.p(1);

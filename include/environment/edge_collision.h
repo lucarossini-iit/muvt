@@ -1,14 +1,13 @@
 #ifndef EDGE_COLLISION_H
 #define EDGE_COLLISION_H
 
-#include <g2o/core/base_unary_edge.h>
-
 #include <XBotInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
 #include <eigen_conversions/eigen_msg.h>
 
+#include <environment/unary_edge.h>
 #include <environment/vertex_robot_pos.h>
 #include <environment/obstacle.h>
 
@@ -16,13 +15,13 @@ using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
 
-class EdgeCollision : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
+class EdgeCollision : public UnaryEdge {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
     typedef std::vector<obstacle> obstacles;
 
-    EdgeCollision(XBot::ModelInterface::Ptr& model,
+    EdgeCollision(XBot::ModelInterface::Ptr model,
                   std::shared_ptr<ComputeLinksDistance> dist,
                   int max_pair_link);
 
@@ -50,7 +49,6 @@ public:
     unsigned int ID;
 
 private:
-    XBot::ModelInterface::Ptr _model;
     std::shared_ptr<ComputeLinksDistance> _cld;
 
     ros::Publisher _point1_pub, _point2_pub;

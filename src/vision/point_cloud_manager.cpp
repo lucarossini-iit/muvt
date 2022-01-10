@@ -23,34 +23,35 @@ _frame_id("pelvis")
     _pc_planar_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("planar", 10, true);
     _pc_outlier_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("outlier", 10, true);
     _ma_pub = _nh.advertise<visualization_msgs::MarkerArray>("markers", 10, true);
-
-    // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
-    // the lookupTransform in the callback)
-//    tf::TransformListener listener;
-//    try
-//    {
-//        listener.waitForTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), ros::Duration(10.0));
-//        listener.lookupTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), _transform);
-//    }
-//    catch (tf::TransformException ex)
-//    {
-//        ROS_ERROR("%s",ex.what());
-//    }
-
-//    tf::transformTFToEigen(_transform, _w_T_cam);
 }
 
 void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
 {
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc (new pcl::PointCloud<pcl::PointXYZRGB>);
-    _point_cloud = msg;
-//    pcl::transformPointCloud(*pc, *_point_cloud, _w_T_cam.matrix());
 
-//    _point_cloud->header.frame_id = _frame_id;
+    // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
+    // the lookupTransform in the callback)
+    tf::TransformListener listener;
+    try
+    {
+        listener.waitForTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.5));
+        listener.lookupTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), _transform);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_ERROR("%s",ex.what());
+    }
+
+    tf::transformTFToEigen(_transform, _w_T_cam);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pc = msg;
 
     // Filter cloud from NaN
     std::vector<int> indices;
-    pcl::removeNaNFromPointCloud(*_point_cloud, *_point_cloud, indices);
+    pcl::removeNaNFromPointCloud(*pc, *pc, indices);
+    pcl::transformPointCloud(*pc, *_point_cloud, _w_T_cam.matrix());
+
+    _point_cloud->header.frame_id = _frame_id;
 
     if(!_isCallbackDone)
         _isCallbackDone = true;
@@ -104,7 +105,7 @@ void PointCloudManager::clusterExtraction()
             pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
             ec.setClusterTolerance (0.05);
             ec.setMinClusterSize (25);
-            ec.setMaxClusterSize (1000);
+            ec.setMaxClusterSize (5000);
             ec.setSearchMethod (tree);
             ec.setInputCloud(_cloud_without_outliers);
             ec.extract (cluster_indices);
@@ -116,12 +117,11 @@ void PointCloudManager::clusterExtraction()
             // Extract i-th cluster from the scene_cloud
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);
             for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-//                cloud_cluster->push_back ((*_cloud_planar_segmented)[*pit]);
                 cloud_cluster->push_back ((*_cloud_without_outliers)[*pit]);
             cloud_cluster->width = cloud_cluster->size ();
             cloud_cluster->height = 1;
             cloud_cluster->is_dense = true;
-//            cloud_cluster->header.frame_id = _frame_id;
+            cloud_cluster->header.frame_id = _frame_id;
             cloud_cluster->header.frame_id = _point_cloud->header.frame_id;
 
             double x_mean = 0, y_mean = 0 , z_mean = 0;
