@@ -10,9 +10,6 @@ _cld(cld)
 {
     resize(max_pair_link);
     ros::NodeHandle nh;
-
-    _point1_pub = nh.advertise<visualization_msgs::Marker>("point1", 1, true);
-    _point2_pub = nh.advertise<visualization_msgs::Marker>("point2", 1, true);
 }
 
 void EdgeCollision::resize(int size)
@@ -39,8 +36,11 @@ void EdgeCollision::setObstacles(obstacles obs)
 
         coll.operation = moveit_msgs::CollisionObject::ADD;
         coll.primitives.resize(1);
-        coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
-        coll.primitives[0].dimensions = {obstacle.size(0), obstacle.size(1), obstacle.size(2)};
+//        coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+//        coll.primitives[0].dimensions = {obstacle.size(0), obstacle.size(1), obstacle.size(2)};
+
+        coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
+        coll.primitives[0].dimensions = {obstacle.size(0)};
 
         geometry_msgs::Pose p;
         p.position.x = obstacle.position(0);    p.position.y = obstacle.position(1);    p.position.z = obstacle.position(2);
@@ -62,54 +62,14 @@ void EdgeCollision::computeError()
     _model->setJointPosition(q);
     _model->update();
 
-    double eps = 0.01;
-    double S = 0.05;
-    double r = 0.1;
+    double eps = 0.05;
+    double S = 0.0025;
+    double r = 0.05;
     int n = 2;
 
     _error.setZero();
 
-    auto distance_check = _cld->getLinkDistances();
-    for (auto distance : distance_check)
-    {
-        if (distance.getLinkNames().first == "arm1_7" && distance.getLinkNames().second.substr(0,14) == "world/obstacle")
-        {
-//            std::cout << "link0: " << distance.getLinkNames().first << "    link1: " << distance.getLinkNames().second << std::endl;
-//            std::cout << "point0: " << distance.getClosestPoints().first.p << "     point1: " << distance.getClosestPoints().second.p << std::endl;
-//            std::cout << "distance: " << distance.getDistance() << std::endl;
-
-            visualization_msgs::Marker m1, m2;
-            m1.header.frame_id = "pelvis";
-            m1.header.stamp = ros::Time::now();
-            m1.header.seq = 0;
-            m1.id = 1;
-            m1.type = visualization_msgs::Marker::CUBE;
-            m1.pose.position.x = distance.getClosestPoints().first.p(0);
-            m1.pose.position.y = distance.getClosestPoints().first.p(1);
-            m1.pose.position.z = distance.getClosestPoints().first.p(2);
-            m1.pose.orientation.x = 0; m1.pose.orientation.y = 0; m1.pose.orientation.z = 0; m1.pose.orientation.w = 1;
-            m1.color.r = 0; m1.color.g = 0; m1.color.b = 1; m1.color.a = 1;
-            m1.action = visualization_msgs::Marker::ADD;
-            m1.scale.x = 0.05; m1.scale.y = 0.05; m1.scale.z = 0.05;
-            _point1_pub.publish(m1);
-
-            m2.header.frame_id = "pelvis";
-            m2.header.stamp = ros::Time::now();
-            m2.header.seq = 1;
-            m2.id = 2;
-            m2.type = visualization_msgs::Marker::CUBE;
-            m2.pose.position.x = distance.getClosestPoints().second.p(0);
-            m2.pose.position.y = distance.getClosestPoints().second.p(1);
-            m2.pose.position.z = distance.getClosestPoints().second.p(2);
-            m2.pose.orientation.x = 0; m2.pose.orientation.y = 0; m2.pose.orientation.z = 0; m2.pose.orientation.w = 1;
-            m2.color.r = 0; m2.color.g = 0; m2.color.b = 1; m2.color.a = 1;
-            m2.action = visualization_msgs::Marker::ADD;
-            m2.scale.x = 0.05; m2.scale.y = 0.05; m2.scale.z = 0.05;
-            _point2_pub.publish(m2);
-
-        }
-    }
-    auto dist = _cld->getLinkDistances(r);
+    auto dist = _cld->getLinkDistances(r+eps);
     auto end = std::next(dist.begin(), _error.size());
     std::list<LinkPairDistance> distances(dist.begin(), end);
     int index = 0;
@@ -121,6 +81,8 @@ void EdgeCollision::computeError()
 //            std::cout << "link0: " << i.getLinkNames().first << "   link2: " << i.getLinkNames().second << "    distance: " << i.getDistance() << std::endl;
             double distance = 0;
             distance += i.getDistance();
+            if (distance < 0)
+                std::cout << "distance: " << distance << std::endl;
             if (distance > r + eps)
                 _error(index) = 0;
             else
