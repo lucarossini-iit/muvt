@@ -84,8 +84,6 @@ void Optimizer::update_edges()
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
-                if (std::sqrt(error) > 1e-2)
-                    std::cout << "EdgeCollision exceeded" << std::endl;
                 cum_err += std::sqrt(error);
             }
             else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
@@ -97,8 +95,6 @@ void Optimizer::update_edges()
 //                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
-                if (std::sqrt(error) > 1e-2)
-                    std::cout << "EdgeTask exceeded" << std::endl;
                 cum_err += std::sqrt(error);
             }
             else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
@@ -111,8 +107,6 @@ void Optimizer::update_edges()
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
-                if (std::sqrt(error) > 1e-2)
-                    std::cout << "EdgeRobotVel exceeded" << std::endl;
             }
             if (vertices.size() == 1)
             {
@@ -125,7 +119,7 @@ void Optimizer::update_edges()
             }
 
             double thresh = 1e-2;
-            if (cum_err > thresh)
+            if (cum_err > thresh && v->id() != 0 && v->id() != _vertices.size() - 1)
                 v->setFixed(false);
             else
                 v->setFixed(true);
@@ -184,6 +178,9 @@ void Optimizer::init_load_config()
 
     YAML_PARSE_OPTION(_optimizer_config["optimizer"], iterations, int, 10);
     _iterations = iterations;
+
+    _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("optimizer");
+    _create_obs_srv = _nh.advertiseService("create_obstacle", &Optimizer::create_obstacle_service, this);
 
     // advertise and subscribe to topics
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
@@ -300,7 +297,7 @@ void Optimizer::init_load_edges()
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7",};
+                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1"};
                 _cld->setLinksVsEnvironment(links);
                 for (auto link_distance : link_distances)
                 {
@@ -462,4 +459,90 @@ void Optimizer::print()
             }
         }
     }
+}
+
+bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res)
+{
+    if (!req.add)
+    {
+        _server->clear();
+        _server->applyChanges();
+        _obstacles.clear();
+        res.status = true;
+        return res.status;
+    }
+
+    Eigen::Vector3d position;
+    position << req.pose.position.x, req.pose.position.y, req.pose.position.z;
+    obstacle obs;
+    obs.position = position;
+    obs.orientation.coeffs() << 0, 0, 0, 1;
+    obs.size << 0.05, 0.05, 0.05;
+    obs.id = _obstacles.size();
+    _obstacles.push_back(obs);
+    update_edges();
+
+    visualization_msgs::InteractiveMarker int_marker;
+    int_marker.header.frame_id = "pelvis";
+    int_marker.header.stamp = ros::Time::now();
+    int_marker.name = "obstacle_" + std::to_string(_obstacles.size());
+    int_marker.description = "obstacle_" + std::to_string(_obstacles.size());
+
+    visualization_msgs::Marker m;
+    m.type = visualization_msgs::Marker::SPHERE;
+    m.pose.position.x = 0;
+    m.pose.position.y = 0;
+    m.pose.position.z = 0;
+    m.pose.orientation.x = 0;
+    m.pose.orientation.y = 0;
+    m.pose.orientation.z = 0;
+    m.pose.orientation.w = 1;
+    m.scale.x = obs.size(0); m.scale.y = obs.size(1); m.scale.z = obs.size(2);
+    m.color.r = 1; m.color.g = 0; m.color.b = 0; m.color.a = 1;
+
+    visualization_msgs::InteractiveMarkerControl obs_control;
+    obs_control.always_visible = true;
+    obs_control.markers.push_back(m);
+    int_marker.controls.push_back(obs_control);
+    int_marker.pose.position.x = req.pose.position.x;
+    int_marker.pose.position.y = req.pose.position.y;
+    int_marker.pose.position.z = req.pose.position.z;
+
+    visualization_msgs::InteractiveMarkerControl move_control_x;
+    move_control_x.name = "move_x";
+    move_control_x.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_x);
+
+    visualization_msgs::InteractiveMarkerControl move_control_y;
+    move_control_y.name = "move_y";
+    Eigen::Matrix3d R;
+    R << cos(M_PI/2), -sin(M_PI/2), 0, sin(M_PI/2), cos(M_PI/2), 0, 0, 0, 1;
+    Eigen::Quaternion<double> quat(R);
+    tf::quaternionEigenToMsg(quat, move_control_y.orientation);
+    move_control_y.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_y);
+
+    visualization_msgs::InteractiveMarkerControl move_control_z;
+    move_control_z.name = "move_z";
+    R << cos(-M_PI/2), 0, sin(-M_PI/2), 0, 1, 0, -sin(-M_PI/2), 0, cos(-M_PI/2);
+    Eigen::Quaternion<double> quat_z(R);
+    tf::quaternionEigenToMsg(quat_z, move_control_z.orientation);
+    move_control_z.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_z);
+
+    _server->insert(int_marker);
+    _server->setCallback(int_marker.name, boost::bind(&Optimizer::interactive_markers_feedback, this, _1));
+    _server->applyChanges();
+
+    res.status = true;
+    return res.status;
+}
+
+void Optimizer::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+{
+    auto c = feedback->marker_name.back();
+    int index = c - '0';
+
+    _obstacles[index-1].position << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
+    update_edges();
 }
