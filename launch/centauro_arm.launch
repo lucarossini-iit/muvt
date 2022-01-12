@@ -6,6 +6,7 @@
     <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
 
     <arg name="vision" default="false"/>
+    <arg name="gazebo" default="true"/>
 
 
     <arg name="vision" default="true"/>
@@ -18,7 +19,7 @@
         <arg name="legs" value="true"/>
         <arg name="realsense" value="true"/>
         <arg name="velodyne" value="false"/>
-        <arg name="gazebo" value="true"/>
+        <arg name="gazebo" value="$(arg gazebo)"/>
     </include>
 
     <!-- URDF joint fixer -->
@@ -36,6 +37,15 @@
             <arg name="base_frame" value="world"/>
         </include>-->
 
+        <!--<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+                <param name="resolution" value="0.02" />
+                <param name="frame_id" type="string" value="pelvis" />
+                <param name="sensor_model/max_range" value="5.0" />
+                <remap from="cloud_in" to="/D435i/D435i_head_camera/depth/color/points" />
+                <param name="pointcloud_min_z" value="-0.5"/>
+                <param name="pointcloud_max_z" value="1.0"/>
+                <param name="latch" value="false"/>
+        </node>-->
         <!-- vision node -->
         <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435i/D435i_head_camera/depth/color/points"/>
     </group>
@@ -67,7 +77,7 @@
         args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/>
 
     <!-- xbotcore -->
-    <node pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
+    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
 
     <!-- static transformers -->
     <!--<node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
