@@ -61,6 +61,8 @@ public:
 
     void run();
 
+    void print();
+
 private:
     /* Macro for option parsing */
     #define YAML_PARSE_OPTION(yaml, name, type, default_value) \
@@ -76,6 +78,7 @@ private:
     } \
     /* End macro for option parsing */
 
+    // Private member functionf for initialization
     void init_load_model();
     void init_load_config();
     void init_optimizer();
@@ -83,15 +86,21 @@ private:
     void init_load_edges();
     void update_edges();
 
+    // Optimize function
     void optimize();
 
-    void object_callback(const teb_test::ObjectMessageStringConstPtr& msg);
+    // Services
+    bool create_obstacle_service(teb_test::SetObstacle::Request& req, teb_test::SetObstacle::Response& res);
 
-    void print();
+    // Callbacks
+    void object_callback(const teb_test::ObjectMessageStringConstPtr& msg);
+    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _obj_sub;
     ros::Publisher _sol_pub, _ee_trj_pub;
+    ros::ServiceServer _create_obs_srv;
+    std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
     ModelInterface::Ptr _model;
     RobotInterface::Ptr _robot;
