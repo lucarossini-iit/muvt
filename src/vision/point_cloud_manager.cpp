@@ -73,7 +73,7 @@ void PointCloudManager::voxelFiltering()
             // Create the filtering object: downsample the dataset using a leaf size of 1cm
             pcl::VoxelGrid<pcl::PointXYZRGB> vg;
             vg.setInputCloud (_point_cloud);
-            vg.setLeafSize (0.02, 0.02, 0.02);
+            vg.setLeafSize (0.01, 0.01, 0.01);
             vg.filter (*_cloud_voxel_filtered);
         }
     }
@@ -305,15 +305,12 @@ void PointCloudManager::run()
 
     voxelFiltering();
     clusterExtraction();
-    if (_cc_pub.size() == 0)
-        _obj_pub.publish(_objects);
     for (int i = 0; i < _cc_pub.size(); i++)
-    {
-        _obj_pub.publish(_objects);
-        publishObjectMarkers();
-        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), _point_cloud->header.frame_id, "object_" + std::to_string(i)));
+    {        
+        _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), _frame_id, "object_" + std::to_string(i)));
     }
-
+    publishObjectMarkers();
+    _obj_pub.publish(_objects);
     _pc_voxel_pub.publish(_cloud_voxel_filtered);
     _pc_planar_pub.publish(_cloud_planar_segmented);
     _pc_outlier_pub.publish(_cloud_without_outliers);
