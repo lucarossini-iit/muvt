@@ -110,7 +110,7 @@ int main(int argc, char** argv)
     };
 
     planner.setStateValidityPredicate(validity_predicate);
-    planner.solve(2.0, "RRTstar");
+    planner.solve(3.0, "RRTstar");
 
     // interpolate
     auto interpolator = std::make_shared<CartesianTrajectoryInterpolation>(model);
