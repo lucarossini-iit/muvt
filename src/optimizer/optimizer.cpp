@@ -184,8 +184,11 @@ void Optimizer::init_load_config()
 
     // advertise and subscribe to topics
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
+
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
+    _vertices_pub = _nh.advertise<std_msgs::Int32MultiArray>("vertices", 10, this);
+    _time_pub = _nh.advertise<std_msgs::Float32>("time", 10, this);
 }
 
 void Optimizer::init_optimizer()
@@ -193,6 +196,9 @@ void Optimizer::init_optimizer()
     auto linearSolver = g2o::make_unique<LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>>();
     auto blockSolver = g2o::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
     g2o::OptimizationAlgorithm *algorithm = new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver));
+
+    _time_vector.resize(10);
+    _time_vector = {0,0,0,0,0,0,0,0,0,0};
 
     _optimizer.setVerbose(false);
     _optimizer.setAlgorithm(algorithm);
@@ -366,12 +372,35 @@ void Optimizer::optimize()
     std::cout << "active: " << counter_active << std::endl;
     auto tic = std::chrono::high_resolution_clock::now();
 
+    std_msgs::Int32MultiArray multi_array;
+    multi_array.data.push_back(counter_non_active);
+    multi_array.data.push_back(counter_active);
+    multi_array.layout.dim.resize(2);
+    multi_array.layout.dim[0].label = "fixed";
+    multi_array.layout.dim[1].label = "active";
+
+    _vertices_pub.publish(multi_array);
+
     _optimizer.initializeOptimization();
     _optimizer.optimize(_iterations);
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
     std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
+
+    // shift _time_vector elements
+    for (int i = 1; i < _time_vector.size(); i++)
+        _time_vector[i-1] = _time_vector[i];
+    _time_vector.back() = double(fsec.count());
+
+    // average and publish
+    std_msgs::Float32 time;
+    time.data = 0;
+    for (auto i : _time_vector)
+        time.data += i;
+
+    time.data /= _time_vector.size();
+    _time_pub.publish(time);
 
     // save and publish solution
     trajectory_msgs::JointTrajectory solution;

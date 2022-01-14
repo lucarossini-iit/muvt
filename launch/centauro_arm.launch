@@ -7,6 +7,7 @@
 
     <arg name="vision" default="false"/>
     <arg name="gazebo" default="true"/>
+    <arg name="gui" default="true"/>
 
 
     <arg name="vision" default="true"/>
@@ -78,6 +79,8 @@
 
     <!-- xbotcore -->
     <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
+
+<!--    <node if="$(arg gui)" pkg="teb_test" type="main_window.py" name="gui" output="screen"/>-->
 
     <!-- static transformers -->
     <!--<node pkg="tf" type="static_transform_publisher" name="pelvis_connector"

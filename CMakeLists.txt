@@ -113,6 +113,9 @@ target_link_libraries(robot_controller_node environment ${cartesian_interface_LI
 add_executable(urdf_parser_test_node test/urdf_parser_test_node.cpp)
 target_link_libraries(urdf_parser_test_node ${catkin_LIBRARIES} ${urdf_LIBRARIES} ${XBotInterface_LIBRARIES})
 
+catkin_install_python(PROGRAMS python/main_window.py
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
 install(TARGETS main_test
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

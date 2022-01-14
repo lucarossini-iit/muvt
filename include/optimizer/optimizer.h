@@ -42,6 +42,8 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/Float32.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <teb_test/ObjectMessageString.h>
@@ -98,7 +100,7 @@ private:
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _obj_sub;
-    ros::Publisher _sol_pub, _ee_trj_pub;
+    ros::Publisher _sol_pub, _ee_trj_pub, _vertices_pub, _time_pub;
     ros::ServiceServer _create_obs_srv;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
@@ -115,6 +117,7 @@ private:
     unsigned int _number_obs;
     int _iterations;
     bool _isJointCallbackDone;
+    std::vector<double> _time_vector;
 };
 
 }}
