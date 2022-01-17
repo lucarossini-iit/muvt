@@ -43,7 +43,7 @@
 #include <visualization_msgs/InteractiveMarker.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_msgs/Int32MultiArray.h>
-#include <std_msgs/Float32.h>
+#include <std_msgs/Float32MultiArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <teb_test/ObjectMessageString.h>
@@ -118,6 +118,7 @@ private:
     int _iterations;
     bool _isJointCallbackDone;
     std::vector<double> _time_vector;
+    ros::Time _init_time;
 };
 
 }}

@@ -188,7 +188,8 @@ void Optimizer::init_load_config()
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
     _vertices_pub = _nh.advertise<std_msgs::Int32MultiArray>("vertices", 10, this);
-    _time_pub = _nh.advertise<std_msgs::Float32>("time", 10, this);
+    _time_pub = _nh.advertise<std_msgs::Float32MultiArray>("time", 10, this);
+    _init_time = ros::Time::now();
 }
 
 void Optimizer::init_optimizer()
@@ -394,12 +395,14 @@ void Optimizer::optimize()
     _time_vector.back() = double(fsec.count());
 
     // average and publish
-    std_msgs::Float32 time;
-    time.data = 0;
+    std_msgs::Float32MultiArray time;
+    time.data.push_back(0);
     for (auto i : _time_vector)
-        time.data += i;
+        time.data[0] += i;
 
-    time.data /= _time_vector.size();
+    auto t = ros::Time::now() - _init_time;
+    time.data[0] /= _time_vector.size();
+    time.data.push_back(t.toSec());
     _time_pub.publish(time);
 
     // save and publish solution
