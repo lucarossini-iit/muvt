@@ -189,6 +189,7 @@ void Optimizer::init_load_config()
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
     _vertices_pub = _nh.advertise<std_msgs::Int32MultiArray>("vertices", 10, this);
     _time_pub = _nh.advertise<std_msgs::Float32MultiArray>("time", 10, this);
+    _err_pub = _nh.advertise<std_msgs::Float32MultiArray>("error", 10, this);
     _init_time = ros::Time::now();
 }
 
@@ -403,6 +404,43 @@ void Optimizer::optimize()
     time.data[0] /= _time_vector.size();
     time.data.push_back(t.toSec());
     _time_pub.publish(time);
+
+    // publish residual error
+    std_msgs::Float32MultiArray err_msg;
+    double cum_err_coll = 0;
+    double cum_err_vel = 0;
+    for (auto vertex : vertices)
+    {
+        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
+
+        double error = 0;
+        for (auto edge : v->edges())
+        {
+            if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
+            {
+                auto e = dynamic_cast<EdgeCollision*>(edge);
+                e->setObstacles(_obstacles);
+                e->computeError();
+                error = 0;
+                for (int i = 0; i < e->getError().size(); i++)
+                    error += e->getError()(i) * e->getError()(i);
+                cum_err_coll += std::sqrt(error);
+            }
+            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
+            {
+                auto e = dynamic_cast<EdgeRobotVel*>(edge);
+                e->computeError();
+                error = 0;
+                for (int i = 0; i < e->getError().size(); i++)
+                    error += e->getError()(i) * e->getError()(i);
+                cum_err_vel += std::sqrt(error);
+            }
+        }    
+    }
+    err_msg.data.resize(2);
+    err_msg.data[0] = cum_err_coll;
+    err_msg.data[1] = cum_err_vel;
+    _err_pub.publish(err_msg);
 
     // save and publish solution
     trajectory_msgs::JointTrajectory solution;

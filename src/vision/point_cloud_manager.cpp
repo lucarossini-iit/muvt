@@ -23,6 +23,7 @@ _frame_id("pelvis")
     _pc_planar_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("planar", 10, true);
     _pc_outlier_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("outlier", 10, true);
     _ma_pub = _nh.advertise<visualization_msgs::MarkerArray>("markers", 10, true);
+    _time_pub = _nh.advertise<std_msgs::Float64MultiArray>("times", 10, true);
 }
 
 void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
@@ -30,11 +31,10 @@ void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &m
 
     // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
     // the lookupTransform in the callback)
-    tf::TransformListener listener;
     try
     {
-        listener.waitForTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.5));
-        listener.lookupTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), _transform);
+        _listener.waitForTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.3));
+        _listener.lookupTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), _transform);
     }
     catch (tf::TransformException ex)
     {
@@ -73,8 +73,12 @@ void PointCloudManager::voxelFiltering()
             // Create the filtering object: downsample the dataset using a leaf size of 1cm
             pcl::VoxelGrid<pcl::PointXYZRGB> vg;
             vg.setInputCloud (_point_cloud);
-            vg.setLeafSize (0.01, 0.01, 0.01);
+            vg.setLeafSize (0.03, 0.03, 0.03);
+            auto tic = std::chrono::high_resolution_clock::now();
             vg.filter (*_cloud_voxel_filtered);
+            auto toc = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> fsec = toc - tic;
+            _times.data.push_back(fsec.count());
         }
     }
 }
@@ -89,13 +93,21 @@ void PointCloudManager::clusterExtraction()
         // planar segmentation
         if (_cloud_self_robot_filtered->size() > 0)
         {
+            auto tic_seg = std::chrono::high_resolution_clock::now();
             planarSegmentation(_cloud_self_robot_filtered, _cloud_planar_segmented);
+            auto toc_seg = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> fsec_seg = toc_seg - tic_seg;
+            _times.data.push_back(fsec_seg.count());
         }
 
         // outliers statistical removal
         if (_cloud_planar_segmented->size() > 0)
         {
+            auto tic_out = std::chrono::high_resolution_clock::now();
             outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
+            auto toc_out = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> fsec_out = toc_out - tic_out;
+            _times.data.push_back(fsec_out.count());
         }
 
         std::vector<pcl::PointIndices> cluster_indices;
@@ -298,6 +310,7 @@ void PointCloudManager::publishObjectMarkers()
 
 void PointCloudManager::run()
 {
+    _times.data.clear();
     _transforms.clear();
     _cc_pub.clear();
     _cluster_cloud.clear();
@@ -314,4 +327,5 @@ void PointCloudManager::run()
     _pc_voxel_pub.publish(_cloud_voxel_filtered);
     _pc_planar_pub.publish(_cloud_planar_segmented);
     _pc_outlier_pub.publish(_cloud_without_outliers);
+    _time_pub.publish(_times);
 }

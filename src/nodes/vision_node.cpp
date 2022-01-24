@@ -13,7 +13,7 @@ int main(int argc, char** argv)
     std::string topic_name(argv[1]);
     pc_manager = std::make_shared<XBot::HyperGraph::Utils::PointCloudManager>(topic_name, nh);
 
-    ros::Rate rate(30);
+    ros::Rate rate(100);
     while (ros::ok())
     {
         pc_manager->run();

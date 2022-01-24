@@ -100,7 +100,7 @@ private:
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _obj_sub;
-    ros::Publisher _sol_pub, _ee_trj_pub, _vertices_pub, _time_pub;
+    ros::Publisher _sol_pub, _ee_trj_pub, _vertices_pub, _time_pub, _err_pub;
     ros::ServiceServer _create_obs_srv;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 

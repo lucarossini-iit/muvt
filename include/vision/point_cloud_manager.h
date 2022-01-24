@@ -32,6 +32,7 @@
 
 #include <teb_test/ObjectMessageString.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_msgs/Float64MultiArray.h>
 
 namespace XBot { namespace HyperGraph { namespace Utils {
 
@@ -59,6 +60,7 @@ private:
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _pc_sub, _pc_robot_filtered_sub;
     ros::Publisher _pc_voxel_pub, _pc_outlier_pub, _pc_planar_pub, _obj_pub, _ma_pub;
+    ros::Publisher _time_pub;
     std::vector<ros::Publisher> _cc_pub;
     std::string _frame_id;
 
@@ -70,9 +72,13 @@ private:
     std::vector<tf::Transform> _transforms;
     tf::TransformBroadcaster _broadcaster;
     tf::StampedTransform _transform;
+    tf::TransformListener _listener;
+
     teb_test::ObjectMessageString _objects;
 
     Eigen::Affine3d _w_T_cam;
+
+    std_msgs::Float64MultiArray _times;
 };
 } } }
 #endif // POINT_CLOUD_MANAGER_H

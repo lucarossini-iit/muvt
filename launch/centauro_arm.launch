@@ -48,7 +48,7 @@
                 <param name="latch" value="false"/>
         </node>-->
         <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435i/D435i_head_camera/depth/color/points"/>
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
     </group>
 
     <!-- optimizer node -->
