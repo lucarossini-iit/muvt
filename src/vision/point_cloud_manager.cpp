@@ -33,8 +33,8 @@ void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &m
     tf::TransformListener listener;
     try
     {
-        listener.waitForTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.5));
-        listener.lookupTransform(_frame_id, "D435i_head_camera_color_optical_frame", ros::Time(0), _transform);
+        listener.waitForTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.5));
+        listener.lookupTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), _transform);
     }
     catch (tf::TransformException ex)
     {

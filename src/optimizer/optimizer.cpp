@@ -299,7 +299,6 @@ void Optimizer::init_load_edges()
             if (collision_urdf->initParam("collision_urdf"))
             {
                 _cld = std::make_shared<ComputeLinksDistance>(*_model, collision_urdf);
-                _cld->setBaseLink("D435i_head_camera_color_optical_frame");
 
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
@@ -369,8 +368,8 @@ void Optimizer::optimize()
         else
             counter_active++;
     }
-    std::cout << "fixed: " << counter_non_active << std::endl;
-    std::cout << "active: " << counter_active << std::endl;
+//    std::cout << "fixed: " << counter_non_active << std::endl;
+//    std::cout << "active: " << counter_active << std::endl;
     auto tic = std::chrono::high_resolution_clock::now();
 
     std_msgs::Int32MultiArray multi_array;
@@ -387,7 +386,7 @@ void Optimizer::optimize()
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
-    std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
+//    std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
 
     // shift _time_vector elements
     for (int i = 1; i < _time_vector.size(); i++)
@@ -421,7 +420,6 @@ void Optimizer::optimize()
         {
             solution.points.push_back(point);
         }
-
 
         _model->setJointPosition(v->estimate());
         _model->update();
@@ -574,7 +572,6 @@ void Optimizer::interactive_markers_feedback(const visualization_msgs::Interacti
 {
     auto c = feedback->marker_name.back();
     int index = c - '0';
-
     _obstacles[index-1].position << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
     update_edges();
 }

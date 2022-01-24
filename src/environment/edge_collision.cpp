@@ -63,26 +63,24 @@ void EdgeCollision::computeError()
     _model->update();
 
     double eps = 0.05;
-    double S = 0.0025;
+    double S = 0.025;
     double r = 0.05;
     int n = 2;
 
     _error.setZero();
 
     auto dist = _cld->getLinkDistances(r+eps);
-    auto end = std::next(dist.begin(), _error.size());
-    std::list<LinkPairDistance> distances(dist.begin(), end);
+//    auto end = std::next(dist.begin(), _error.size());
+//    std::list<LinkPairDistance> distances(dist.begin(), end);
     int index = 0;
 
-    for (auto i : distances)
+    for (auto i : dist)
     {
         if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
         {
 //            std::cout << "link0: " << i.getLinkNames().first << "   link2: " << i.getLinkNames().second << "    distance: " << i.getDistance() << std::endl;
             double distance = 0;
             distance += i.getDistance();
-            if (distance < 0)
-                std::cout << "distance: " << distance << std::endl;
             if (distance > r + eps)
                 _error(index) = 0;
             else

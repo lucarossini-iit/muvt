@@ -2,7 +2,7 @@
 
     <param name="use_sim_time" value="false"/>
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
-    <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/capsule/centauro_capsules.urdf"/>
+    <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/centauro_capsule.urdf"/>
     <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
 
     <arg name="vision" default="false"/>
@@ -19,7 +19,7 @@
         <arg name="upper_body" value="true"/>
         <arg name="legs" value="true"/>
         <arg name="realsense" value="true"/>
-        <arg name="velodyne" value="false"/>
+        <arg name="velodyne" value="true"/>
         <arg name="gazebo" value="$(arg gazebo)"/>
     </include>
 

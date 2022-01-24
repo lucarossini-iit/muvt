@@ -132,23 +132,8 @@ int main(int argc, char** argv)
         }
     }
 
-    XBot::HyperGraph::Optimizer opt(trajectory, model);
-
-    // TODO remove simulator
-//    auto simulator = std::make_shared<XBot::HyperGraph::Simulator>(100, start, goal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
-//    std::vector<Eigen::VectorXd> q_init;
-
     // trajectory
-//    auto configurations =  simulator->getConfigurations();
-//    for (auto configuration : configurations)
-//    {
-//        q_init.push_back(configuration.q);
-//    }
-
-    // single configuration
-//    q_init.push_back(qhome);
-
-//    XBot::HyperGraph::Optimizer opt(q_init);
+    XBot::HyperGraph::Optimizer opt(trajectory, model);
 
     ros::Rate rate(50);
     while (ros::ok())

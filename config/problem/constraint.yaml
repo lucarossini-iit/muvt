@@ -9,7 +9,7 @@ collisions:
     weight: 50
 
 optimizer:
-    iterations: 50
+    iterations: 1
 
 nominal_trajectory:
     weight: 25
