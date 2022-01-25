@@ -62,7 +62,7 @@ class MeinWindow(QtWidgets.QMainWindow):
         layout.addWidget(wid_err)
 
         self.__time_sub = rospy.Subscriber('/optimizer/time', Float32MultiArray, self.__callback)
-        self.__err_sub = rospy.Subscriber('/optimizer/error', Float32, self.__callback_error)
+        self.__err_sub = rospy.Subscriber('/optimizer/error', Float32MultiArray, self.__callback_error)
         self.__time_list = list()
         self.__opt_time_list = list()
         self.__error_coll = list()
@@ -118,8 +118,8 @@ class MeinWindow(QtWidgets.QMainWindow):
         else:
             ymin = np.array(self.__error_vel).min()
         self._dynamic_ax_err.set_ylim(ymin - (ymax - ymin) * 0.05, ymax + (ymax - ymin) * 0.05)
-        self._line_err.set_data(self.__time_list, self.__error_coll)
-        self._line_err_vel.set_data(self.__time_list, self.__error_vel)
+        self._line_err.set_data(self.__time_list[:len(self.__error_coll)], self.__error_coll)
+        self._line_err_vel.set_data(self.__time_list[:len(self.__error_vel)], self.__error_vel)
         self._dynamic_ax_err.figure.canvas.draw()
 
         return [self._line_err, self._line_err_vel]
