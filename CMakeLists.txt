@@ -30,6 +30,8 @@ find_package(urdf REQUIRED)
 
 find_package(ompl 1.5.0 REQUIRED)
 
+find_package(gazebo REQUIRED)
+
 add_message_files(
     FILES
     ObjectMessage.msg
@@ -60,6 +62,7 @@ include_directories(
     ${cartesian_interface_INCLUDE_DIRS}
     ${cartesio_planning_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
+    ${GAZEBO_INCLUDE_DIRS}
     )
 
 add_library(environment SHARED
@@ -87,14 +90,15 @@ target_link_libraries(simulator environment
                                 ${OpenSoT_LIBRARIES}
                                 yaml-cpp)
 
+# gazebo model plugin
+add_library(move_box gazebo_plugin/move_box.cpp)
+target_link_libraries(move_box ${GAZEBO_LIBRARIES})
+
 add_executable(vision_node src/nodes/vision_node.cpp src/vision/point_cloud_manager.cpp)
 target_link_libraries(vision_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(main_test src/nodes/test.cpp)
 target_link_libraries(main_test simulator environment g2o::solver_csparse ${catkin_LIBRARIES})
-
-#add_executable(optimizer_test src/nodes/optimizer_node.cpp src/simulator/optimizer_test.cpp)
-#target_link_libraries(optimizer_test simulator ${catkin_LIBRARIES})
 
 add_executable(object_recognition_test test/object_recognition_test.cpp)
 target_link_libraries(object_recognition_test ${PCL_LIBRARIES})
@@ -125,7 +129,12 @@ install(TARGETS environment
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-        
+
+install(TARGETS move_box
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
 install(TARGETS simulator
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
