@@ -29,3 +29,22 @@ set(gcf, 'Color', 'white')
 axis equal
 xlim([-0.01, 0.2])
 ylim([-0.01, 0.2])
+
+% 2 - EdgeRobotVel
+x = linspace(-1.1, 1.1, 1000);
+S = 5;
+y = [];
+for ii = 1:length(x)
+    y(ii) = 1/exp(x(ii) + 1)^S + exp(x(ii) - 1)^S;
+end
+figure(2)
+plot(x,y, 'LineWidth', 6)
+grid on
+set(gca, 'LineWidth', 3)
+set(gca, 'TickLabelInterpreter', 'latex')
+set(gca, 'FontSize', 65)
+set(gca, 'XTick', [-1.0, 0.0,  1.0], 'XTickLabel', {'$v_{min}$' , 0.0,  '$v_{max}$'})
+set(gcf, 'Color', 'white')
+axis equal
+xlim([-1.1, 1.1])
+ylim([-0.1, 2.1])
