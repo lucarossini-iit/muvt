@@ -159,8 +159,6 @@ void Optimizer::init_load_model()
         else
             ROS_ERROR("world_frame_link %s does not exists, keeping original world!", world_frame_link.c_str());
     }
-
-    _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
 }
 
 void Optimizer::init_load_config()

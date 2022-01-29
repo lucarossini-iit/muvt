@@ -105,8 +105,6 @@ private:
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
     ModelInterface::Ptr _model;
-    RobotInterface::Ptr _robot;
-    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
     YAML::Node _optimizer_config;
 
