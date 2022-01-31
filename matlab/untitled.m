@@ -21,6 +21,7 @@ end
 figure(1)
 plot(x,y, 'LineWidth', 6)
 grid on
+xline(0.1, 'k--', 'LineWidth', 6)
 set(gca, 'LineWidth', 3)
 set(gca, 'TickLabelInterpreter', 'latex')
 set(gca, 'FontSize', 65)
@@ -40,10 +41,12 @@ end
 figure(2)
 plot(x,y, 'LineWidth', 6)
 grid on
+xline(-1, 'k--', 'LineWidth', 6)
+xline(1, 'k--', 'LineWidth', 6)
 set(gca, 'LineWidth', 3)
 set(gca, 'TickLabelInterpreter', 'latex')
 set(gca, 'FontSize', 65)
-set(gca, 'XTick', [-1.0, 0.0,  1.0], 'XTickLabel', {'$v_{min}$' , 0.0,  '$v_{max}$'})
+set(gca, 'XTick', [-1.0, 0.0,  1.0], 'XTickLabel', {'$min$' , 0.0,  '$max$'})
 set(gcf, 'Color', 'white')
 axis equal
 xlim([-1.1, 1.1])
