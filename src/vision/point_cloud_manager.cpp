@@ -73,7 +73,7 @@ void PointCloudManager::voxelFiltering()
             // Create the filtering object: downsample the dataset using a leaf size of 1cm
             pcl::VoxelGrid<pcl::PointXYZRGB> vg;
             vg.setInputCloud (_point_cloud);
-            vg.setLeafSize (0.03, 0.03, 0.03);
+            vg.setLeafSize (0.02, 0.02, 0.02);
             auto tic = std::chrono::high_resolution_clock::now();
             vg.filter (*_cloud_voxel_filtered);
             auto toc = std::chrono::high_resolution_clock::now();
