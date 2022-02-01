@@ -108,6 +108,11 @@ void Optimizer::update_edges()
                     error += e->getError()(i) * e->getError()(i);
                 cum_err += std::sqrt(error);
             }
+            else if (dynamic_cast<EdgeTrajectoryVel*>(edge) != nullptr)
+            {
+                auto e = dynamic_cast<EdgeTrajectoryVel*>(edge);
+                e->setRef(v->estimate());
+            }
             if (vertices.size() == 1)
             {
                 if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
@@ -119,10 +124,10 @@ void Optimizer::update_edges()
             }
 
             double thresh = 1e-2;
-            if (cum_err > thresh && v->id() != 0 && v->id() != _vertices.size() - 1)
+            if (/*cum_err > thresh && */ v->id() != 0 && v->id() != _vertices.size() - 1)
                 v->setFixed(false);
             else
-                v->setFixed(true);
+                v->setFixed(false);
         }
     }
 }
@@ -283,7 +288,10 @@ void Optimizer::init_load_edges()
                 auto e_t = new EdgeTask();
                 Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
                 info_t.setIdentity();
-                info_t *= weight;
+                if (i == 0 || i == _vertices.size()-1)
+                    info_t *= 5000;
+                else
+                    info_t *= weight;
                 e_t->setInformation(info_t);
                 e_t->vertices()[0] = _optimizer.vertex(i);
                 auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
@@ -334,6 +342,22 @@ void Optimizer::init_load_edges()
                 _optimizer.addEdge(e_coll);
             }
         }
+        else if (vc_name == "trajectory_vel")
+        {
+            YAML_PARSE_OPTION(_optimizer_config["collisions"], weight, double, 1);
+            for (int i = 0; i < _vertices.size(); i++)
+            {
+                auto e_trj_vel = new EdgeTrajectoryVel(_model);
+                Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+                info.setIdentity();
+                info *= weight;
+                e_trj_vel->setInformation(info);
+                e_trj_vel->vertices()[0] = _optimizer.vertex(i);
+                e_trj_vel->resize();
+                e_trj_vel->setRef(_vertices[i]);
+                _optimizer.addEdge(e_trj_vel);
+            }
+        }
         else
         {
             ROS_WARN("%s not found!", vc_name.c_str());
@@ -367,10 +391,6 @@ void Optimizer::optimize()
         else
             counter_active++;
     }
-//    std::cout << "fixed: " << counter_non_active << std::endl;
-//    std::cout << "active: " << counter_active << std::endl;
-    auto tic = std::chrono::high_resolution_clock::now();
-
     std_msgs::Int32MultiArray multi_array;
     multi_array.data.push_back(counter_non_active);
     multi_array.data.push_back(counter_active);
@@ -381,11 +401,10 @@ void Optimizer::optimize()
     _vertices_pub.publish(multi_array);
 
     _optimizer.initializeOptimization();
+    auto tic = std::chrono::high_resolution_clock::now();
     _optimizer.optimize(_iterations);
-
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
-//    std::cout << "optimization done in " << fsec.count() << " seconds!" << std::endl;
 
     // shift _time_vector elements
     for (int i = 1; i < _time_vector.size(); i++)
@@ -423,15 +442,6 @@ void Optimizer::optimize()
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err_coll += std::sqrt(error);
-            }
-            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
-            {
-                auto e = dynamic_cast<EdgeRobotVel*>(edge);
-                e->computeError();
-                error = 0;
-                for (int i = 0; i < e->getError().size(); i++)
-                    error += e->getError()(i) * e->getError()(i);
-                cum_err_vel += std::sqrt(error);
             }
         }    
     }
