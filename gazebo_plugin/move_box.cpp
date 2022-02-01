@@ -8,49 +8,58 @@
 
 namespace gazebo
 {
-    class MoveBox : public ModelPlugin
+  class AnimatedBox : public ModelPlugin
+  {
+    public: void Load(physics::ModelPtr _parent, sdf::ElementPtr /*_sdf*/)
     {
-        public: void Load(physics::ModelPtr parent, sdf::ElementPtr /*sdf*/)
-        {
-            // Stode the pointer to the model
-            this->model = parent;
+      // Store the pointer to the model
+      this->model = _parent;
 
-            // Listen to the update event. This event is broadcast every
-            // simulation iteration
-            this->updateConnection = event::Events::ConnectWorldUpdateBegin(std::bind(&MoveBox::OnUpdate, this));
+        // create the animation
+        gazebo::common::PoseAnimationPtr anim(
+              // name the animation "test",
+              // make it last 10 seconds,
+              // and set it on a repeat loop
+              new gazebo::common::PoseAnimation("test", 10.0, true));
 
-            // Set iterator to initial value
-            _index = 0;
-            _incr = 1;
+        gazebo::common::PoseKeyFrame *key;
 
-            // Set model initial position
-            // Send a pre-computed trajectory
-            double y = -2.5;
-            double x = 0.976034;
-            double z = 1.22682;
+        // set starting location of the box
+        key = anim->CreateKeyFrame(0.0);
+        key->Translation(ignition::math::Vector3d(0.976034, -0.1, 1.22682));
+        key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
-            ignition::math::Pose3d pose(ignition::math::Vector3d(x, y, z), ignition::math::Quaterniond::Identity);
-            this->model->SetLinkWorldPose(pose, "box::link");
-        }
+        // set first waypoint
+        key = anim->CreateKeyFrame(3.0);
+        key->Translation(ignition::math::Vector3d(0.976034, 0.3, 1.22682));
+        key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
-        // Called by the world update start event
-        public: void OnUpdate()
-        {
-            // Apply a small linear velocity to the model.
-            this->model->SetLinearVel(ignition::math::Vector3d(0.0, 0.1, 0.0));
-        }
+        // set second waypoint
+        key = anim->CreateKeyFrame(5.0);
+        key->Translation(ignition::math::Vector3d(0.976034, 0.1, 1.22682));
+        key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
-        // Pointer to the model
-        private: physics::ModelPtr model;
+        // set third waypoint
+        key = anim->CreateKeyFrame(7.0);
+        key->Translation(ignition::math::Vector3d(0.946034, 0.1, 1.42682));
+        key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
-        // Pointer to the update event connection
-        private: event::ConnectionPtr updateConnection;
+        // move back to starting point
+        key = anim->CreateKeyFrame(10.0);
+        key->Translation(ignition::math::Vector3d(0.976034, -0.1, 1.22682));
+        key->Rotation(ignition::math::Quaterniond(0, 0, 0));
 
-        // Trajectory iterator
-        private: int _index;
-        private: int _incr;
-    };
+        // set the animation
+        _parent->SetAnimation(anim);
+    }
 
-    // Register this plugin with the simulator
-    GZ_REGISTER_MODEL_PLUGIN(MoveBox)
+    // Pointer to the model
+    private: physics::ModelPtr model;
+
+    // Pointer to the update event connection
+    private: event::ConnectionPtr updateConnection;
+  };
+
+  // Register this plugin with the simulator
+  GZ_REGISTER_MODEL_PLUGIN(AnimatedBox)
 }
