@@ -25,9 +25,9 @@ namespace gazebo
 
             // Set model initial position
             // Send a pre-computed trajectory
-            double y = -0.5;
-            double x = 0.7;
-            double z = 1.0;
+            double y = -2.5;
+            double x = 0.976034;
+            double z = 1.22682;
 
             ignition::math::Pose3d pose(ignition::math::Vector3d(x, y, z), ignition::math::Quaterniond::Identity);
             this->model->SetLinkWorldPose(pose, "box::link");
