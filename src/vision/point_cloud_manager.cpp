@@ -116,7 +116,7 @@ void PointCloudManager::clusterExtraction()
         {
             pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
             ec.setClusterTolerance (0.05);
-            ec.setMinClusterSize (25);
+            ec.setMinClusterSize (10);
             ec.setMaxClusterSize (5000);
             ec.setSearchMethod (tree);
             ec.setInputCloud(_cloud_without_outliers);
@@ -174,7 +174,7 @@ void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in
     // Create the filtering object
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud (input);
-    sor.setMeanK (50);
+    sor.setMeanK (10);
     sor.setStddevMulThresh (1.0);
     sor.filter (*output);
 }

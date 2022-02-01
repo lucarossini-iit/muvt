@@ -38,6 +38,7 @@
 #include <environment/edge_task.h>
 #include <environment/edge_collision.h>
 #include <environment/obstacle.h>
+#include <environment/edge_trajectory_vel.h>
 
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>

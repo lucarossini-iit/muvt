@@ -32,13 +32,14 @@ void EdgeRobotVel::computeError()
     q2 = v2->estimate();
    _error.setZero(v1->estimateDimension());
 
-    double S = 3;
-    diff = (q2/0.033 - q1/0.033);
+    double S = 2;
+    diff = (q2/0.05 - q1/0.05);
     _vel = diff;
 
     for (int i = 0; i < q1.size(); i++)
     {
-        double value = 1/pow(exp(diff(i) - _vel_min(i)), S) + pow(exp(diff(i) - _vel_max(i)), S);
+//        double value = 1/pow(exp(diff(i) - _vel_min(i)), S) + pow(exp(diff(i) - _vel_max(i)), S);
+        double value = pow(diff(i), S);
         _error(i) = value;
     }
 }

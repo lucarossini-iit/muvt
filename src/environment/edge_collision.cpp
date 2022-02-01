@@ -26,31 +26,34 @@ void EdgeCollision::setObstacles(obstacles obs)
 {
     _cld->removeAllWorldCollision();
 
-    moveit_msgs::PlanningSceneWorld wc;
-    for (auto obstacle : obs)
-    {
-        moveit_msgs::CollisionObject coll;
-        coll.header.frame_id = obstacle.frame_id;
-        coll.header.stamp = ros::Time::now();
-        coll.id = "obstacle_" + std::to_string(obstacle.id);
+//    if (obs.size() > 0)
+//    {
+        moveit_msgs::PlanningSceneWorld wc;
+        for (auto obstacle : obs)
+        {
+            moveit_msgs::CollisionObject coll;
+            coll.header.frame_id = obstacle.frame_id;
+            coll.header.stamp = ros::Time::now();
+            coll.id = "obstacle_" + std::to_string(obstacle.id);
 
-        coll.operation = moveit_msgs::CollisionObject::ADD;
-        coll.primitives.resize(1);
-//        coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
-//        coll.primitives[0].dimensions = {obstacle.size(0), obstacle.size(1), obstacle.size(2)};
+            coll.operation = moveit_msgs::CollisionObject::ADD;
+            coll.primitives.resize(1);
+            coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+            coll.primitives[0].dimensions = {obstacle.size(0), obstacle.size(1), obstacle.size(2)};
 
-        coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
-        coll.primitives[0].dimensions = {obstacle.size(0)};
+//            coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
+//            coll.primitives[0].dimensions = {obstacle.size(0)};
 
-        geometry_msgs::Pose p;
-        p.position.x = obstacle.position(0);    p.position.y = obstacle.position(1);    p.position.z = obstacle.position(2);
-        tf::quaternionEigenToMsg(obstacle.orientation, p.orientation);
-        coll.primitive_poses = {p};
+            geometry_msgs::Pose p;
+            p.position.x = obstacle.position(0);    p.position.y = obstacle.position(1);    p.position.z = obstacle.position(2);
+            tf::quaternionEigenToMsg(obstacle.orientation, p.orientation);
+            coll.primitive_poses = {p};
 
-        wc.collision_objects.push_back(coll);
-    }
+            wc.collision_objects.push_back(coll);
+        }
 
-    _cld->setWorldCollisions(wc);
+        _cld->setWorldCollisions(wc);
+//    }
 }
 
 void EdgeCollision::computeError()
@@ -62,9 +65,9 @@ void EdgeCollision::computeError()
     _model->setJointPosition(q);
     _model->update();
 
-    double eps = 0.05;
-    double S = 0.025;
-    double r = 0.05;
+    double eps = 0.1;
+    double S = 0.0025;
+    double r = 0.0;
     int n = 2;
 
     _error.setZero();
@@ -76,8 +79,8 @@ void EdgeCollision::computeError()
 
     for (auto i : dist)
     {
-        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
-        {
+//        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
+//        {
 //            std::cout << "link0: " << i.getLinkNames().first << "   link2: " << i.getLinkNames().second << "    distance: " << i.getDistance() << std::endl;
             double distance = 0;
             distance += i.getDistance();
@@ -88,7 +91,7 @@ void EdgeCollision::computeError()
                 double value = pow((-distance-(-r-eps))/S, n);
                 _error(index) = value;
             }
-        }
+//        }
     index++;
     }
 }
