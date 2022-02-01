@@ -7,9 +7,7 @@
 
     <arg name="vision" default="false"/>
     <arg name="gazebo" default="true"/>
-    <arg name="gui" default="true"/>
-
-
+    <arg name="logger" default="false"/>
     <arg name="vision" default="true"/>
     <arg name="is_model_floating_base" value="false"/>
 
@@ -79,6 +77,11 @@
 
     <!-- xbotcore -->
     <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
+
+    <!-- logger node -->
+    <node if="$(arg logger)" pkg="multi_contact_planning" type="logger_node" name="logger_node" output="screen"
+        args="/optimizer/error
+              /optimizer/time"/>
 
 <!--    <node if="$(arg gui)" pkg="teb_test" type="main_window.py" name="gui" output="screen"/>-->
 
