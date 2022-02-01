@@ -13,7 +13,7 @@ optimizer:
     iterations: 1
 
 nominal_trajectory:
-    weight: 50
+    weight: 5
 
 velocity_limits:
     weight: 1
