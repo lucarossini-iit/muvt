@@ -45,6 +45,7 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Float32.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <teb_test/ObjectMessageString.h>

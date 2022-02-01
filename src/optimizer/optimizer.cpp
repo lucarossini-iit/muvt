@@ -192,7 +192,7 @@ void Optimizer::init_load_config()
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
     _vertices_pub = _nh.advertise<std_msgs::Int32MultiArray>("vertices", 10, this);
     _time_pub = _nh.advertise<std_msgs::Float32MultiArray>("time", 10, this);
-    _err_pub = _nh.advertise<std_msgs::Float32MultiArray>("error", 10, this);
+    _err_pub = _nh.advertise<std_msgs::Float32>("error", 10, this);
     _init_time = ros::Time::now();
 }
 
@@ -423,7 +423,7 @@ void Optimizer::optimize()
     _time_pub.publish(time);
 
     // publish residual error
-    std_msgs::Float32MultiArray err_msg;
+    std_msgs::Float32 err_msg;
     double cum_err_coll = 0;
     double cum_err_vel = 0;
     for (auto vertex : vertices)
@@ -445,9 +445,7 @@ void Optimizer::optimize()
             }
         }    
     }
-    err_msg.data.resize(2);
-    err_msg.data[0] = cum_err_coll;
-    err_msg.data[1] = cum_err_vel;
+    err_msg.data = cum_err_coll;
     _err_pub.publish(err_msg);
 
     // save and publish solution
