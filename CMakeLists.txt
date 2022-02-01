@@ -74,7 +74,8 @@ add_library(environment SHARED
             src/environment/edge_collision.cpp
             src/environment/edge_robot_vel.cpp
             src/environment/edge_joint_limits.cpp
-            src/environment/edge_task.cpp)
+            src/environment/edge_task.cpp
+            src/environment/edge_trajectory_vel.cpp)
 target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl g2o::types_slam3d)
 
 add_library(simulator SHARED

@@ -3,16 +3,20 @@ constraints:
     # - joint_limits
     - velocity_limits
     - nominal_trajectory
+    - trajectory_vel
 
 collisions:
-    max_pair_link: 20
+    max_pair_link: 50
     weight: 50
 
 optimizer:
     iterations: 1
 
 nominal_trajectory:
-    weight: 25
+    weight: 50
 
 velocity_limits:
-    weight: 25
+    weight: 1
+
+trajectory_vel:
+    weight: 50
