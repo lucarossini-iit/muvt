@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 
     XBot::HyperGraph::Controller::RobotController controller;
 
-    ros::Rate rate(30);
+    ros::Rate rate(40);
     while(ros::ok())
     {
         controller.run();
