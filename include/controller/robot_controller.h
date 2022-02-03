@@ -42,6 +42,8 @@ private:
     XBot::RobotInterface::Ptr _robot;
     std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
 
+    double _opt_interpolation_time, _ctrl_interpolation_time;
+
     trajectory_msgs::JointTrajectory _trajectory;
 
     std::vector<std::string> _keys;
@@ -49,6 +51,8 @@ private:
     bool _replay;
 
     int _index, _incr;
+
+    Eigen::VectorXd _q_init;
 
 
 };
