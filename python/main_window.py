@@ -43,8 +43,8 @@ class MeinWindow(QtWidgets.QMainWindow):
         dynamic_err = FigureCanvasQTAgg(fig_err)
         self._dynamic_ax_err = dynamic_err.figure.subplots()
         self._line_err, = self._dynamic_ax_err.plot([], [], lw=2, label='EdgeCollision')
-        self._line_err_vel, = self._dynamic_ax_err.plot([], [], lw=2, label='EdgeRobotVel')
-        self._dynamic_ax_err.legend()
+        # self._line_err_vel, = self._dynamic_ax_err.plot([], [], lw=2, label='EdgeRobotVel')
+        # self._dynamic_ax_err.legend()
         self._dynamic_ax_err.grid()
         ani = animation.FuncAnimation(fig, self.__run_err, interval=10, repeat=False)
         layout_graph.addWidget(dynamic_err)
@@ -62,7 +62,7 @@ class MeinWindow(QtWidgets.QMainWindow):
         layout.addWidget(wid_err)
 
         self.__time_sub = rospy.Subscriber('/optimizer/time', Float32MultiArray, self.__callback)
-        self.__err_sub = rospy.Subscriber('/optimizer/error', Float32MultiArray, self.__callback_error)
+        self.__err_sub = rospy.Subscriber('/optimizer/error', Float32, self.__callback_error)
         self.__time_list = list()
         self.__opt_time_list = list()
         self.__error_coll = list()
@@ -83,13 +83,13 @@ class MeinWindow(QtWidgets.QMainWindow):
         self.__counter += 1
 
     def __callback_error(self, data):
-        self.__error_coll.append(data.data[0])
+        self.__error_coll.append(data.data)
         if len(self.__error_coll) > 500:
             del self.__error_coll[0]
 
-        self.__error_vel.append(data.data[1])
-        if len(self.__error_vel) > 500:
-            del self.__error_vel[0]
+        # self.__error_vel.append(data.data[1])
+        # if len(self.__error_vel) > 500:
+        #     del self.__error_vel[0]
 
         if self.__counter % 3 == 0:
             self.__run_err()
@@ -105,21 +105,32 @@ class MeinWindow(QtWidgets.QMainWindow):
 
         return self._line
 
+    # def __run_err(self):
+    #     xmin, xmax = self._dynamic_ax_err.get_xlim()
+    #     if self.__time_list[-1] >= xmax:
+    #         self._dynamic_ax_err.set_xlim(self.__time_list[0], self.__time_list[-1])
+    #     if np.array(self.__error_coll).max() < np.array(self.__error_vel).max():
+    #         ymax = np.array(self.__error_vel).max()
+    #     else:
+    #         ymax = np.array(self.__error_coll).max()
+    #     if np.array(self.__error_coll).min() < np.array(self.__error_vel).min():
+    #         ymin = np.array(self.__error_coll).min()
+    #     else:
+    #         ymin = np.array(self.__error_vel).min()
+    #     self._dynamic_ax_err.set_ylim(ymin - (ymax - ymin) * 0.05, ymax + (ymax - ymin) * 0.05)
+    #     self._line_err.set_data(self.__time_list[:len(self.__error_coll)], self.__error_coll)
+    #     self._line_err_vel.set_data(self.__time_list[:len(self.__error_vel)], self.__error_vel)
+    #     self._dynamic_ax_err.figure.canvas.draw()
+    #
+    #     return [self._line_err, self._line_err_vel]
+
     def __run_err(self):
         xmin, xmax = self._dynamic_ax_err.get_xlim()
         if self.__time_list[-1] >= xmax:
             self._dynamic_ax_err.set_xlim(self.__time_list[0], self.__time_list[-1])
-        if np.array(self.__error_coll).max() < np.array(self.__error_vel).max():
-            ymax = np.array(self.__error_vel).max()
-        else:
-            ymax = np.array(self.__error_coll).max()
-        if np.array(self.__error_coll).min() < np.array(self.__error_vel).min():
-            ymin = np.array(self.__error_coll).min()
-        else:
-            ymin = np.array(self.__error_vel).min()
+        ymin, ymax = np.array(self.__error_coll).min(), np.array(self.__error_coll).max()
         self._dynamic_ax_err.set_ylim(ymin - (ymax - ymin) * 0.05, ymax + (ymax - ymin) * 0.05)
         self._line_err.set_data(self.__time_list[:len(self.__error_coll)], self.__error_coll)
-        self._line_err_vel.set_data(self.__time_list[:len(self.__error_vel)], self.__error_vel)
         self._dynamic_ax_err.figure.canvas.draw()
 
         return [self._line_err, self._line_err_vel]
