@@ -126,20 +126,25 @@ int main(int argc, char** argv)
 
     std::vector<Eigen::VectorXd> raw_trajectory, trajectory;
     std::cout << "[cartesio_planning]: start interpolating" << std::endl;
+
+    double interpolation_time;
+    if (!nhpr.hasParam("interpolation_time") && !nhpr.getParam("interpolation_time", interpolation_time))
+        ROS_ERROR("mandatory parameter 'interpolation_time' missing!");
+    std::cout << "interpolation time: " << interpolation_time << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
     if(planner.getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION || planner.getPlannerStatus() == ompl::base::PlannerStatus::EXACT_SOLUTION)
     {
         auto t = ros::Duration(0.);
         raw_trajectory = planner.getSolutionPath();
-
         interpolator->compute(raw_trajectory);
         double time = 0.;
-        const double interpolation_time = 0.05;
         while(time <= interpolator->getTrajectoryEndTime())
         {
             auto sol_eval = interpolator->evaluate(time);
             trajectory.push_back(sol_eval);
             std::cout << sol_eval.transpose() << std::endl;
-            time += interpolation_time;
+            time += 0.05;
         }
     }
 

@@ -288,8 +288,8 @@ void Optimizer::init_load_edges()
                 auto e_t = new EdgeTask();
                 Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
                 info_t.setIdentity();
-                if (i == 0 || i == _vertices.size()-1)
-                    info_t *= 5000;
+                if (i == 0 || i == _vertices.size() - 1)
+                    info_t *= 10000;
                 else
                     info_t *= weight;
                 e_t->setInformation(info_t);
@@ -344,7 +344,7 @@ void Optimizer::init_load_edges()
         }
         else if (vc_name == "trajectory_vel")
         {
-            YAML_PARSE_OPTION(_optimizer_config["collisions"], weight, double, 1);
+            YAML_PARSE_OPTION(_optimizer_config["trajectory_vel"], weight, double, 1);
             for (int i = 0; i < _vertices.size(); i++)
             {
                 auto e_trj_vel = new EdgeTrajectoryVel(_model);
@@ -405,20 +405,23 @@ void Optimizer::optimize()
     _optimizer.optimize(_iterations);
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
+//    std::cout << fsec.count() << std::endl;
 
     // shift _time_vector elements
-    for (int i = 1; i < _time_vector.size(); i++)
-        _time_vector[i-1] = _time_vector[i];
-    _time_vector.back() = double(fsec.count());
+//    for (int i = 1; i < _time_vector.size(); i++)
+//        _time_vector[i-1] = _time_vector[i];
+//    _time_vector.back() = double(fsec.count());
 
     // average and publish
     std_msgs::Float32MultiArray time;
-    time.data.push_back(0);
-    for (auto i : _time_vector)
-        time.data[0] += i;
+//    time.data.push_back(0);
+//    for (auto i : _time_vector)
+//        time.data[0] += i;
 
     auto t = ros::Time::now() - _init_time;
-    time.data[0] /= _time_vector.size();
+//    time.data[0] /= _time_vector.size();
+//    time.data.push_back(t.toSec());
+    time.data.push_back(fsec.count());
     time.data.push_back(t.toSec());
     _time_pub.publish(time);
 

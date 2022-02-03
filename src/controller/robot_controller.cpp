@@ -16,8 +16,14 @@ _incr(1)
     _init_srv = _nh.advertiseService("init_service", &RobotController::init_service, this);
     _replay_srv = _nh.advertiseService("replay_service", &RobotController::replay_service, this);
 
-    int rate = _nhpr.param("rate", 10);
-    _r = std::make_shared<ros::Rate>(rate);
+    if (!_nhpr.hasParam("opt_interpolation_time") && !_nhpr.getParam("opt_interpolation_time", _opt_interpolation_time))
+        ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
+
+    if (!_nhpr.hasParam("ctrl_interpolation_time") && !_nhpr.getParam("ctrl_interpolation_time", _ctrl_interpolation_time))
+        ROS_ERROR("missing mandatory private parameter 'ctrl_interpolation_time!");
+
+    _opt_interpolation_time = 0.05;
+    _ctrl_interpolation_time = 0.01;
 }
 
 void RobotController::init_load_model()
@@ -125,7 +131,6 @@ bool RobotController::init_service(std_srvs::Empty::Request &req, std_srvs::Empt
 
     for (int i = 0; i < T/dt; i++)
     {
-        std::cout << i << std::endl;
         for (auto key : _keys)
         {
             q_ref[key] = q_init[key] + ((q_fin[key] - q_init[key]) * i * dt / T);
@@ -174,25 +179,78 @@ void RobotController::run()
 
     if (_replay)
     {
-        XBot::JointNameMap joint_map;
-        Eigen::VectorXd q = Eigen::VectorXd::Map(_trajectory.points[_index].positions.data(), _trajectory.points[_index].positions.size());
-        _model->eigenToMap(q, joint_map);
-        if (_robot)
+        // if the optimizer interpolation time is lower than the controller interpolation time
+        // the robot is moved using the _opt_interpolation_time
+        if (_opt_interpolation_time <= _ctrl_interpolation_time)
         {
-            _robot->setPositionReference(joint_map);
-            _robot->move();
+            XBot::JointNameMap joint_map;
+            Eigen::VectorXd q = Eigen::VectorXd::Map(_trajectory.points[_index].positions.data(), _trajectory.points[_index].positions.size());
+            _model->eigenToMap(q, joint_map);
+            if (_robot)
+            {
+                _robot->setPositionReference(joint_map);
+                _robot->move();
+            }
+            else
+            {
+                _model->setJointPosition(q);
+                _model->update();
+            }
+
+            _index += _incr;
+            if(_index == _trajectory.points.size() - 1 || _index == 0)
+               _incr *= -1;
         }
+        // else we interpolate between two adjacent states coming from the optimizer using the
+        // controller interpolation time
         else
         {
-            _model->setJointPosition(q);
-            _model->update();
+            // find the number of interpolated states to be added
+            int num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
+
+            // initial state
+            if (_index % num_steps == 0)
+                _model->getJointPosition(_q_init);
+
+            // final state
+            XBot::JointNameMap joint_map_fin;
+            Eigen::VectorXd q_fin(_model->getJointNum());
+            int trajectory_index;
+            if (_incr == 1)
+                trajectory_index = int(_index/num_steps);
+            else
+                trajectory_index = int(_index/num_steps) - 1;
+
+            q_fin = Eigen::VectorXd::Map(_trajectory.points[trajectory_index].positions.data(), _trajectory.points[trajectory_index].positions.size());
+            _model->eigenToMap(q_fin, joint_map_fin);          
+
+            Eigen::VectorXd q(_model->getJointNum());
+            XBot::JointNameMap joint_map;
+
+            // reference state
+            int index_reference;
+            if (_incr == 1)
+                index_reference = _index - num_steps*int(_index/num_steps)+1;
+            else
+                index_reference = _incr * (_index - num_steps*(trajectory_index+1) - num_steps);
+
+            q = _q_init + (q_fin - _q_init) * (index_reference) / num_steps;
+            _model->eigenToMap(q, joint_map);
+            if (_robot)
+            {
+                _robot->setPositionReference(joint_map);
+                _robot->move();
+            }
+            else
+            {
+                _model->setJointPosition(joint_map);
+                _model->update();
+            }
+
+            _index += _incr;
+            if(_index == _trajectory.points.size()*num_steps || (_index == num_steps && _incr == -1))
+                _incr *= -1;
+
         }
-
-        _index += _incr;
-        if(_index == _trajectory.points.size() - 1 || _index == 0)
-           _incr *= -1;
-
-        _r->sleep();
     }
-    ros::spinOnce();
 }

@@ -1,15 +1,15 @@
 <launch>
-
     <param name="use_sim_time" value="false"/>
     <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
     <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/centauro_capsule.urdf"/>
     <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
 
-    <arg name="vision" default="false"/>
     <arg name="gazebo" default="true"/>
     <arg name="logger" default="false"/>
     <arg name="vision" default="true"/>
     <arg name="is_model_floating_base" value="false"/>
+    <arg name="opt_interpolation_time" value="0.05"/>
+    <arg name="ctrl_interpolation_time" value="0.01"/>
 
     <!-- include robot_description -->
     <include file="$(find centauro_gazebo)/launch/centauro_world.launch">
@@ -27,26 +27,11 @@
     </node>
 
     <!-- zedm ros wrapper -->
-    <group if="$(arg vision)">
-        <!--<include file="$(find zed_wrapper)/launch/zedm.launch">
-            <arg name="cam_pos_x" value="0.7"/>
-            <arg name="cam_pos_y" value="0.0"/>
-            <arg name="cam_pos_z" value="0.55"/>
-            <arg name="cam_pitch" value="1.5"/>
-            <arg name="base_frame" value="world"/>
-        </include>-->
-
-        <!--<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
-                <param name="resolution" value="0.02" />
-                <param name="frame_id" type="string" value="pelvis" />
-                <param name="sensor_model/max_range" value="5.0" />
-                <remap from="cloud_in" to="/D435i/D435i_head_camera/depth/color/points" />
-                <param name="pointcloud_min_z" value="-0.5"/>
-                <param name="pointcloud_max_z" value="1.0"/>
-                <param name="latch" value="false"/>
-        </node>-->
+    <group if="$(arg gazebo)">
         <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>        
+        <!-- xbotcore -->
+        <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
     </group>
 
     <!-- optimizer node -->
@@ -55,6 +40,7 @@
         <param name="optimizer_config" textfile="$(find teb_test)/config/problem/constraint.yaml"/>
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="planner_config" textfile="$(find teb_test)/config/problem/planner_config.yaml"/>
+        <param name="interpolation_time" type="double" value="0.05"/>
         <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
     </node>
 
@@ -62,6 +48,8 @@
     <node pkg="teb_test" type="robot_controller_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
         <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
         <param name="model_type" value="RBDL"/>
+        <param name="opt_interpolation_time" type="double" value="0.05"/>
+        <param name="ctrl_interpolation_time" type="double" value="0.01"/>
         <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
     </node>
 
@@ -75,18 +63,9 @@
     <node pkg="rviz" name="rviz" type="rviz" output="screen"
         args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/>
 
-    <!-- xbotcore -->
-    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
-
     <!-- logger node -->
     <node if="$(arg logger)" pkg="multi_contact_planning" type="logger_node" name="logger_node" output="screen"
         args="/optimizer/error
-              /optimizer/time"/>
-
-<!--    <node if="$(arg gui)" pkg="teb_test" type="main_window.py" name="gui" output="screen"/>-->
-
-    <!-- static transformers -->
-    <!--<node pkg="tf" type="static_transform_publisher" name="pelvis_connector"
-        args="0 0 0 0 0 0 pelvis sim/pelvis 30"/>-->
-
+              /optimizer/time
+              /xbotcore/joint_states"/>
 </launch>

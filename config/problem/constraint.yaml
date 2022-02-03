@@ -10,13 +10,13 @@ collisions:
     weight: 50
 
 optimizer:
-    iterations: 1
+    iterations: 2
 
 nominal_trajectory:
-    weight: 5
+    weight: 50
 
 velocity_limits:
-    weight: 1
+    weight: 50
 
 trajectory_vel:
-    weight: 50
+    weight: 0.1

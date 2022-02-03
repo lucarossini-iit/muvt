@@ -31,7 +31,7 @@ void EdgeTrajectoryVel::computeError()
     _error.setZero();
     const VertexRobotPos* v = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
 
-    auto diff = v->estimate() - _ref;
+    auto diff = (v->estimate() - _ref)/0.01;
     double S = 2;
 
     for (int i = 0; i < diff.size(); i++)
