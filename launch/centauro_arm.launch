@@ -1,12 +1,12 @@
 <launch>
     <param name="use_sim_time" value="false"/>
-    <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
+    <!--param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
     <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/centauro_capsule.urdf"/>
-    <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
+    <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/-->
 
     <arg name="gazebo" default="true"/>
     <arg name="vision" default="true"/>
-    <arg name="optimizer default="true"/>
+    <arg name="optimizer" default="true"/>
     <arg name="logger" default="false"/>
     <arg name="vision" default="true"/>
     <arg name="is_model_floating_base" value="false"/>
@@ -14,22 +14,22 @@
     <arg name="ctrl_interpolation_time" value="0.01"/>
 
     <!-- include robot_description -->
-    <include file="$(find centauro_gazebo)/launch/centauro_world.launch">
+    <!--include file="$(find centauro_gazebo)/launch/centauro_world.launch">
         <arg name="floating_base" value="true"/>
         <arg name="upper_body" value="true"/>
         <arg name="legs" value="true"/>
         <arg name="realsense" value="true"/>
         <arg name="velodyne" value="true"/>
         <arg name="gazebo" value="$(arg gazebo)"/>
-    </include> 
+    </include--> 
 
     <!-- xbotcore -->
     <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
 
 
-    <group if="$(arg vision)>
+    <group if="$(arg vision)">
         <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435_head_camera/depth/color/points"/>
 
         <!-- robot_body_filter node -->
         <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">
@@ -65,8 +65,8 @@
     </group>
 
     <!-- rviz -->
-    <node pkg="rviz" name="rviz" type="rviz" output="screen"
-        args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/>
+    <!--node pkg="rviz" name="rviz" type="rviz" output="screen"
+        args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/-->
 
     <!-- logger node -->
     <node if="$(arg logger)" pkg="multi_contact_planning" type="logger_node" name="logger_node" output="screen"
