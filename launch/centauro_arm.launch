@@ -5,6 +5,7 @@
     <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
 
     <arg name="gazebo" default="true"/>
+    <arg name="vision" default="true"/>
     <arg name="logger" default="false"/>
     <arg name="vision" default="true"/>
     <arg name="is_model_floating_base" value="false"/>
@@ -26,13 +27,11 @@
         <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
     </node>
 
-    <!-- zedm ros wrapper -->
-    <group if="$(arg gazebo)">
-        <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>        
-        <!-- xbotcore -->
-        <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
-    </group>
+    <!-- xbotcore -->
+    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
+
+    <!-- vision node -->
+    <node if="$(arg vision)" pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
 
     <!-- optimizer node -->
     <node pkg="teb_test" type="optimizer" name="optimizer" output="screen">
