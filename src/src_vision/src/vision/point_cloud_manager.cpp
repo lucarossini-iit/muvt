@@ -30,7 +30,6 @@ _frame_id("pelvis")
 
 void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
 {
-
     // extract camera tf w.r.t. world frame (at the moment it handles static camera; easy upgrade moving
     // the lookupTransform in the callback)
     try
@@ -193,6 +192,9 @@ void PointCloudManager::clusterExtraction()
 
             // Create a publisher
             ros::Publisher pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("object_"+std::to_string(j), 1, true);
+
+            // push_back
+            _cluster_cloud.push_back(cloud_cluster);
             j++;
         }
     generateObjectMsg();
