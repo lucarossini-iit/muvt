@@ -7,6 +7,7 @@ _nh(nh),
 _nhpr("~"),
 _point_cloud(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_voxel_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
+_cloud_pass_through_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_self_robot_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_without_outliers(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_planar_segmented(new pcl::PointCloud<pcl::PointXYZRGB>),
@@ -20,6 +21,7 @@ _frame_id("pelvis")
     // Advertise object topic
     _obj_pub = _nh.advertise<teb_test::ObjectMessageString>("optimizer/obstacles", 10, true);
     _pc_voxel_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("voxel", 10, true);
+    _pc_pass_through_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("pass_through", 10, true);
     _pc_planar_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("planar", 10, true);
     _pc_outlier_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("outlier", 10, true);
     _ma_pub = _nh.advertise<visualization_msgs::MarkerArray>("markers", 10, true);
@@ -83,6 +85,36 @@ void PointCloudManager::voxelFiltering()
     }
 }
 
+void PointCloudManager::passThroughFilter()
+{
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_z_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_y_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    if (_cloud_self_robot_filtered->size() > 0)
+    {
+        // filter on z-axis
+        pcl::PassThrough<pcl::PointXYZRGB> z_filter;
+        z_filter.setInputCloud(_cloud_self_robot_filtered);
+        z_filter.setFilterFieldName("z");
+        z_filter.setFilterLimits(-0.5, 1.0);
+        z_filter.filter(*cloud_z_filtered);
+
+        // filter on y-axis
+        pcl::PassThrough<pcl::PointXYZRGB> y_filter;
+        z_filter.setInputCloud(cloud_z_filtered);
+        z_filter.setFilterFieldName("y");
+        z_filter.setFilterLimits(-0.5, 0.5);
+        z_filter.filter(*cloud_y_filtered);
+
+        // filter on x-axis
+        pcl::PassThrough<pcl::PointXYZRGB> x_filter;
+        z_filter.setInputCloud(cloud_y_filtered);
+        z_filter.setFilterFieldName("x");
+        z_filter.setFilterLimits(0.0, 1.5);
+        z_filter.filter(*_cloud_pass_through_filtered);
+    }
+}
+
 
 void PointCloudManager::clusterExtraction()
 {
@@ -94,7 +126,7 @@ void PointCloudManager::clusterExtraction()
         if (_cloud_self_robot_filtered->size() > 0)
         {
             auto tic_seg = std::chrono::high_resolution_clock::now();
-            planarSegmentation(_cloud_self_robot_filtered, _cloud_planar_segmented);
+            planarSegmentation(_cloud_pass_through_filtered, _cloud_planar_segmented);
             auto toc_seg = std::chrono::high_resolution_clock::now();
             std::chrono::duration<float> fsec_seg = toc_seg - tic_seg;
             _times.data.push_back(fsec_seg.count());
@@ -158,11 +190,6 @@ void PointCloudManager::clusterExtraction()
 
             // Create a publisher
             ros::Publisher pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("object_"+std::to_string(j), 1, true);
-
-            // push_back
-            _cluster_cloud.push_back(cloud_cluster);
-            _cc_pub.push_back(pub);
-
             j++;
         }
     generateObjectMsg();
@@ -251,26 +278,29 @@ void PointCloudManager::generateObjectMsg()
 
         // extract size of the bounding boxes
         std::vector<double> x_vec, y_vec, z_vec;
-        for (auto point : _cluster_cloud[i]->points)
+        if (!_cluster_cloud.empty())
         {
-            x_vec.push_back(point.x);
-            y_vec.push_back(point.y);
-            z_vec.push_back(point.z);
+            for (auto point : _cluster_cloud[i]->points)
+            {
+                x_vec.push_back(point.x);
+                y_vec.push_back(point.y);
+                z_vec.push_back(point.z);
+            }
+
+            auto x_min = *std::min_element(x_vec.begin(), x_vec.end());
+            auto y_min = *std::min_element(y_vec.begin(), y_vec.end());
+            auto z_min = *std::min_element(z_vec.begin(), z_vec.end());
+
+            auto x_max = *std::max_element(x_vec.begin(), x_vec.end());
+            auto y_max = *std::max_element(y_vec.begin(), y_vec.end());
+            auto z_max = *std::max_element(z_vec.begin(), z_vec.end());
+
+            msg.size.x = x_max - x_min;
+            msg.size.y = y_max - y_min;
+            msg.size.z = z_max - z_min;
+
+            _objects.objects.push_back(msg);
         }
-
-        auto x_min = *std::min_element(x_vec.begin(), x_vec.end());
-        auto y_min = *std::min_element(y_vec.begin(), y_vec.end());
-        auto z_min = *std::min_element(z_vec.begin(), z_vec.end());
-
-        auto x_max = *std::max_element(x_vec.begin(), x_vec.end());
-        auto y_max = *std::max_element(y_vec.begin(), y_vec.end());
-        auto z_max = *std::max_element(z_vec.begin(), z_vec.end());
-
-        msg.size.x = x_max - x_min;
-        msg.size.y = y_max - y_min;
-        msg.size.z = z_max - z_min;
-
-        _objects.objects.push_back(msg);
     }
 }
 
@@ -312,19 +342,20 @@ void PointCloudManager::run()
 {
     _times.data.clear();
     _transforms.clear();
-    _cc_pub.clear();
     _cluster_cloud.clear();
     _objects.objects.clear();
 
     voxelFiltering();
+    passThroughFilter();
     clusterExtraction();
-    for (int i = 0; i < _cc_pub.size(); i++)
+    for (int i = 0; i < _transforms.size(); i++)
     {        
         _broadcaster.sendTransform(tf::StampedTransform(_transforms[i], ros::Time::now(), _frame_id, "object_" + std::to_string(i)));
     }
     publishObjectMarkers();
     _obj_pub.publish(_objects);
     _pc_voxel_pub.publish(_cloud_voxel_filtered);
+    _pc_pass_through_pub.publish(_cloud_pass_through_filtered);
     _pc_planar_pub.publish(_cloud_planar_segmented);
     _pc_outlier_pub.publish(_cloud_without_outliers);
     _time_pub.publish(_times);
