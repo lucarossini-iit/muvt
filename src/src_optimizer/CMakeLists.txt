@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.1.0)
 
 add_compile_options(-std=c++14)
 
-
 find_package(cartesio_planning REQUIRED)
 
 find_package(cartesian_interface REQUIRED)

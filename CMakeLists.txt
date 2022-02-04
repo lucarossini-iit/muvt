@@ -19,20 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
     urdf
     )
 
-find_package(cartesio_planning REQUIRED)
-
-find_package(cartesian_interface REQUIRED)
-
-find_package(g2o REQUIRED)
-
-find_package(fcl 0.6.1 QUIET)
-
-find_package(urdf REQUIRED)
-
-find_package(ompl 1.5.0 REQUIRED)
-
-find_package(gazebo REQUIRED)
-
 add_message_files(
     FILES
     ObjectMessage.msg
@@ -56,7 +42,8 @@ catkin_package(
     )
     
 include_directories(
-    include)
+    include
+    ${catkin_INCLUDE_DIRS})
 
 install(DIRECTORY launch/
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
