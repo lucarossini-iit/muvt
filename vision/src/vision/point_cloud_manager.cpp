@@ -103,7 +103,7 @@ void PointCloudManager::passThroughFilter()
         pcl::PassThrough<pcl::PointXYZRGB> y_filter;
         z_filter.setInputCloud(cloud_z_filtered);
         z_filter.setFilterFieldName("y");
-        z_filter.setFilterLimits(-0.5, 0.5);
+        z_filter.setFilterLimits(-1.0, 1.0);
         z_filter.filter(*cloud_y_filtered);
 	cloud_y_filtered->header.frame_id = _frame_id;
 

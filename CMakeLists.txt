@@ -58,11 +58,11 @@ install(PROGRAMS scripts/xbotcore.sh
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 if(BUILD_VISION)
-    add_subdirectory(src/src_vision)
+    add_subdirectory(vision)
 endif()
 
 if(BUILD_OPTIMIZER)
-    add_subdirectory(src/src_optimizer)
+    add_subdirectory(optimizer)
 endif()
 
 
