@@ -27,6 +27,7 @@ public:
 
 private:
     void init_load_model();
+    bool velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin, int num_steps);
 
     void trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg);
 

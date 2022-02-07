@@ -400,8 +400,8 @@ void Optimizer::optimize()
 
     _vertices_pub.publish(multi_array);
 
-    _optimizer.initializeOptimization();
     auto tic = std::chrono::high_resolution_clock::now();
+    _optimizer.initializeOptimization(); 
     _optimizer.optimize(_iterations);
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;

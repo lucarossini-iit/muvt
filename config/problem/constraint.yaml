@@ -7,16 +7,16 @@ constraints:
 
 collisions:
     max_pair_link: 50
-    weight: 50
+    weight: 100
 
 optimizer:
     iterations: 2
 
 nominal_trajectory:
-    weight: 50
+    weight: 10
 
 velocity_limits:
-    weight: 50
+    weight: 100
 
 trajectory_vel:
-    weight: 0.1
+    weight: 0.001

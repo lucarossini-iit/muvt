@@ -2,6 +2,8 @@
 
 using namespace XBot::HyperGraph::Controller;
 
+int num_steps, trajectory_index, index_reference;
+
 RobotController::RobotController(std::string ns):
 _nh(ns),
 _nhpr("~"),
@@ -24,6 +26,10 @@ _incr(1)
 
     _opt_interpolation_time = 0.05;
     _ctrl_interpolation_time = 0.01;
+
+    // interpolator data
+    num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
+    trajectory_index = 1;
 }
 
 void RobotController::init_load_model()
@@ -166,13 +172,27 @@ bool RobotController::replay_service(std_srvs::SetBool::Request &req, std_srvs::
     return true;
 }
 
+bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin, int num_steps)
+{
+    Eigen::VectorXd qdot = (q_fin - q_init)/_ctrl_interpolation_time;
+    qdot /= num_steps;
+    Eigen::VectorXd qdot_max;
+    _model->getVelocityLimits(qdot_max);
+    qdot_max /= 10;
+
+    for (int i = 0; i < qdot.size(); i++)
+        if(qdot(i) > qdot_max(i) || qdot(i) < -qdot_max(i))
+            return false;
+
+    return true;
+}
+
 void RobotController::run()
 {
     if(_robot)
     {
         _robot->sense();
         _model->syncFrom(*_robot);
-//        _rspub->publishTransforms(ros::Time::now(), "sim");
     }
     else
         _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));
@@ -205,37 +225,44 @@ void RobotController::run()
         // controller interpolation time
         else
         {
-            // find the number of interpolated states to be added
-            int num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
+            index_reference++;
+            // reset
+            if ((index_reference - 1) % num_steps == 0)
+            {
+                // reset num_steps to the nominal value
+                num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
 
-            // initial state
-            if (_index % num_steps == 0)
+                // reset index_reference
+                index_reference = 1;
+
+                // update _q_init
                 _model->getJointPosition(_q_init);
+
+                // update trajectory_index
+                if (trajectory_index == _trajectory.points.size() - 1 || trajectory_index == 0)
+                    _incr *= -1;
+                trajectory_index += _incr;
+            }
 
             // final state
             XBot::JointNameMap joint_map_fin;
             Eigen::VectorXd q_fin(_model->getJointNum());
-            int trajectory_index;
-            if (_incr == 1)
-                trajectory_index = int(_index/num_steps);
-            else
-                trajectory_index = int(_index/num_steps) - 1;
-
             q_fin = Eigen::VectorXd::Map(_trajectory.points[trajectory_index].positions.data(), _trajectory.points[trajectory_index].positions.size());
             _model->eigenToMap(q_fin, joint_map_fin);          
 
+            // velocity check increases the number of steps to move from two adjacent optimizer states
+            while (!velocity_check(_q_init, q_fin, num_steps))
+            {
+                num_steps += 1;
+            }
+
+            // compute reference
             Eigen::VectorXd q(_model->getJointNum());
             XBot::JointNameMap joint_map;
-
-            // reference state
-            int index_reference;
-            if (_incr == 1)
-                index_reference = _index - num_steps*int(_index/num_steps)+1;
-            else
-                index_reference = _incr * (_index - num_steps*(trajectory_index+1) - num_steps);
-
             q = _q_init + (q_fin - _q_init) * (index_reference) / num_steps;
             _model->eigenToMap(q, joint_map);
+
+            // move
             if (_robot)
             {
                 _robot->setPositionReference(joint_map);
@@ -246,11 +273,6 @@ void RobotController::run()
                 _model->setJointPosition(joint_map);
                 _model->update();
             }
-
-            _index += _incr;
-            if(_index == _trajectory.points.size()*num_steps || (_index == num_steps && _incr == -1))
-                _incr *= -1;
-
         }
     }
 }
