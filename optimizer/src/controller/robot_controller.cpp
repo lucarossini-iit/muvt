@@ -153,6 +153,8 @@ bool RobotController::init_service(std_srvs::Empty::Request &req, std_srvs::Empt
         rate.sleep();
     }
 
+    trajectory_index = 1;
+
     return true;
 }
 
@@ -168,12 +170,15 @@ bool RobotController::replay_service(std_srvs::SetBool::Request &req, std_srvs::
         res.message = "stopping replaying trajectory";
     }
 
+    res.success = true;
     std::cout << res.message << std::endl;
-    return true;
+    return res.success;
 }
 
 bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin, int num_steps)
 {
+//    std::cout << "qinit: " << q_init.transpose() << std::endl;
+//    std::cout << "qfin " << q_fin.transpose() << std::endl;
     Eigen::VectorXd qdot = (q_fin - q_init)/_ctrl_interpolation_time;
     qdot /= num_steps;
     Eigen::VectorXd qdot_max;
@@ -182,7 +187,9 @@ bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_f
 
     for (int i = 0; i < qdot.size(); i++)
         if(qdot(i) > qdot_max(i) || qdot(i) < -qdot_max(i))
+        {
             return false;
+        }
 
     return true;
 }
@@ -226,22 +233,28 @@ void RobotController::run()
         else
         {
             index_reference++;
-            // reset
+            // update
             if ((index_reference - 1) % num_steps == 0)
             {
                 // reset num_steps to the nominal value
                 num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
+//                std::cout << "resetting num_steps -> " << num_steps << std::endl;
 
                 // reset index_reference
                 index_reference = 1;
 
                 // update _q_init
-                _model->getJointPosition(_q_init);
+//                _model->getJointPosition(_q_init);
 
                 // update trajectory_index
                 if (trajectory_index == _trajectory.points.size() - 1 || trajectory_index == 0)
                     _incr *= -1;
                 trajectory_index += _incr;
+
+                if(_incr == 1)
+                    _q_init = Eigen::VectorXd::Map(_trajectory.points[trajectory_index-1].positions.data(), _trajectory.points[trajectory_index-1].positions.size());
+                else
+                    _q_init = Eigen::VectorXd::Map(_trajectory.points[trajectory_index+1].positions.data(), _trajectory.points[trajectory_index+1].positions.size());
             }
 
             // final state
@@ -254,12 +267,16 @@ void RobotController::run()
             while (!velocity_check(_q_init, q_fin, num_steps))
             {
                 num_steps += 1;
+//                std::cout << "increasing num_steps to " << num_steps << std::endl;
             }
+
+//            std::cout << "index_reference: " << index_reference << "   trajectory_index: " << trajectory_index << "   num_steps: " << num_steps << std::endl;
 
             // compute reference
             Eigen::VectorXd q(_model->getJointNum());
             XBot::JointNameMap joint_map;
             q = _q_init + (q_fin - _q_init) * (index_reference) / num_steps;
+            std::cout << "q: " << q.transpose() << std::endl;
             _model->eigenToMap(q, joint_map);
 
             // move
