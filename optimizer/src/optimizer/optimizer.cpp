@@ -310,7 +310,7 @@ void Optimizer::init_load_edges()
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1"};
+                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1", "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2"};
                 _cld->setLinksVsEnvironment(links);
                 for (auto link_distance : link_distances)
                 {
@@ -471,19 +471,32 @@ void Optimizer::optimize()
         _model->setJointPosition(v->estimate());
         _model->update();
         Eigen::Affine3d T;
-        _model->getPose("arm1_7", T);
-        visualization_msgs::Marker m;
-        m.header.frame_id = "pelvis";
-        m.header.stamp = ros::Time::now();
-        m.id = v->id();
-        m.action = visualization_msgs::Marker::ADD;
-        m.type = visualization_msgs::Marker::SPHERE;
-        m.color.r = 0; m.color.g = 1; m.color.b = 0; m.color.a = 1;
-        m.scale.x = 0.01; m.scale.y = 0.01; m.scale.z = 0.01;
-        m.pose.position.x = T.translation()(0);
-        m.pose.position.y = T.translation()(1);
-        m.pose.position.z = T.translation()(2);
-        ma.markers.push_back(m);
+        _model->getPose("ball1", T);
+        visualization_msgs::Marker m_left, m_right;
+        m_left.header.frame_id = "pelvis";
+        m_left.header.stamp = ros::Time::now();
+        m_left.id = v->id();
+        m_left.action = visualization_msgs::Marker::ADD;
+        m_left.type = visualization_msgs::Marker::SPHERE;
+        m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+        m_left.scale.x = 0.01; m_left.scale.y = 0.01; m_left.scale.z = 0.01;
+        m_left.pose.position.x = T.translation()(0);
+        m_left.pose.position.y = T.translation()(1);
+        m_left.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m_left);
+
+        _model->getPose("ball2",T);
+        m_right.header.frame_id = "pelvis";
+        m_right.header.stamp = ros::Time::now();
+        m_right.id = 200 + v->id();
+        m_right.action = visualization_msgs::Marker::ADD;
+        m_right.type = visualization_msgs::Marker::SPHERE;
+        m_right.color.r = 0; m_right.color.g = 1; m_right.color.b = 0; m_right.color.a = 1;
+        m_right.scale.x = 0.01; m_right.scale.y = 0.01; m_right.scale.z = 0.01;
+        m_right.pose.position.x = T.translation()(0);
+        m_right.pose.position.y = T.translation()(1);
+        m_right.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m_right);
     }
 
     _ee_trj_pub.publish(ma);

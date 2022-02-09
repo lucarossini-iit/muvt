@@ -1,6 +1,6 @@
 state_validity_check:
     - self-collision
-    - ground_collision
+    #- ground_collision
 
 self-collision:
     type: "CollisionCheck"

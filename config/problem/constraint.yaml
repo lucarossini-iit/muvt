@@ -6,7 +6,7 @@ constraints:
     - trajectory_vel
 
 collisions:
-    max_pair_link: 50
+    max_pair_link: 100
     weight: 100
 
 optimizer:

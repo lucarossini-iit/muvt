@@ -179,8 +179,7 @@ bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_f
 {
 //    std::cout << "qinit: " << q_init.transpose() << std::endl;
 //    std::cout << "qfin " << q_fin.transpose() << std::endl;
-    Eigen::VectorXd qdot = (q_fin - q_init)/_ctrl_interpolation_time;
-    qdot /= num_steps;
+    Eigen::VectorXd qdot = (q_fin - q_init)/(_ctrl_interpolation_time * num_steps);
     Eigen::VectorXd qdot_max;
     _model->getVelocityLimits(qdot_max);
     qdot_max /= 10;
@@ -276,7 +275,6 @@ void RobotController::run()
             Eigen::VectorXd q(_model->getJointNum());
             XBot::JointNameMap joint_map;
             q = _q_init + (q_fin - _q_init) * (index_reference) / num_steps;
-            std::cout << "q: " << q.transpose() << std::endl;
             _model->eigenToMap(q, joint_map);
 
             // move
