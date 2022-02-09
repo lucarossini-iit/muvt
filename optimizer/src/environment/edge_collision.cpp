@@ -73,25 +73,30 @@ void EdgeCollision::computeError()
     _error.setZero();
 
     auto dist = _cld->getLinkDistances(r+eps);
-//    auto end = std::next(dist.begin(), _error.size());
-//    std::list<LinkPairDistance> distances(dist.begin(), end);
     int index = 0;
 
     for (auto i : dist)
     {
-//        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
-//        {
-//            std::cout << "link0: " << i.getLinkNames().first << "   link2: " << i.getLinkNames().second << "    distance: " << i.getDistance() << std::endl;
-            double distance = 0;
-            distance += i.getDistance();
-            if (distance > r + eps)
-                _error(index) = 0;
-            else
-            {
-                double value = pow((-distance-(-r-eps))/S, n);
-                _error(index) = value;
-            }
-//        }
+    double distance = 0;
+    distance += i.getDistance();
+    if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
+    {
+        // use higher distance threshold to compensate inaccuracies of the camera
+        eps = 0.1;
+    }
+    else
+    {
+        // use a lower distance threshold for self collision since link position is more precise
+        eps = 0.02;
+    }
+
+    if (distance > r + eps)
+        _error(index) = 0;
+    else
+    {
+        double value = pow((-distance-(-r-eps))/S, n);
+        _error(index) = value;
+    }
     index++;
     }
 }

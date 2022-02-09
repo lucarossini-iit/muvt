@@ -310,7 +310,11 @@ void Optimizer::init_load_edges()
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1", "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2"};
+                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1",
+                                              "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
+                                              "hip1_1", "hip2_1", "knee_1",
+                                              "hip1_2", "hip2_2", "knee_2",
+                                              "pelvis", "torso_2"};
                 _cld->setLinksVsEnvironment(links);
                 for (auto link_distance : link_distances)
                 {
