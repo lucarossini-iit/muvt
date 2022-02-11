@@ -14,6 +14,9 @@ optimizer:
 
 nominal_trajectory:
     weight: 10
+    end_effectors:
+        - "ball1"
+        - "ball2"
 
 velocity_limits:
     weight: 100

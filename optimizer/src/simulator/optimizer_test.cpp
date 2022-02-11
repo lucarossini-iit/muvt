@@ -298,7 +298,7 @@ void Optimizer::load_edges()
              _optimizer.addEdge(e_jl);
 
              // reference trajectory task
-             auto e_t = new EdgeTask();
+             auto e_t = new EdgeTask(_model);
              Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
              info_t.setIdentity(); info_t *= 0.1;
              e_t->setInformation(info_t);

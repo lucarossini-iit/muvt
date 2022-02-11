@@ -3,15 +3,18 @@
 
 #include <g2o/core/base_unary_edge.h>
 
+#include <XBotInterface/ModelInterface.h>
+
+#include <environment/unary_edge.h>
 #include <environment/vertex_robot_pos.h>
 
 using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
 
-class EdgeTask : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
+class EdgeTask : public UnaryEdge {
 public:
-    EdgeTask();
+    EdgeTask(XBot::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {
@@ -24,8 +27,9 @@ public:
     }
 
     void setReference(Eigen::VectorXd ref);
+    void setEndEffectors(std::vector<std::string> ee);
 
-    void resize();
+    bool resize();
 
     Eigen::VectorXd getError() const;
 
@@ -35,6 +39,8 @@ public:
 
 private:
     Eigen::VectorXd _ref;
+    std::vector<Eigen::Affine3d> _T_ref;
+    std::vector<std::string> _ee;
 };
 
 } }

@@ -282,11 +282,14 @@ void Optimizer::init_load_edges()
         }
         else if (vc_name == "nominal_trajectory")
         {
-            YAML_PARSE_OPTION(_optimizer_config["nominal_trajectory"], weight, double, 1);
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], weight, double, 1);
+//            YAML_PARSE_OPTION(_optimizer_config[vc_name], end_effectors, std::vector<std::string>, {});
+            std::vector<std::string> end_effectors = {"ball1"};
             for (int i = 0; i < _vertices.size(); i++)
             {
-                auto e_t = new EdgeTask();
-                Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
+                auto e_t = new EdgeTask(_model);
+//                Eigen::MatrixXd info_t(_model->getJointNum(), _model->getJointNum());
+                Eigen::MatrixXd info_t(end_effectors.size() * 3, end_effectors.size() * 3);
                 info_t.setIdentity();
                 if (i == 0 || i == _vertices.size() - 1)
                     info_t *= 10000;
@@ -295,6 +298,7 @@ void Optimizer::init_load_edges()
                 e_t->setInformation(info_t);
                 e_t->vertices()[0] = _optimizer.vertex(i);
                 auto v = dynamic_cast<const VertexRobotPos*>(_optimizer.vertex(i));
+                e_t->setEndEffectors(end_effectors);
                 e_t->setReference(v->estimate());
                 e_t->resize();
                 _optimizer.addEdge(e_t);
@@ -310,11 +314,11 @@ void Optimizer::init_load_edges()
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1",
-                                              "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
-                                              "hip1_1", "hip2_1", "knee_1",
-                                              "hip1_2", "hip2_2", "knee_2",
-                                              "pelvis", "torso_2"};
+                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1"};
+//                                              "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
+//                                              "hip1_1", "hip2_1", "knee_1",
+//                                              "hip1_2", "hip2_2", "knee_2",
+//                                              "pelvis", "torso_2"};
                 _cld->setLinksVsEnvironment(links);
                 for (auto link_distance : link_distances)
                 {
@@ -334,7 +338,7 @@ void Optimizer::init_load_edges()
                 ROS_ERROR("unable to find collision_urdf");
 
             YAML_PARSE_OPTION(_optimizer_config[vc_name], max_pair_link, int, 1e2);
-            YAML_PARSE_OPTION(_optimizer_config["collisions"], weight, double, 1);
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], weight, double, 1);
             for (int i = 0; i < _vertices.size(); i++)
             {
                 auto e_coll = new EdgeCollision(_model, _cld, max_pair_link);
