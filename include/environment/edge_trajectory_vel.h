@@ -9,8 +9,8 @@ class EdgeTrajectoryVel : public UnaryEdge {
 public:
     EdgeTrajectoryVel(XBot::ModelInterface::Ptr model);
 
-    bool read(std::istream& is){}
-    bool write(std::ostream &os) const {}
+    bool read(std::istream& is){ return true; }
+    bool write(std::ostream &os) const { return true; }
 
     void resize();
 

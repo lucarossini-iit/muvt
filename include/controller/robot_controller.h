@@ -12,6 +12,7 @@
 
 #include <trajectory_msgs/JointTrajectory.h>
 
+#include <std_msgs/Int16.h>
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 
@@ -36,6 +37,7 @@ private:
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _trj_sub;
+    ros::Publisher _trj_index_pub;
     ros::ServiceServer _init_srv, _replay_srv;
     std::shared_ptr<ros::Rate> _r;
 

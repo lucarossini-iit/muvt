@@ -43,6 +43,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <std_msgs/Int16.h>
 #include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Float32.h>
@@ -98,10 +99,11 @@ private:
 
     // Callbacks
     void object_callback(const teb_test::ObjectMessageStringConstPtr& msg);
-    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+    void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    void update_local_vertices_callback(const std_msgs::Int16ConstPtr& msg);
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Subscriber _obj_sub;
+    ros::Subscriber _obj_sub, _trj_index_sub;
     ros::Publisher _sol_pub, _ee_trj_pub, _vertices_pub, _time_pub, _err_pub;
     ros::ServiceServer _create_obs_srv;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
@@ -115,7 +117,7 @@ private:
     std::shared_ptr<ComputeLinksDistance> _cld;
     obstacles _obstacles;
     unsigned int _number_obs;
-    int _iterations;
+    int _iterations, _num_local_vertices;
     bool _isJointCallbackDone;
     std::vector<double> _time_vector;
     ros::Time _init_time;

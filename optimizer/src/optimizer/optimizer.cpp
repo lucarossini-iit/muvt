@@ -2,6 +2,8 @@
 
 using namespace XBot::HyperGraph;
 
+int old_trajectory_index;
+
 Optimizer::Optimizer():
 _nh("optimizer"),
 _nhpr("~"),
@@ -64,6 +66,48 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
     update_edges();
 }
 
+void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &msg)
+{
+    if (_vertices.size() == 0)
+    {
+        ROS_WARN("missing vertices!");
+        return;
+    }
+
+    if (_vertices.size() < _num_local_vertices)
+    {
+        ROS_WARN("you are asking a number of local vertices greater than the number of vertices themselves...reducing num_local_vertices");
+        _num_local_vertices = _vertices.size();
+    }
+
+    auto vertices = _optimizer.vertices();
+    // from start to goal configuration
+
+//    if (msg->data > old_trajectory_index)
+//    {
+
+    for (auto v : vertices)
+    {
+        auto vertex = dynamic_cast<VertexRobotPos*>(v.second);
+        if(msg->data > old_trajectory_index)
+        {
+            if (v.first >= msg->data && v.first < msg->data + _num_local_vertices)
+                vertex->setFixed(false);
+            else
+                vertex->setFixed(true);
+        }
+        else
+        {
+            if (v.first >= msg->data - _num_local_vertices && v.first < msg->data)
+                vertex->setFixed(false);
+            else
+                vertex->setFixed(true);
+        }
+    }
+
+    old_trajectory_index = msg->data;
+}
+
 void Optimizer::update_edges()
 {
     auto vertices = _optimizer.vertices();
@@ -81,53 +125,54 @@ void Optimizer::update_edges()
                 e->computeError();
 //                if (e->getError().norm() > 1e-2)
 //                    std::cout << "EdgeCollision related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
-                error = 0;
-                for (int i = 0; i < e->getError().size(); i++)
-                    error += e->getError()(i) * e->getError()(i);
-                cum_err += std::sqrt(error);
-            }
-            else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
-            {
-                auto e = dynamic_cast<EdgeTask*>(edge);
-                e->computeError();
-                error = 0;
+//                error = 0;
+//                for (int i = 0; i < e->getError().size(); i++)
+//                    error += e->getError()(i) * e->getError()(i);
+//                cum_err += std::sqrt(error);
+//            }
+//            else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
+//            {
+//                auto e = dynamic_cast<EdgeTask*>(edge);
+//                e->computeError();
+//                error = 0;
 //                if (e->getError().norm() > 1e-2)
 //                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
-                for (int i = 0; i < e->getError().size(); i++)
-                    error += e->getError()(i) * e->getError()(i);
-                cum_err += std::sqrt(error);
-            }
-            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
-            {
-                auto e = dynamic_cast<EdgeRobotVel*>(edge);
-                e->computeError();
+//                for (int i = 0; i < e->getError().size(); i++)
+//                    error += e->getError()(i) * e->getError()(i);
+//                cum_err += std::sqrt(error);
+//            }
+//            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
+//            {
+//                auto e = dynamic_cast<EdgeRobotVel*>(edge);
+//                e->computeError();
 //                if (e->getError().norm() > 1e-2)
 //                    std::cout << "EdgeRobotVel related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
-                error = 0;
-                for (int i = 0; i < e->getError().size(); i++)
-                    error += e->getError()(i) * e->getError()(i);
-                cum_err += std::sqrt(error);
-            }
-            else if (dynamic_cast<EdgeTrajectoryVel*>(edge) != nullptr)
-            {
-                auto e = dynamic_cast<EdgeTrajectoryVel*>(edge);
-                e->setRef(v->estimate());
-            }
-            if (vertices.size() == 1)
-            {
-                if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
-                {
-                    auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
-                    e->setRef(v->estimate());
-                    e->computeError();
-                }
-            }
+//                error = 0;
+//                for (int i = 0; i < e->getError().size(); i++)
+//                    error += e->getError()(i) * e->getError()(i);
+//                cum_err += std::sqrt(error);
+//            }
+//            else if (dynamic_cast<EdgeTrajectoryVel*>(edge) != nullptr)
+//            {
+//                auto e = dynamic_cast<EdgeTrajectoryVel*>(edge);
+//                e->setRef(v->estimate());
+//            }
+//            if (vertices.size() == 1)
+//            {
+//                if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
+//                {
+//                    auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
+//                    e->setRef(v->estimate());
+//                    e->computeError();
+//                }
+//            }
 
-            double thresh = 1e-2;
-            if (/*cum_err > thresh && */ v->id() != 0 && v->id() != _vertices.size() - 1)
-                v->setFixed(false);
-            else
-                v->setFixed(false);
+//            double thresh = 1e-2;
+//            if (/*cum_err > thresh && */ v->id() != 0 && v->id() != _vertices.size() - 1)
+//                v->setFixed(false);
+//            else
+//                v->setFixed(false);
+            }
         }
     }
 }
@@ -181,12 +226,16 @@ void Optimizer::init_load_config()
 
     YAML_PARSE_OPTION(_optimizer_config["optimizer"], iterations, int, 10);
     _iterations = iterations;
+    YAML_PARSE_OPTION(_optimizer_config["optimizer"], num_local_vertices, int, 100);
+    _num_local_vertices = num_local_vertices;
+    old_trajectory_index = 0;
 
     _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("optimizer");
     _create_obs_srv = _nh.advertiseService("create_obstacle", &Optimizer::create_obstacle_service, this);
 
     // advertise and subscribe to topics
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
+    _trj_index_sub = _nh.subscribe("trajectory_index", 10, &Optimizer::update_local_vertices_callback, this);
 
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
@@ -217,8 +266,8 @@ void Optimizer::init_vertices()
         v->setDimension(_model->getJointNum());
         v->setEstimate(_vertices[i]);
         v->setId(i);
-        if (i == 0 || i == _vertices.size() - 1)
-            v->setFixed(true);
+//        if (i == 0 || i == _vertices.size() - 1)
+//            v->setFixed(true);
         _optimizer.addVertex(v);
     }
 }
@@ -486,7 +535,14 @@ void Optimizer::optimize()
         m_left.id = v->id();
         m_left.action = visualization_msgs::Marker::ADD;
         m_left.type = visualization_msgs::Marker::SPHERE;
-        m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+        if (v->fixed())
+        {
+            m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+        }
+        else
+        {
+            m_left.color.r = 0; m_left.color.g = 0; m_left.color.b = 1; m_left.color.a = 1;
+        }
         m_left.scale.x = 0.01; m_left.scale.y = 0.01; m_left.scale.z = 0.01;
         m_left.pose.position.x = T.translation()(0);
         m_left.pose.position.y = T.translation()(1);
@@ -499,7 +555,14 @@ void Optimizer::optimize()
         m_right.id = 200 + v->id();
         m_right.action = visualization_msgs::Marker::ADD;
         m_right.type = visualization_msgs::Marker::SPHERE;
-        m_right.color.r = 0; m_right.color.g = 1; m_right.color.b = 0; m_right.color.a = 1;
+        if (v->fixed())
+        {
+            m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+        }
+        else
+        {
+            m_left.color.r = 0; m_left.color.g = 0; m_left.color.b = 1; m_left.color.a = 1;
+        }
         m_right.scale.x = 0.01; m_right.scale.y = 0.01; m_right.scale.z = 0.01;
         m_right.pose.position.x = T.translation()(0);
         m_right.pose.position.y = T.translation()(1);

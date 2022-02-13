@@ -2,7 +2,7 @@
 
 using namespace XBot::HyperGraph::Controller;
 
-int num_steps, trajectory_index, index_reference;
+int num_steps, trajectory_index, old_trajectory_index, index_reference;
 
 RobotController::RobotController(std::string ns):
 _nh(ns),
@@ -14,6 +14,8 @@ _incr(1)
     init_load_model();
 
     _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotController::trajectory_callback, this);
+
+    _trj_index_pub = _nh.advertise<std_msgs::Int16>("optimizer/trajectory_index", 10, true);
 
     _init_srv = _nh.advertiseService("init_service", &RobotController::init_service, this);
     _replay_srv = _nh.advertiseService("replay_service", &RobotController::replay_service, this);
@@ -30,6 +32,7 @@ _incr(1)
     // interpolator data
     num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
     trajectory_index = 1;
+    old_trajectory_index = trajectory_index;
 }
 
 void RobotController::init_load_model()
@@ -177,8 +180,6 @@ bool RobotController::replay_service(std_srvs::SetBool::Request &req, std_srvs::
 
 bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin, int num_steps)
 {
-//    std::cout << "qinit: " << q_init.transpose() << std::endl;
-//    std::cout << "qfin " << q_fin.transpose() << std::endl;
     Eigen::VectorXd qdot = (q_fin - q_init)/(_ctrl_interpolation_time * num_steps);
     Eigen::VectorXd qdot_max;
     _model->getVelocityLimits(qdot_max);
@@ -237,18 +238,18 @@ void RobotController::run()
             {
                 // reset num_steps to the nominal value
                 num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
-//                std::cout << "resetting num_steps -> " << num_steps << std::endl;
 
                 // reset index_reference
                 index_reference = 1;
-
-                // update _q_init
-//                _model->getJointPosition(_q_init);
 
                 // update trajectory_index
                 if (trajectory_index == _trajectory.points.size() - 1 || trajectory_index == 0)
                     _incr *= -1;
                 trajectory_index += _incr;
+
+                std_msgs::Int16 msg;
+                msg.data = trajectory_index;
+                _trj_index_pub.publish(msg);
 
                 if(_incr == 1)
                     _q_init = Eigen::VectorXd::Map(_trajectory.points[trajectory_index-1].positions.data(), _trajectory.points[trajectory_index-1].positions.size());
@@ -289,5 +290,11 @@ void RobotController::run()
                 _model->update();
             }
         }
+    }
+    else
+    {
+        std_msgs::Int16 msg;
+        msg.data = trajectory_index;
+        _trj_index_pub.publish(msg);
     }
 }

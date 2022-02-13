@@ -11,6 +11,7 @@ collisions:
 
 optimizer:
     iterations: 2
+    num_local_vertices: 20
 
 nominal_trajectory:
     weight: 10
