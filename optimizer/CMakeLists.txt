@@ -40,7 +40,7 @@ target_link_libraries(environment ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT
 
 add_library(simulator SHARED
     src/simulator/simulator.cpp)
-            #src/simulator/optimizer_test.cpp)
+          
 target_link_libraries(simulator environment
                                 g2o::core
                                 g2o::types_slam3d
