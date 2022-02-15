@@ -345,8 +345,7 @@ void Optimizer::init_load_edges()
         else if (vc_name == "nominal_trajectory")
         {
             YAML_PARSE_OPTION(_optimizer_config[vc_name], weight, double, 1);
-//            YAML_PARSE_OPTION(_optimizer_config[vc_name], end_effectors, std::vector<std::string>, {});
-            std::vector<std::string> end_effectors = {"ball1", "ball2"};
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], end_effectors, std::vector<std::string>, {});
             for (int i = 0; i < _vertices.size(); i++)
             {
                 auto e_t = new EdgeTask(_model);
