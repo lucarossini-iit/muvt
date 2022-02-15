@@ -6,32 +6,32 @@
     <arg name="optimizer" default="true"/>
     <arg name="logger" default="false"/>
     <arg name="vision" default="true"/>
-    <arg name="is_model_floating_base" value="false"/>
+    <arg name="is_model_floating_base" value="true"/>
     <arg name="opt_interpolation_time" value="0.05"/>
     <arg name="ctrl_interpolation_time" value="0.01"/>
 
     <!-- xbotcore -->
-    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
+<!--    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>-->
 
-    <group if="$(arg vision)">
+<!--    <group if="$(arg vision)">-->
         <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
+<!--        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>-->
 
         <!-- robot_body_filter node -->
-        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">
-          <rosparam command="load" file="$(find robot_body_filter_node)/config/config.yaml" />
-          <remap from="cloud_in" to="/voxel" />
-        </node>
-    </group>
+<!--        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">-->
+<!--          <rosparam command="load" file="$(find robot_body_filter_node)/config/config.yaml" />-->
+<!--          <remap from="cloud_in" to="/voxel" />-->
+<!--        </node>-->
+<!--    </group>-->
 
-    <group if="$(arg optimizer)">
-        <param name="cartesian/problem_description" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
+<!--    <group if="$(arg optimizer)">-->
+        <param name="cartesian_stack" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
         <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/centauro_capsule.urdf"/>
-        <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
+        <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro_virtual_frame.srdf"/>
 
         <!-- include robot_description -->
         <include file="$(find centauro_gazebo)/launch/centauro_world.launch">
-            <arg name="floating_base" value="false"/>
+            <arg name="floating_base" value="true"/>
             <arg name="upper_body" value="true"/>
             <arg name="legs" value="true"/>
             <arg name="realsense" value="true"/>
@@ -41,11 +41,11 @@
 
         <!-- URDF joint fixer -->
         <node pkg="teb_test" type="urdf_parser_test_node" name="urdf_parser_test_node" output="screen">
-            <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
+            <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints_car_model.yaml"/>
         </node>
 
         <!-- optimizer node -->
-        <node pkg="teb_test" type="optimizer" name="optimizer" output="screen">
+        <node pkg="teb_test" type="car_model" name="optimizer" output="screen">
             <param name="rate" value="10"/>
             <param name="optimizer_config" textfile="$(find teb_test)/config/problem/constraint.yaml"/>
             <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
@@ -55,7 +55,7 @@
         </node>
 
         <!-- robot control node -->
-        <node pkg="teb_test" type="robot_controller_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+        <node pkg="teb_test" type="robot_controller_car_model_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
             <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
             <param name="model_type" value="RBDL"/>
             <param name="opt_interpolation_time" type="double" value="0.05"/>
@@ -65,12 +65,13 @@
 
         <!-- rviz -->
         <node pkg="rviz" name="rviz" type="rviz" output="screen"
-            args="-d $(find teb_test)/config/rviz/urdf_parser_test.rviz"/>
-    </group>
+            args="-d $(find teb_test)/config/rviz/car_model.rviz"/>
+
+<!--    </group>-->
 
     <!-- logger node -->
-    <node if="$(arg logger)" pkg="multi_contact_planning" type="logger_node" name="logger_node" output="screen"
-        args="/optimizer/error
-              /optimizer/time
-              /xbotcore/joint_states"/>
+<!--    <node if="$(arg logger)" pkg="multi_contact_planning" type="logger_node" name="logger_node" output="screen"-->
+<!--        args="/optimizer/error-->
+<!--              /optimizer/time-->
+<!--              /xbotcore/joint_states"/>-->
 </launch>

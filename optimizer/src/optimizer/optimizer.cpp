@@ -80,29 +80,42 @@ void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &ms
         _num_local_vertices = _vertices.size();
     }
 
-    auto vertices = _optimizer.vertices();
-    // from start to goal configuration
-
-//    if (msg->data > old_trajectory_index)
-//    {
-
-    for (auto v : vertices)
+    // find active vertices
+    std::vector<int> active_vertices;
+    if(msg->data >= old_trajectory_index)
     {
-        auto vertex = dynamic_cast<VertexRobotPos*>(v.second);
-        if(msg->data > old_trajectory_index)
+        for (int i = 0; i < _num_local_vertices; i++)
         {
-            if (v.first >= msg->data && v.first < msg->data + _num_local_vertices)
-                vertex->setFixed(false);
+            if((msg->data + i) > _vertices.size()-1)
+                active_vertices.push_back(_vertices.size()-1 - i);
             else
-                vertex->setFixed(true);
+                active_vertices.push_back(msg->data + i);
         }
-        else
+    }
+    else
+    {
+        for (int i = 0; i < _num_local_vertices; i++)
         {
-            if (v.first >= msg->data - _num_local_vertices && v.first < msg->data)
-                vertex->setFixed(false);
+            if ((msg->data - i) < 0)
+                active_vertices.push_back(i);
             else
-                vertex->setFixed(true);
+                active_vertices.push_back(msg->data - i);
         }
+    }
+    auto vertices = _optimizer.vertices();
+
+    // fix all
+    for (auto vertex : vertices)
+    {
+        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
+        v->setFixed(true);
+    }
+
+    // active the computed vertices
+    for (auto index : active_vertices)
+    {
+        auto vertex = dynamic_cast<VertexRobotPos*>(vertices[index]);
+        vertex->setFixed(false);
     }
 
     old_trajectory_index = msg->data;
@@ -320,7 +333,7 @@ void Optimizer::init_load_edges()
                 {
                     auto e_vel = new EdgeRobotVel(_model);
                     Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-                    info.setIdentity(); info *= 0.1;
+                    info.setIdentity(); info *= 0.1; info(0,0) *= 10000; info(1,1) *= 10000; info(2,2) *= 10000; info(3,3) *= 10000; info(4,4) *= 10000; info(5,5) *= 10000;
                     e_vel->setInformation(info);
                     e_vel->vertices()[0] = _optimizer.vertex(i);
                     e_vel->vertices()[1] = _optimizer.vertex(i+1);
@@ -333,7 +346,7 @@ void Optimizer::init_load_edges()
         {
             YAML_PARSE_OPTION(_optimizer_config[vc_name], weight, double, 1);
 //            YAML_PARSE_OPTION(_optimizer_config[vc_name], end_effectors, std::vector<std::string>, {});
-            std::vector<std::string> end_effectors = {"ball1"};
+            std::vector<std::string> end_effectors = {"ball1", "ball2"};
             for (int i = 0; i < _vertices.size(); i++)
             {
                 auto e_t = new EdgeTask(_model);
@@ -363,11 +376,13 @@ void Optimizer::init_load_edges()
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::list<std::string> links {"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1"};
-//                                              "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
-//                                              "hip1_1", "hip2_1", "knee_1",
-//                                              "hip1_2", "hip2_2", "knee_2",
-//                                              "pelvis", "torso_2"};
+                std::list<std::string> links { // "arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1",
+                                              // "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
+                                              "hip1_1", "hip2_1", "knee_1", "ankle1_1", "ankle2_1", "wheel_1",
+                                              "hip1_2", "hip2_2", "knee_2", "ankle1_2", "ankle2_2", "wheel_2",
+                                              "hip1_3", "hip2_3", "knee_3", "ankle1_3", "ankle2_3", "wheel_3",
+                                              "hip1_4", "hip2_4", "knee_4", "ankle1_4", "ankle2_4", "wheel_4",
+                                              "pelvis", "torso_2"};
                 _cld->setLinksVsEnvironment(links);
                 for (auto link_distance : link_distances)
                 {
@@ -381,6 +396,7 @@ void Optimizer::init_load_edges()
                 auto coll_links = _cld->getLinkDistances();
                 for (auto link : coll_links)
                     std::cout << link.getLinkNames().first << "   " << link.getLinkNames().second << std::endl;
+                std::cout << "created " << coll_links.size() << " link pairs" << std::endl;
             }
 
             else
@@ -413,6 +429,32 @@ void Optimizer::init_load_edges()
                 e_trj_vel->resize();
                 e_trj_vel->setRef(_vertices[i]);
                 _optimizer.addEdge(e_trj_vel);
+            }
+        }
+        else if (vc_name == "kinematic")
+        {
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], distal_links, std::vector<std::string>, {});
+            std::vector<int> default_indices {0, 1, 2};
+
+            for (auto link : distal_links)
+            {
+                YAML_PARSE_OPTION(_optimizer_config[vc_name][link], indices, std::vector<int>, default_indices);
+                YAML_PARSE_OPTION(_optimizer_config[vc_name][link], weight, double, 1);
+                for (int i = 0; i < _vertices.size(); i++)
+                {
+                    auto e_kin = new EdgeKinematic(_model);
+                    Eigen::MatrixXd info(indices.size(), indices.size());
+                    info *= weight;
+                    e_kin->setDistalLink(link);
+                    e_kin->setIndices(indices);
+                    Eigen::Affine3d T;
+                    _model->setJointPosition(_vertices[i]);
+                    _model->update();
+                    _model->getPose(link, T);
+                    e_kin->setReference(T);
+                    e_kin->vertices()[0] = _optimizer.vertex(i);
+                    _optimizer.addEdge(e_kin);
+                }
             }
         }
         else
@@ -525,49 +567,135 @@ void Optimizer::optimize()
             solution.points.push_back(point);
         }
 
+//        _model->setJointPosition(v->estimate());
+//        _model->update();
+//        Eigen::Affine3d T;
+//        _model->getPose("ball1", T);
+//        visualization_msgs::Marker m_left, m_right;
+//        m_left.header.frame_id = "pelvis";
+//        m_left.header.stamp = ros::Time::now();
+//        m_left.id = v->id();
+//        m_left.action = visualization_msgs::Marker::ADD;
+//        m_left.type = visualization_msgs::Marker::SPHERE;
+//        if (v->fixed())
+//        {
+//            m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+//        }
+//        else
+//        {
+//            m_left.color.r = 0; m_left.color.g = 0; m_left.color.b = 1; m_left.color.a = 1;
+//        }
+//        m_left.scale.x = 0.01; m_left.scale.y = 0.01; m_left.scale.z = 0.01;
+//        m_left.pose.position.x = T.translation()(0);
+//        m_left.pose.position.y = T.translation()(1);
+//        m_left.pose.position.z = T.translation()(2);
+//        ma.markers.push_back(m_left);
+
+//        _model->getPose("ball2", T);
+//        m_right.header.frame_id = "pelvis";
+//        m_right.header.stamp = ros::Time::now();
+//        m_right.id = _vertices.size() + v->id();
+//        m_right.action = visualization_msgs::Marker::ADD;
+//        m_right.type = visualization_msgs::Marker::SPHERE;
+//        if (v->fixed())
+//        {
+//            m_right.color.r = 0; m_right.color.g = 1; m_right.color.b = 0; m_right.color.a = 1;
+//        }
+//        else
+//        {
+//            m_right.color.r = 0; m_right.color.g = 0; m_right.color.b = 1; m_right.color.a = 1;
+//        }
+//        m_right.scale.x = 0.01; m_right.scale.y = 0.01; m_right.scale.z = 0.01;
+//        m_right.pose.position.x = T.translation()(0);
+//        m_right.pose.position.y = T.translation()(1);
+//        m_right.pose.position.z = T.translation()(2);
+//        ma.markers.push_back(m_right);
+
         _model->setJointPosition(v->estimate());
         _model->update();
         Eigen::Affine3d T;
-        _model->getPose("ball1", T);
-        visualization_msgs::Marker m_left, m_right;
-        m_left.header.frame_id = "pelvis";
-        m_left.header.stamp = ros::Time::now();
-        m_left.id = v->id();
-        m_left.action = visualization_msgs::Marker::ADD;
-        m_left.type = visualization_msgs::Marker::SPHERE;
+        _model->getPose("wheel_1", T);
+        visualization_msgs::Marker m_front_left, m_front_right, m_back_left, m_back_right;
+        m_front_left.header.frame_id = "world";
+        m_front_left.header.stamp = ros::Time::now();
+        m_front_left.id = v->id();
+        m_front_left.action = visualization_msgs::Marker::ADD;
+        m_front_left.type = visualization_msgs::Marker::SPHERE;
         if (v->fixed())
         {
-            m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+            m_front_left.color.r = 0; m_front_left.color.g = 1; m_front_left.color.b = 0; m_front_left.color.a = 1;
         }
         else
         {
-            m_left.color.r = 0; m_left.color.g = 0; m_left.color.b = 1; m_left.color.a = 1;
+            m_front_left.color.r = 0; m_front_left.color.g = 0; m_front_left.color.b = 1; m_front_left.color.a = 1;
         }
-        m_left.scale.x = 0.01; m_left.scale.y = 0.01; m_left.scale.z = 0.01;
-        m_left.pose.position.x = T.translation()(0);
-        m_left.pose.position.y = T.translation()(1);
-        m_left.pose.position.z = T.translation()(2);
-        ma.markers.push_back(m_left);
+        m_front_left.scale.x = 0.01; m_front_left.scale.y = 0.01; m_front_left.scale.z = 0.01;
+        m_front_left.pose.position.x = T.translation()(0);
+        m_front_left.pose.position.y = T.translation()(1);
+        m_front_left.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m_front_left);
 
-        _model->getPose("ball2",T);
-        m_right.header.frame_id = "pelvis";
-        m_right.header.stamp = ros::Time::now();
-        m_right.id = 200 + v->id();
-        m_right.action = visualization_msgs::Marker::ADD;
-        m_right.type = visualization_msgs::Marker::SPHERE;
+        _model->getPose("wheel_2", T);
+        m_front_right.header.frame_id = "world";
+        m_front_right.header.stamp = ros::Time::now();
+        m_front_right.id = _vertices.size() + v->id();
+        m_front_right.action = visualization_msgs::Marker::ADD;
+        m_front_right.type = visualization_msgs::Marker::SPHERE;
         if (v->fixed())
         {
-            m_left.color.r = 0; m_left.color.g = 1; m_left.color.b = 0; m_left.color.a = 1;
+            m_front_right.color.r = 0; m_front_right.color.g = 1; m_front_right.color.b = 0; m_front_right.color.a = 1;
         }
         else
         {
-            m_left.color.r = 0; m_left.color.g = 0; m_left.color.b = 1; m_left.color.a = 1;
+            m_front_right.color.r = 0; m_front_right.color.g = 0; m_front_right.color.b = 1; m_front_right.color.a = 1;
         }
-        m_right.scale.x = 0.01; m_right.scale.y = 0.01; m_right.scale.z = 0.01;
-        m_right.pose.position.x = T.translation()(0);
-        m_right.pose.position.y = T.translation()(1);
-        m_right.pose.position.z = T.translation()(2);
-        ma.markers.push_back(m_right);
+        m_front_right.scale.x = 0.01; m_front_right.scale.y = 0.01; m_front_right.scale.z = 0.01;
+        m_front_right.pose.position.x = T.translation()(0);
+        m_front_right.pose.position.y = T.translation()(1);
+        m_front_right.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m_front_right);
+
+        _model->setJointPosition(v->estimate());
+        _model->update();
+        _model->getPose("wheel_3", T);
+        m_back_left.header.frame_id = "world";
+        m_back_left.header.stamp = ros::Time::now();
+        m_back_left.id = v->id();
+        m_back_left.action = visualization_msgs::Marker::ADD;
+        m_back_left.type = visualization_msgs::Marker::SPHERE;
+        if (v->fixed())
+        {
+            m_back_left.color.r = 0; m_back_left.color.g = 1; m_back_left.color.b = 0; m_back_left.color.a = 1;
+        }
+        else
+        {
+            m_back_left.color.r = 0; m_back_left.color.g = 0; m_back_left.color.b = 1; m_back_left.color.a = 1;
+        }
+        m_back_left.scale.x = 0.01; m_back_left.scale.y = 0.01; m_back_left.scale.z = 0.01;
+        m_back_left.pose.position.x = T.translation()(0);
+        m_back_left.pose.position.y = T.translation()(1);
+        m_back_left.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m_back_left);
+
+        _model->getPose("wheel_4", T);
+        m_back_right.header.frame_id = "world";
+        m_back_right.header.stamp = ros::Time::now();
+        m_back_right.id = _vertices.size() + v->id();
+        m_back_right.action = visualization_msgs::Marker::ADD;
+        m_back_right.type = visualization_msgs::Marker::SPHERE;
+        if (v->fixed())
+        {
+            m_back_right.color.r = 0; m_back_right.color.g = 1; m_back_right.color.b = 0; m_back_right.color.a = 1;
+        }
+        else
+        {
+            m_back_right.color.r = 0; m_back_right.color.g = 0; m_back_right.color.b = 1; m_back_right.color.a = 1;
+        }
+        m_back_right.scale.x = 0.01; m_back_right.scale.y = 0.01; m_back_right.scale.z = 0.01;
+        m_back_right.pose.position.x = T.translation()(0);
+        m_back_right.pose.position.y = T.translation()(1);
+        m_back_right.pose.position.z = T.translation()(2);
+        ma.markers.push_back(m_back_right);
     }
 
     _ee_trj_pub.publish(ma);
@@ -638,7 +766,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     obstacle obs;
     obs.position = position;
     obs.orientation.coeffs() << 0, 0, 0, 1;
-    obs.size << 0.05, 0.05, 0.05;
+    obs.size << 0.1, 0.1, 0.1;
     obs.id = _obstacles.size();
     _obstacles.push_back(obs);
     update_edges();
@@ -650,7 +778,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     int_marker.description = "obstacle_" + std::to_string(_obstacles.size());
 
     visualization_msgs::Marker m;
-    m.type = visualization_msgs::Marker::SPHERE;
+    m.type = visualization_msgs::Marker::CUBE;
     m.pose.position.x = 0;
     m.pose.position.y = 0;
     m.pose.position.z = 0;
@@ -659,7 +787,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     m.pose.orientation.z = 0;
     m.pose.orientation.w = 1;
     m.scale.x = obs.size(0); m.scale.y = obs.size(1); m.scale.z = obs.size(2);
-    m.color.r = 1; m.color.g = 0; m.color.b = 0; m.color.a = 1;
+    m.color.r = 1.0; m.color.g = 1.0; m.color.b = 0; m.color.a = 1.0;
 
     visualization_msgs::InteractiveMarkerControl obs_control;
     obs_control.always_visible = true;

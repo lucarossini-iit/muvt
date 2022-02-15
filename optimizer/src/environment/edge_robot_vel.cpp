@@ -8,7 +8,7 @@ BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos>(),
 _model(model)
 {
     _model->getVelocityLimits(_vel_max);
-//    _vel_max /= 5;
+    _vel_max /= 5;
     _vel_min = -_vel_max;
 }
 

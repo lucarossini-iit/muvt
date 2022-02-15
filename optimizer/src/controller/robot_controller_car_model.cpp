@@ -1,10 +1,10 @@
-#include <controller/robot_controller.h>
+#include <controller/robot_controller_car_model.h>
 
 using namespace XBot::HyperGraph::Controller;
 
-int num_steps, trajectory_index, old_trajectory_index, index_reference;
+extern int num_steps, trajectory_index, old_trajectory_index, index_reference;
 
-RobotController::RobotController(std::string ns):
+RobotControllerCarModel::RobotControllerCarModel(std::string ns):
 _nh(ns),
 _nhpr("~"),
 _replay(false),
@@ -12,30 +12,37 @@ _index(0),
 _incr(1)
 {
     init_load_model();
+    init_load_config();
 
-    _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotController::trajectory_callback, this);
+    _replay_srv = _nh.advertiseService("replay_service", &RobotControllerCarModel::replay_service, this);
+
+    _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotControllerCarModel::trajectory_callback, this);
 
     _trj_index_pub = _nh.advertise<std_msgs::Int16>("optimizer/trajectory_index", 10, true);
-
-    _init_srv = _nh.advertiseService("init_service", &RobotController::init_service, this);
-    _replay_srv = _nh.advertiseService("replay_service", &RobotController::replay_service, this);
-
-    if (!_nhpr.hasParam("opt_interpolation_time") && !_nhpr.getParam("opt_interpolation_time", _opt_interpolation_time))
-        ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
-
-    if (!_nhpr.hasParam("ctrl_interpolation_time") && !_nhpr.getParam("ctrl_interpolation_time", _ctrl_interpolation_time))
-        ROS_ERROR("missing mandatory private parameter 'ctrl_interpolation_time!");
-
-    _opt_interpolation_time = 0.05;
-    _ctrl_interpolation_time = 0.01;
-
-    // interpolator data
-    num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
-    trajectory_index = 1;
-    old_trajectory_index = trajectory_index;
 }
 
-void RobotController::init_load_model()
+void RobotControllerCarModel::trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg)
+{
+    _trajectory = *msg;
+}
+
+bool RobotControllerCarModel::replay_service(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+{
+    _replay = req.data;
+    if (_replay)
+        res.message = "starting replaying trajectory";
+    else
+    {
+        _index = 0;
+        res.message = "stopping replaying trajectory";
+    }
+
+    res.success = true;
+    std::cout << res.message << std::endl;
+    return res.success;
+}
+
+void RobotControllerCarModel::init_load_model()
 {
     auto cfg = XBot::ConfigOptionsFromParamServer();
     ConfigOptions cfg_reduced;
@@ -84,11 +91,11 @@ void RobotController::init_load_model()
     {
         _robot = RobotInterface::getRobot(cfg);
         _robot->setControlMode(ControlMode::Position());
-        auto fixed_joint_map = _nhpr.param<std::map<std::string, double>>("fixed_joints", std::map<std::string, double>());
-        std::map<std::string, XBot::ControlMode> idle_joint_map;
-        for(auto pair : fixed_joint_map)
-            idle_joint_map.insert(std::make_pair(pair.first, XBot::ControlMode::Idle()));
-        _robot->setControlMode(idle_joint_map);
+//        auto fixed_joint_map = _nhpr.param<std::map<std::string, double>>("fixed_joints", std::map<std::string, double>());
+//        std::map<std::string, XBot::ControlMode> idle_joint_map;
+//        for(auto pair : fixed_joint_map)
+//            idle_joint_map.insert(std::make_pair(pair.first, XBot::ControlMode::Idle()));
+//        _robot->setControlMode(idle_joint_map);
     }
     catch(std::runtime_error& e)
     {
@@ -97,6 +104,8 @@ void RobotController::init_load_model()
 
     _model = XBot::ModelInterface::getModel(cfg_reduced);
     _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
+
+    _ci_model = XBot::ModelInterface::getModel(cfg);
 
     if(!_robot)
     {
@@ -111,71 +120,49 @@ void RobotController::init_load_model()
         std::cout << "RobotInterface succesfully generated!" << std::endl;
         _model->syncFrom(*_robot);
     }
-
-    XBot::JointNameMap q_map;
-    _model->getJointPosition(q_map);
-    for (auto joint_pair : q_map)
-        _keys.push_back(joint_pair.first);
 }
 
-void RobotController::trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg)
+void RobotControllerCarModel::init_load_config()
 {
-    _trajectory = *msg;
-}
 
-bool RobotController::init_service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
-{
-    double T = 1;
-    double dt = 0.01;
-    XBot::JointNameMap q_init, q_fin, q_ref;
-    _model->getJointPosition(q_init);
-    q_ref = q_init;
-    ros::Rate rate(1/dt);
-
-    Eigen::VectorXd q = Eigen::VectorXd::Map(_trajectory.points[0].positions.data(), _trajectory.points[0].positions.size());
-    _model->eigenToMap(q, q_fin);
-
-    for (int i = 0; i < T/dt; i++)
+    if (!_nhpr.hasParam("opt_interpolation_time") && !_nhpr.getParam("opt_interpolation_time", _opt_interpolation_time))
     {
-        for (auto key : _keys)
-        {
-            q_ref[key] = q_init[key] + ((q_fin[key] - q_init[key]) * i * dt / T);
-        }
-        if(_robot)
-        {
-            _robot->setPositionReference(q_ref);
-            _robot->move();
-        }
-        _model->setJointPosition(q_ref);
-        _model->update();
-        if(!_robot)
-            _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));
-        rate.sleep();
+        ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
+//        throw std::runtime_error("opt_interpolation_time!");
     }
 
+    if (!_nhpr.hasParam("ctrl_interpolation_time") && !_nhpr.getParam("ctrl_interpolation_time", _ctrl_interpolation_time))
+    {
+        ROS_ERROR("missing mandatory private parameter 'ctrl_interpolation_time!");
+//        throw std::runtime_error("ctrl_interpolation_time!");
+    }
+
+    std::string cartesian_stack;
+    if(!_nh.getParam("cartesian_stack", cartesian_stack))
+    {
+        ROS_ERROR("cartesian_stackcartesian_stack!");
+        throw std::runtime_error("cartesian_stack!");
+    }
+
+    auto ik_yaml_goal = YAML::Load(cartesian_stack);
+
+    double ci_period = _ctrl_interpolation_time;
+    auto ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _ci_model);
+    auto ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
+
+    _ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
+                                                        ik_prob, ci_ctx);
+
+    _opt_interpolation_time = 0.05;
+    _ctrl_interpolation_time = 0.01;
+
+    // interpolator data
+    num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
     trajectory_index = 1;
-
-    return true;
+    old_trajectory_index = trajectory_index;
 }
 
-bool RobotController::replay_service(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
-{
-    _replay = req.data;
-    if (_replay)
-        res.message = "starting replaying trajectory";
-    else
-    {
-        _index = 0;
-        _incr = 1;
-        res.message = "stopping replaying trajectory";
-    }
-
-    res.success = true;
-    std::cout << res.message << std::endl;
-    return res.success;
-}
-
-bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin, int num_steps)
+bool RobotControllerCarModel::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin)
 {
     Eigen::VectorXd qdot = (q_fin - q_init)/(_ctrl_interpolation_time * num_steps);
     Eigen::VectorXd qdot_max;
@@ -191,7 +178,7 @@ bool RobotController::velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_f
     return true;
 }
 
-void RobotController::run()
+void RobotControllerCarModel::run()
 {
     if(_robot)
     {
@@ -258,10 +245,10 @@ void RobotController::run()
             XBot::JointNameMap joint_map_fin;
             Eigen::VectorXd q_fin(_model->getJointNum());
             q_fin = Eigen::VectorXd::Map(_trajectory.points[trajectory_index].positions.data(), _trajectory.points[trajectory_index].positions.size());
-            _model->eigenToMap(q_fin, joint_map_fin);          
+            _model->eigenToMap(q_fin, joint_map_fin);
 
             // velocity check increases the number of steps to move from two adjacent optimizer states
-            while (!velocity_check(_q_init, q_fin, num_steps))
+            while (!velocity_check(_q_init, q_fin))
                 num_steps += 1;
 
             // compute reference
@@ -269,6 +256,24 @@ void RobotController::run()
             XBot::JointNameMap joint_map;
             q = _q_init + (q_fin - _q_init) * (index_reference) / num_steps;
             _model->eigenToMap(q, joint_map);
+
+            // once computed the q_ref, find the new reference for the wheels
+//            XBot::JointNameMap ci_joint_map;
+//            _ci_model->getJointPosition(ci_joint_map);
+//            for (auto pair : joint_map)
+//                ci_joint_map[pair.first] = pair.second;
+//            _ci_model->setJointPosition(ci_joint_map);
+//            _ci_model->update();
+//            auto time = ros::Time::now();
+//            _ci->reset(time.toSec());
+//            _ci->update(time.toSec(), _ctrl_interpolation_time);
+//            Eigen::VectorXd ci_qdot, ci_q;
+//            _ci_model->mapToEigen(ci_joint_map, ci_q);
+//            _ci_model->getJointVelocity(ci_qdot);
+//            ci_q += ci_qdot * _ctrl_interpolation_time;
+//            _model->eigenToMap(ci_q, ci_joint_map);
+//            for (auto& pair : joint_map)
+//                pair.second = ci_joint_map[pair.first];
 
             // move
             if (_robot)

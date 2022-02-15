@@ -1,4 +1,4 @@
-#include <controller/robot_controller.h>
+#include <controller/robot_controller_car_model.h>
 
 int main(int argc, char** argv)
 {
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     else
         r = int(1/opt_interpolation_time);
 
-    XBot::HyperGraph::Controller::RobotController controller;
+    XBot::HyperGraph::Controller::RobotControllerCarModel controller;
 
     ros::Rate rate(r);
     while(ros::ok())

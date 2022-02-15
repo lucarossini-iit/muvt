@@ -148,7 +148,7 @@ int main(int argc, char** argv)
             auto sol_eval = interpolator->evaluate(time);
             trajectory.push_back(sol_eval);
             std::cout << sol_eval.transpose() << std::endl;
-            time += 0.01;
+            time += 0.05;
         }
     }
 
