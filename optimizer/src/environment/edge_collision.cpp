@@ -61,8 +61,7 @@ void EdgeCollision::computeError()
     int n_dof = _model->getJointNum();
     const VertexRobotPos* v1 = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
 
-    Eigen::VectorXd q = v1->estimate();
-    _model->setJointPosition(q);
+    _model->setJointPosition(v1->estimate());
     _model->update();
 
     double eps = 0.1;
@@ -77,27 +76,31 @@ void EdgeCollision::computeError()
 
     for (auto i : dist)
     {
-    double distance = 0;
-    distance += i.getDistance();
-    if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
-    {
-        // use higher distance threshold to compensate inaccuracies of the camera
-        eps = 0.1;
-    }
-    else
-    {
-        // use a lower distance threshold for self collision since link position is more precise
-        eps = 0.02;
-    }
+        double distance = 0;
+        distance += i.getDistance();
+        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
+        {
+            if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
+            {
+                // use higher distance threshold to compensate inaccuracies of the camera
+                eps = 0.1;
+            }
+            else
+            {
+                // use a lower distance threshold for self collision since link position is more precise
+                eps = 0.02;
+            }
 
-    if (distance > r + eps)
-        _error(index) = 0;
-    else
-    {
-        double value = pow((-distance-(-r-eps))/S, n);
-        _error(index) = value;
-    }
-    index++;
+            if (distance > r + eps)
+                _error(index) = 0;
+            else
+            {
+                double value = pow((-distance-(-r-eps))/S, n);
+                _error(index) = value;
+//                std::cout << i.getLinkNames().first << "  " << i.getLinkNames().second << "   " << i.getDistance() << std::endl;
+            }
+        index++;
+        }
     }
 }
 

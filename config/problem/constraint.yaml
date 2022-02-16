@@ -1,21 +1,21 @@
 constraints:
     - collisions
-    - joint_limits
+    # - joint_limits
     # - velocity_limits
-    - nominal_trajectory
+    # - nominal_trajectory
     # - trajectory_vel
     - kinematic
 
 collisions:
-    max_pair_link: 150
-    weight: 100
+    max_pair_link: 260
+    weight: 0.01
 
 optimizer:
     iterations: 1
-    num_local_vertices: 50
+    num_local_vertices: 40
 
 nominal_trajectory:
-    weight: 10
+    weight: 0.1
     end_effectors:
         - "wheel_1"
         - "wheel_2"
@@ -23,10 +23,10 @@ nominal_trajectory:
         - "wheel_4"
 
 velocity_limits:
-    weight: 100
+    weight: 0.1
 
 trajectory_vel:
-    weight: 1.0
+    weight: 0.01
 
 kinematic:
     distal_links:
@@ -35,14 +35,14 @@ kinematic:
         - "wheel_3"
         - "wheel_4"
     wheel_1:
-        weight: 10000
+        weight: 100
         indices: [2]
     wheel_2:
-        weight: 10000
+        weight: 100
         indices: [2]
     wheel_3:
-        weight: 10000
+        weight: 100
         indices: [2]
     wheel_4:
-        weight: 10000
+        weight: 100
         indices: [2]

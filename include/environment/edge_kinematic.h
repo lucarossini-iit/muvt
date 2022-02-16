@@ -33,13 +33,16 @@ public:
     }
 
     bool setDistalLink(std::string distal_link);
+    std::string getDistalLink() const {return _distal_link;}
     bool setIndices(std::vector<int> indices);
     void setReference(Eigen::Affine3d T_ref);
+    void setBaseLink(std::string base_link);
     void computeError();
+//    void linearizeOplus();
 
 
 private:
-    std::string _distal_link;
+    std::string _distal_link, _base_link;
     std::vector<int> _indices;
     Eigen::Affine3d _T_ref;
 

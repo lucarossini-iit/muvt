@@ -3,6 +3,7 @@
 using namespace XBot::HyperGraph;
 
 int old_trajectory_index;
+std::string frame_id;
 
 Optimizer::Optimizer():
 _nh("optimizer"),
@@ -40,6 +41,8 @@ _isJointCallbackDone(false)
     init_optimizer();
     init_vertices();
     init_load_edges();
+
+    frame_id = "world";
 }
 
 void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg)
@@ -121,6 +124,30 @@ void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &ms
     old_trajectory_index = msg->data;
 }
 
+void Optimizer::update_kinetic_edge_reference_callback(const std_msgs::Float32ConstPtr &msg)
+{
+    auto vertices = _optimizer.vertices();
+    for (auto vertex : vertices)
+    {
+        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
+        for (auto edge : v->edges())
+        {
+            if(auto e = dynamic_cast<EdgeKinematic*>(edge))
+            {
+                if (e->getDistalLink() == "pelvis")
+                {
+                    _model->setJointPosition(v->estimate());
+                    _model->update();
+                    Eigen::Affine3d T;
+                    _model->getPose("pelvis", T);
+                    T.translation().z() = msg->data;
+                    e->setReference(T);
+                }
+            }
+        }
+    }
+}
+
 void Optimizer::update_edges()
 {
     auto vertices = _optimizer.vertices();
@@ -135,56 +162,12 @@ void Optimizer::update_edges()
             {
                 auto e = dynamic_cast<EdgeCollision*>(edge);
                 e->setObstacles(_obstacles);
-                e->computeError();
-//                if (e->getError().norm() > 1e-2)
-//                    std::cout << "EdgeCollision related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
-//                error = 0;
-//                for (int i = 0; i < e->getError().size(); i++)
-//                    error += e->getError()(i) * e->getError()(i);
-//                cum_err += std::sqrt(error);
-//            }
-//            else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
-//            {
-//                auto e = dynamic_cast<EdgeTask*>(edge);
-//                e->computeError();
-//                error = 0;
-//                if (e->getError().norm() > 1e-2)
-//                    std::cout << "EdgeTask related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
-//                for (int i = 0; i < e->getError().size(); i++)
-//                    error += e->getError()(i) * e->getError()(i);
-//                cum_err += std::sqrt(error);
-//            }
-//            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
-//            {
-//                auto e = dynamic_cast<EdgeRobotVel*>(edge);
-//                e->computeError();
-//                if (e->getError().norm() > 1e-2)
-//                    std::cout << "EdgeRobotVel related to vertex " << v->id() << " has error: " << e->getError().transpose() << std::endl;
-//                error = 0;
-//                for (int i = 0; i < e->getError().size(); i++)
-//                    error += e->getError()(i) * e->getError()(i);
-//                cum_err += std::sqrt(error);
-//            }
-//            else if (dynamic_cast<EdgeTrajectoryVel*>(edge) != nullptr)
-//            {
-//                auto e = dynamic_cast<EdgeTrajectoryVel*>(edge);
-//                e->setRef(v->estimate());
-//            }
-//            if (vertices.size() == 1)
-//            {
-//                if (dynamic_cast<EdgeRobotUnaryVel*>(edge) != nullptr)
-//                {
-//                    auto e = dynamic_cast<EdgeRobotUnaryVel*>(edge);
-//                    e->setRef(v->estimate());
-//                    e->computeError();
-//                }
-//            }
+            }
 
-//            double thresh = 1e-2;
-//            if (/*cum_err > thresh && */ v->id() != 0 && v->id() != _vertices.size() - 1)
-//                v->setFixed(false);
-//            else
-//                v->setFixed(false);
+            if(dynamic_cast<EdgeTrajectoryVel*>(edge) != nullptr)
+            {
+                auto e = dynamic_cast<EdgeTrajectoryVel*>(edge);
+                e->setRef(v->estimate());
             }
         }
     }
@@ -249,6 +232,7 @@ void Optimizer::init_load_config()
     // advertise and subscribe to topics
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
     _trj_index_sub = _nh.subscribe("trajectory_index", 10, &Optimizer::update_local_vertices_callback, this);
+    _edge_kin_sub = _nh.subscribe("kin_reference", 10, &Optimizer::update_kinetic_edge_reference_callback, this);
 
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
@@ -313,7 +297,7 @@ void Optimizer::init_load_edges()
         }
         else if (vc_name == "velocity_limits")
         {
-            YAML_PARSE_OPTION(_optimizer_config["velocity_limits"], weight, double, 1);
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], weight, double, 1);
             if (_vertices.size() == 1)
             {
                 auto e_vel = new EdgeRobotUnaryVel(_model);
@@ -333,7 +317,7 @@ void Optimizer::init_load_edges()
                 {
                     auto e_vel = new EdgeRobotVel(_model);
                     Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-                    info.setIdentity(); info *= 0.1; info(0,0) *= 10000; info(1,1) *= 10000; info(2,2) *= 10000; info(3,3) *= 10000; info(4,4) *= 10000; info(5,5) *= 10000;
+                    info.setZero(); info *= weight; info(0,0) = 0; info(1,1) = 1000000; info(2,2) = 100000000; info(3,3) = 1000000; info(4,4) = 1000000; info(5,5) = 1000000;
                     e_vel->setInformation(info);
                     e_vel->vertices()[0] = _optimizer.vertex(i);
                     e_vel->vertices()[1] = _optimizer.vertex(i+1);
@@ -353,7 +337,7 @@ void Optimizer::init_load_edges()
                 Eigen::MatrixXd info_t(end_effectors.size() * 3, end_effectors.size() * 3);
                 info_t.setIdentity();
                 if (i == 0 || i == _vertices.size() - 1)
-                    info_t *= 10000;
+                    info_t *= weight;
                 else
                     info_t *= weight;
                 e_t->setInformation(info_t);
@@ -375,8 +359,8 @@ void Optimizer::init_load_edges()
                 // remove useless link pairs
                 auto link_distances = _cld->getLinkDistances();
                 std::list<LinkPairDistance::LinksPair> black_list;
-                std::list<std::string> links { // "arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1",
-                                              // "arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
+                std::list<std::string> links {//"arm1_1", "arm1_2", "arm1_3", "arm1_4", "arm1_5", "arm1_6", "arm1_7", "ball1",
+                                              //"arm2_1", "arm2_2", "arm2_3", "arm2_4", "arm2_5", "arm2_6", "arm2_7", "ball2",
                                               "hip1_1", "hip2_1", "knee_1", "ankle1_1", "ankle2_1", "wheel_1",
                                               "hip1_2", "hip2_2", "knee_2", "ankle1_2", "ankle2_2", "wheel_2",
                                               "hip1_3", "hip2_3", "knee_3", "ankle1_3", "ankle2_3", "wheel_3",
@@ -442,10 +426,12 @@ void Optimizer::init_load_edges()
                 for (int i = 0; i < _vertices.size(); i++)
                 {
                     auto e_kin = new EdgeKinematic(_model);
-                    Eigen::MatrixXd info(indices.size(), indices.size());
-                    info *= weight;
-                    e_kin->setDistalLink(link);
                     e_kin->setIndices(indices);
+                    Eigen::MatrixXd info(indices.size(), indices.size());
+//                    Eigen::MatrixXd info(3, 3);
+                    info *= weight;
+                    e_kin->setInformation(info);
+                    e_kin->setDistalLink(link);                
                     Eigen::Affine3d T;
                     _model->setJointPosition(_vertices[i]);
                     _model->update();
@@ -503,22 +489,10 @@ void Optimizer::optimize()
     _optimizer.optimize(_iterations);
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> fsec = toc - tic;
-//    std::cout << fsec.count() << std::endl;
-
-    // shift _time_vector elements
-//    for (int i = 1; i < _time_vector.size(); i++)
-//        _time_vector[i-1] = _time_vector[i];
-//    _time_vector.back() = double(fsec.count());
 
     // average and publish
     std_msgs::Float32MultiArray time;
-//    time.data.push_back(0);
-//    for (auto i : _time_vector)
-//        time.data[0] += i;
-
     auto t = ros::Time::now() - _init_time;
-//    time.data[0] /= _time_vector.size();
-//    time.data.push_back(t.toSec());
     time.data.push_back(fsec.count());
     time.data.push_back(t.toSec());
     _time_pub.publish(time);
@@ -654,12 +628,10 @@ void Optimizer::optimize()
         m_front_right.pose.position.z = T.translation()(2);
         ma.markers.push_back(m_front_right);
 
-        _model->setJointPosition(v->estimate());
-        _model->update();
         _model->getPose("wheel_3", T);
         m_back_left.header.frame_id = "world";
         m_back_left.header.stamp = ros::Time::now();
-        m_back_left.id = v->id();
+        m_back_left.id = vertices.size()*2 + v->id();
         m_back_left.action = visualization_msgs::Marker::ADD;
         m_back_left.type = visualization_msgs::Marker::SPHERE;
         if (v->fixed())
@@ -679,7 +651,7 @@ void Optimizer::optimize()
         _model->getPose("wheel_4", T);
         m_back_right.header.frame_id = "world";
         m_back_right.header.stamp = ros::Time::now();
-        m_back_right.id = _vertices.size() + v->id();
+        m_back_right.id = _vertices.size()*3 + v->id();
         m_back_right.action = visualization_msgs::Marker::ADD;
         m_back_right.type = visualization_msgs::Marker::SPHERE;
         if (v->fixed())
@@ -703,49 +675,14 @@ void Optimizer::optimize()
 
 void Optimizer::print()
 {
+    std::cout << "------ PRINTING OPTIMIZED VERTICES -------" << std::endl;
     auto vertices = _optimizer.vertices();
 
     for (auto vertex : vertices)
     {
-        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
-//        std::cout << "------------------------" << std::endl;
-//        std::cout << "VERTEX " << v->id() << std::endl;
-//        std::cout << "q: " << v->estimate().transpose() << std::endl;
-//        std::cout << "------------------------" << std::endl;
+       auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
 
-//        std::cout << "EDGES:" << std::endl;
-        auto edges = v->edges();
-        for (auto edge : edges)
-        {
-            if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
-            {
-//                auto e = dynamic_cast<EdgeCollision*>(edge);
-//                std::cout << "EdgeCollision: " << std::endl;
-//                std::cout << "error: " << e->getError().transpose() << std::endl;
-            }
-            else if (dynamic_cast<EdgeRobotVel*>(edge) != nullptr)
-            {
-                auto e = dynamic_cast<EdgeRobotVel*>(edge);
-                Eigen::VectorXd zero(_model->getJointNum());
-                zero.setZero();
-                if (e->getError() != zero)
-                {
-                    std::cout << "EdgeRobotVel: " << std::endl;
-                    auto v0 = dynamic_cast<VertexRobotPos*>(e->vertex(0));
-                    auto v1 = dynamic_cast<VertexRobotPos*>(e->vertex(1));
-                    std::cout << "vertex0: " << v0->estimate() << std::endl;
-                    std::cout << "vertex1: " << v1->estimate() << std::endl;
-                    std::cout << "velocities: " << e->getVelocities().transpose() << std::endl;
-                    std::cout << "error: " << e->getError().transpose() << std::endl;
-                }
-            }
-            else if (dynamic_cast<EdgeTask*>(edge) != nullptr)
-            {
-//                auto e = dynamic_cast<EdgeTask*>(edge);
-//                std::cout << "EdgeTask: " << std::endl;
-//                std::cout << "error: " << e->getError().transpose() << std::endl;
-            }
-        }
+       std::cout << "id: " << v->id() << "\n q: " << v->estimate().transpose() << std::endl;
     }
 }
 
@@ -765,13 +702,13 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     obstacle obs;
     obs.position = position;
     obs.orientation.coeffs() << 0, 0, 0, 1;
-    obs.size << 0.1, 0.1, 0.1;
+    obs.size << 0.5, 0.1, 0.1;
     obs.id = _obstacles.size();
     _obstacles.push_back(obs);
     update_edges();
 
     visualization_msgs::InteractiveMarker int_marker;
-    int_marker.header.frame_id = "pelvis";
+    int_marker.header.frame_id = frame_id;
     int_marker.header.stamp = ros::Time::now();
     int_marker.name = "obstacle_" + std::to_string(_obstacles.size());
     int_marker.description = "obstacle_" + std::to_string(_obstacles.size());

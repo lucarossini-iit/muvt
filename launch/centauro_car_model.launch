@@ -27,7 +27,7 @@
 <!--    <group if="$(arg optimizer)">-->
         <param name="cartesian_stack" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>
         <param name="collision_urdf" textfile="$(find centauro_urdf)/urdf/centauro_capsule.urdf"/>
-        <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro_virtual_frame.srdf"/>
+        <param name="robot_description_semantic" textfile="$(find centauro_srdf)/srdf/centauro.srdf"/>
 
         <!-- include robot_description -->
         <include file="$(find centauro_gazebo)/launch/centauro_world.launch">

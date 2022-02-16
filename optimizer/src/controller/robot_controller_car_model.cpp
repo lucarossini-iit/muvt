@@ -83,7 +83,7 @@ void RobotControllerCarModel::init_load_model()
 
     cfg_reduced.set_parameter("model_type", _nhpr.param<std::string>("model_type", "RBDL"));
 
-    cfg_reduced.set_parameter("is_model_floating_base", _nhpr.param<bool>("is_model_floating_base", false));
+    cfg_reduced.set_parameter("is_model_floating_base", _nhpr.param<bool>("is_model_floating_base", true));
 
     cfg_reduced.set_parameter<std::string>("framework", "ROS");
 
@@ -153,7 +153,7 @@ void RobotControllerCarModel::init_load_config()
     _ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
                                                         ik_prob, ci_ctx);
 
-    _opt_interpolation_time = 0.05;
+    _opt_interpolation_time = 0.1;
     _ctrl_interpolation_time = 0.01;
 
     // interpolator data

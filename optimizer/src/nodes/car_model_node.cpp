@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
     cfg.set_parameter("model_type", nhpr.param<std::string>("model_type", "RBDL"));
 
-    cfg.set_parameter("is_model_floating_base", nhpr.param<bool>("is_model_floating_base", false));
+    cfg.set_parameter("is_model_floating_base", nhpr.param<bool>("is_model_floating_base", true));
 
     cfg.set_parameter<std::string>("framework", "ROS");
 
@@ -53,12 +53,11 @@ int main(int argc, char** argv)
     model->getRobotState("home", qhome);
     model->setJointPosition(qhome);
     model->update();
-    XBot::Cartesian::Utils::RobotStatePublisher rspub(model);
 
     // create trajectory;
     qstart = qhome;
     qgoal = qstart;
-    qgoal(0) += 3;
+    qgoal(0) += 6;
     XBot::HyperGraph::Simulator simulator(50, qstart, qgoal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
 
     auto configurations = simulator.getConfigurations();
