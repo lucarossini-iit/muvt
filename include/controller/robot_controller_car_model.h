@@ -32,7 +32,7 @@ private:
     void init_load_config();
     bool velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin);
 
-//    void on_timer_cb(const ros::TimerEvent&);
+//    void robot_callback(const ros::TimerEvent&);
 
     void trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg);
 

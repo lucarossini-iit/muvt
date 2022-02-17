@@ -60,7 +60,7 @@
             <param name="model_type" value="RBDL"/>
             <param name="opt_interpolation_time" type="double" value="0.05"/>
             <param name="ctrl_interpolation_time" type="double" value="0.01"/>
-            <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
+            <param name="velodyne_joint_pos" type="double" value="-0.65"/>
         </node>
 
         <!-- rviz -->

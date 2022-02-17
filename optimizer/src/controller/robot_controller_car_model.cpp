@@ -5,6 +5,7 @@ using namespace XBot::HyperGraph::Controller;
 extern int num_steps, trajectory_index, old_trajectory_index, index_reference;
 Eigen::VectorXd q_fb_old;
 bool start;
+double velodyne_joint_pos;
 
 RobotControllerCarModel::RobotControllerCarModel(std::string ns):
 _nh(ns),
@@ -103,6 +104,7 @@ void RobotControllerCarModel::init_load_model()
         control_map["j_wheel_2"] = ControlMode::Velocity();
         control_map["j_wheel_3"] = ControlMode::Velocity();
         control_map["j_wheel_4"] = ControlMode::Velocity();
+        control_map["velodyne_joint"] = ControlMode::Idle();
         _robot->setControlMode(control_map);
     }
     catch(std::runtime_error& e)
@@ -137,11 +139,11 @@ void RobotControllerCarModel::init_load_model()
 
 void RobotControllerCarModel::init_load_config()
 {
-//    _opt_interpolation_time = _nhpr.param("opt_interpolation_time", 0.0);
-//    _ctrl_interpolation_time = _nhpr.param("ctrl_interpolation_time", 0.0);
+    _opt_interpolation_time = _nhpr.param("opt_interpolation_time", 0.0);
+    _ctrl_interpolation_time = _nhpr.param("ctrl_interpolation_time", 0.0);
 
-    _opt_interpolation_time = 0.1;
-    _ctrl_interpolation_time = 0.01;
+//    _opt_interpolation_time = 0.1;
+//    _ctrl_interpolation_time = 0.01;
 
     if (_opt_interpolation_time == 0)
     {
@@ -313,6 +315,9 @@ void RobotControllerCarModel::run()
             q_old += ci_qdot * _ctrl_interpolation_time;
             _ci_model->eigenToMap(q_old, ci_joint_map);
 
+            // set velodyne_joint position
+            ci_joint_map["velodyne_joint"] = velodyne_joint_pos;
+
             XBot::JointNameMap joint_vel_map;
             _ci_model->eigenToMap(ci_qdot, joint_vel_map);
 
@@ -322,8 +327,6 @@ void RobotControllerCarModel::run()
                 _robot->setPositionReference(ci_joint_map);
                 _robot->setVelocityReference(joint_vel_map);
                 _robot->move();
-//                _model->setJointPosition(ci_joint_map);
-//                _model->update();
             }
             else
             {
