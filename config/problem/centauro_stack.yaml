@@ -23,24 +23,28 @@ Gaze:
 Steering_FL:
     type: "CentauroSteering"
     wheel_name: "wheel_1"
+    max_steering_speed: 8.0
     lib_name: "libcentauro_cartesio_addon.so"
     lambda: 0.1
 
 Steering_FR:
     type: "CentauroSteering"
     wheel_name: "wheel_2"
+    max_steering_speed: 8.0
     lib_name: "libcentauro_cartesio_addon.so"
     lambda: 0.1
 
 Steering_HL:
     type: "CentauroSteering"
     wheel_name: "wheel_3"
+    max_steering_speed: 8.0
     lib_name: "libcentauro_cartesio_addon.so"
     lambda: 0.1
 
 Steering_HR:
     type: "CentauroSteering"
     wheel_name: "wheel_4"
+    max_steering_speed: 8.0
     lib_name: "libcentauro_cartesio_addon.so"
     lambda: 0.1
 

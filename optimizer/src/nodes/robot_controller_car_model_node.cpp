@@ -6,14 +6,23 @@ int main(int argc, char** argv)
     ros::NodeHandle nh(""), nhpr("~");
 
     double ctrl_interpolation_time, opt_interpolation_time;
-    if (!nhpr.hasParam("ctrl_interpolation_time") && !nh.getParam("ctrl_interpolation_time", ctrl_interpolation_time))
-        ROS_ERROR("missing mandatory private parameter 'ctrl_interpolation_time!");
-
-    if (!nh.hasParam("opt_interpolation_time") && !nh.getParam("opt_interpolation_time", opt_interpolation_time))
-        ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
-
-    ctrl_interpolation_time = 0.01;
+//    opt_interpolation_time = nhpr.param("opt_interpolation_time", 0.0);
+//    ctrl_interpolation_time = nhpr.param("ctrl_interpolation_time", 0.0);
     opt_interpolation_time = 0.1;
+    ctrl_interpolation_time = 0.01;
+
+    if (opt_interpolation_time == 0)
+    {
+        ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
+        throw std::runtime_error("opt_interpolation_time!");
+    }
+
+    if (ctrl_interpolation_time == 0)
+    {
+        ROS_ERROR("missing mandatory private parameter 'ctrl_interpolation_time!");
+        throw std::runtime_error("ctrl_interpolation_time!");
+    }
+
     int r;
     if (ctrl_interpolation_time <= opt_interpolation_time)
         r = int(1/ctrl_interpolation_time);

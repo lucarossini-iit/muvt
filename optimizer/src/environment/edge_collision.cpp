@@ -78,8 +78,8 @@ void EdgeCollision::computeError()
     {
         double distance = 0;
         distance += i.getDistance();
-        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
-        {
+//        if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
+//        {
             if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
             {
                 // use higher distance threshold to compensate inaccuracies of the camera
@@ -100,7 +100,7 @@ void EdgeCollision::computeError()
 //                std::cout << i.getLinkNames().first << "  " << i.getLinkNames().second << "   " << i.getDistance() << std::endl;
             }
         index++;
-        }
+//        }
     }
 }
 

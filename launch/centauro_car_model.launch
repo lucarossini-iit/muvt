@@ -11,18 +11,18 @@
     <arg name="ctrl_interpolation_time" value="0.01"/>
 
     <!-- xbotcore -->
-<!--    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>-->
+    <node if="$(arg gazebo)" pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
 
-<!--    <group if="$(arg vision)">-->
+    <group if="$(arg vision)">
         <!-- vision node -->
-<!--        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>-->
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
 
         <!-- robot_body_filter node -->
-<!--        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">-->
-<!--          <rosparam command="load" file="$(find robot_body_filter_node)/config/config.yaml" />-->
-<!--          <remap from="cloud_in" to="/voxel" />-->
-<!--        </node>-->
-<!--    </group>-->
+        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">
+          <rosparam command="load" file="$(find robot_body_filter_node)/config/config.yaml" />
+          <remap from="cloud_in" to="/voxel" />
+        </node>
+    </group>
 
 <!--    <group if="$(arg optimizer)">-->
         <param name="cartesian_stack" textfile="$(find teb_test)/config/problem/centauro_stack.yaml"/>

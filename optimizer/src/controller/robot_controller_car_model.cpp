@@ -3,6 +3,8 @@
 using namespace XBot::HyperGraph::Controller;
 
 extern int num_steps, trajectory_index, old_trajectory_index, index_reference;
+Eigen::VectorXd q_fb_old;
+bool start;
 
 RobotControllerCarModel::RobotControllerCarModel(std::string ns):
 _nh(ns),
@@ -21,6 +23,8 @@ _time(0.0)
 
     _trj_index_pub = _nh.advertise<std_msgs::Int16>("optimizer/trajectory_index", 10, true);
     _postural_pub = _nh.advertise<sensor_msgs::JointState>("/cartesian/Postural/reference", 10, true);
+
+    bool start = false;
 }
 
 void RobotControllerCarModel::trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg)
@@ -93,6 +97,13 @@ void RobotControllerCarModel::init_load_model()
     {
         _robot = RobotInterface::getRobot(cfg);
         _robot->setControlMode(ControlMode::Position());
+        std::map<std::string, ControlMode> control_map;
+        _robot->getControlMode(control_map);
+        control_map["j_wheel_1"] = ControlMode::Velocity();
+        control_map["j_wheel_2"] = ControlMode::Velocity();
+        control_map["j_wheel_3"] = ControlMode::Velocity();
+        control_map["j_wheel_4"] = ControlMode::Velocity();
+        _robot->setControlMode(control_map);
     }
     catch(std::runtime_error& e)
     {
@@ -114,18 +125,23 @@ void RobotControllerCarModel::init_load_model()
         _ci_model->getRobotState("home", qhome);
         _ci_model->setJointPosition(qhome);
         _ci_model->update();
+
     }
     else
     {
         std::cout << "RobotInterface succesfully generated!" << std::endl;
-        _model->syncFrom(*_robot);
+        _ci_model->syncFrom(*_robot);
+        _ci_model->getJointPosition(q_fb_old);
     }
 }
 
 void RobotControllerCarModel::init_load_config()
 {
-    _opt_interpolation_time = _nhpr.param("opt_interpolation_time", 0.0);
-    _ctrl_interpolation_time = _nhpr.param("ctrl_interpolation_time", 0.0);
+//    _opt_interpolation_time = _nhpr.param("opt_interpolation_time", 0.0);
+//    _ctrl_interpolation_time = _nhpr.param("ctrl_interpolation_time", 0.0);
+
+    _opt_interpolation_time = 0.1;
+    _ctrl_interpolation_time = 0.01;
 
     if (_opt_interpolation_time == 0)
     {
@@ -185,13 +201,23 @@ void RobotControllerCarModel::run()
     if(_robot)
     {
         _robot->sense();
-        _model->syncFrom(*_robot);
+        _ci_model->setJointPosition(q_fb_old);
+        _ci_model->update();
     }
-    else
-        _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));
+
+    _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));
 
     if (_replay)
     {
+        if (!start)
+        {
+            Eigen::VectorXd q_robot;
+            _robot->getJointPosition(q_robot);
+            q_fb_old.tail(q_robot.size()) = q_robot;
+            _ci_model->setJointPosition(q_fb_old);
+            _ci_model->update();
+            start = true;
+        }
         // if the optimizer interpolation time is lower than the controller interpolation time
         // the robot is moved using the _opt_interpolation_time
         if (_opt_interpolation_time <= _ctrl_interpolation_time)
@@ -287,11 +313,17 @@ void RobotControllerCarModel::run()
             q_old += ci_qdot * _ctrl_interpolation_time;
             _ci_model->eigenToMap(q_old, ci_joint_map);
 
+            XBot::JointNameMap joint_vel_map;
+            _ci_model->eigenToMap(ci_qdot, joint_vel_map);
+
             // move
             if (_robot)
             {
-                _robot->setPositionReference(joint_map);
+                _robot->setPositionReference(ci_joint_map);
+                _robot->setVelocityReference(joint_vel_map);
                 _robot->move();
+//                _model->setJointPosition(ci_joint_map);
+//                _model->update();
             }
             else
             {
@@ -299,6 +331,7 @@ void RobotControllerCarModel::run()
                 _ci_model->update();
             }
             _time += _ctrl_interpolation_time;
+            q_fb_old = q_old;
         }
     }
     else
