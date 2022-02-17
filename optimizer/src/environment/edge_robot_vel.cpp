@@ -8,7 +8,10 @@ BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos>(),
 _model(model)
 {
     _model->getVelocityLimits(_vel_max);
-    _vel_max /= 5;
+//    _vel_max /= 5;
+    double vel_max_fb_tr = 0.5;
+    double vel_max_fb_or = 0.1;
+    _vel_max(0) = vel_max_fb_tr; _vel_max(1) = vel_max_fb_tr; _vel_max(2) = vel_max_fb_tr; _vel_max(3) = vel_max_fb_or; _vel_max(4) = vel_max_fb_or; _vel_max(5) = vel_max_fb_or;
     _vel_min = -_vel_max;
 }
 
@@ -33,7 +36,7 @@ void EdgeRobotVel::computeError()
    _error.setZero(v1->estimateDimension());
 
     double S = 2, Sc = 10;
-    diff = (q2/0.05 - q1/0.05);
+    diff = (q2/0.1 - q1/0.1);
     _vel = diff;
 
     for (int i = 0; i < q1.size(); i++)

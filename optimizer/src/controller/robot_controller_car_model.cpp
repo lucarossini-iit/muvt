@@ -9,7 +9,8 @@ _nh(ns),
 _nhpr("~"),
 _replay(false),
 _index(0),
-_incr(1)
+_incr(1),
+_time(0.0)
 {
     init_load_model();
     init_load_config();
@@ -19,6 +20,7 @@ _incr(1)
     _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotControllerCarModel::trajectory_callback, this);
 
     _trj_index_pub = _nh.advertise<std_msgs::Int16>("optimizer/trajectory_index", 10, true);
+    _postural_pub = _nh.advertise<sensor_msgs::JointState>("/cartesian/Postural/reference", 10, true);
 }
 
 void RobotControllerCarModel::trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg)
@@ -91,11 +93,6 @@ void RobotControllerCarModel::init_load_model()
     {
         _robot = RobotInterface::getRobot(cfg);
         _robot->setControlMode(ControlMode::Position());
-//        auto fixed_joint_map = _nhpr.param<std::map<std::string, double>>("fixed_joints", std::map<std::string, double>());
-//        std::map<std::string, XBot::ControlMode> idle_joint_map;
-//        for(auto pair : fixed_joint_map)
-//            idle_joint_map.insert(std::make_pair(pair.first, XBot::ControlMode::Idle()));
-//        _robot->setControlMode(idle_joint_map);
     }
     catch(std::runtime_error& e)
     {
@@ -103,9 +100,8 @@ void RobotControllerCarModel::init_load_model()
     }
 
     _model = XBot::ModelInterface::getModel(cfg_reduced);
-    _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_model);
-
     _ci_model = XBot::ModelInterface::getModel(cfg);
+    _rspub = std::make_shared<XBot::Cartesian::Utils::RobotStatePublisher>(_ci_model);
 
     if(!_robot)
     {
@@ -114,6 +110,10 @@ void RobotControllerCarModel::init_load_model()
         _model->getRobotState("home", qhome);
         _model->setJointPosition(qhome);
         _model->update();
+        qhome.resize(_ci_model->getJointNum());
+        _ci_model->getRobotState("home", qhome);
+        _ci_model->setJointPosition(qhome);
+        _ci_model->update();
     }
     else
     {
@@ -124,17 +124,19 @@ void RobotControllerCarModel::init_load_model()
 
 void RobotControllerCarModel::init_load_config()
 {
+    _opt_interpolation_time = _nhpr.param("opt_interpolation_time", 0.0);
+    _ctrl_interpolation_time = _nhpr.param("ctrl_interpolation_time", 0.0);
 
-    if (!_nhpr.hasParam("opt_interpolation_time") && !_nhpr.getParam("opt_interpolation_time", _opt_interpolation_time))
+    if (_opt_interpolation_time == 0)
     {
         ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
-//        throw std::runtime_error("opt_interpolation_time!");
+        throw std::runtime_error("opt_interpolation_time!");
     }
 
-    if (!_nhpr.hasParam("ctrl_interpolation_time") && !_nhpr.getParam("ctrl_interpolation_time", _ctrl_interpolation_time))
+    if (_ctrl_interpolation_time == 0)
     {
         ROS_ERROR("missing mandatory private parameter 'ctrl_interpolation_time!");
-//        throw std::runtime_error("ctrl_interpolation_time!");
+        throw std::runtime_error("ctrl_interpolation_time!");
     }
 
     std::string cartesian_stack;
@@ -153,9 +155,6 @@ void RobotControllerCarModel::init_load_config()
     _ci = XBot::Cartesian::CartesianInterfaceImpl::MakeInstance("OpenSot",
                                                         ik_prob, ci_ctx);
 
-    _opt_interpolation_time = 0.1;
-    _ctrl_interpolation_time = 0.01;
-
     // interpolator data
     num_steps = int(_opt_interpolation_time / _ctrl_interpolation_time);
     trajectory_index = 1;
@@ -167,6 +166,9 @@ bool RobotControllerCarModel::velocity_check(Eigen::VectorXd q_init, Eigen::Vect
     Eigen::VectorXd qdot = (q_fin - q_init)/(_ctrl_interpolation_time * num_steps);
     Eigen::VectorXd qdot_max;
     _model->getVelocityLimits(qdot_max);
+    double vel_max_fb_tr = 5.0;
+    double vel_max_fb_or = 1.0;
+    qdot_max(0) = vel_max_fb_tr; qdot_max(1) = vel_max_fb_tr; qdot_max(2) = vel_max_fb_tr; qdot_max(3) = vel_max_fb_or; qdot_max(4) = vel_max_fb_or; qdot_max(5) = vel_max_fb_or;
     qdot_max /= 10;
 
     for (int i = 0; i < qdot.size(); i++)
@@ -258,22 +260,32 @@ void RobotControllerCarModel::run()
             _model->eigenToMap(q, joint_map);
 
             // once computed the q_ref, find the new reference for the wheels
-//            XBot::JointNameMap ci_joint_map;
-//            _ci_model->getJointPosition(ci_joint_map);
-//            for (auto pair : joint_map)
-//                ci_joint_map[pair.first] = pair.second;
-//            _ci_model->setJointPosition(ci_joint_map);
-//            _ci_model->update();
-//            auto time = ros::Time::now();
-//            _ci->reset(time.toSec());
-//            _ci->update(time.toSec(), _ctrl_interpolation_time);
-//            Eigen::VectorXd ci_qdot, ci_q;
-//            _ci_model->mapToEigen(ci_joint_map, ci_q);
-//            _ci_model->getJointVelocity(ci_qdot);
-//            ci_q += ci_qdot * _ctrl_interpolation_time;
-//            _model->eigenToMap(ci_q, ci_joint_map);
-//            for (auto& pair : joint_map)
-//                pair.second = ci_joint_map[pair.first];
+            // Retrieve joint position
+            XBot::JointNameMap ci_joint_map, old_ci_joint_map;
+            Eigen::VectorXd q_new, q_old;
+            _ci_model->getJointPosition(ci_joint_map);
+            _ci_model->getJointPosition(old_ci_joint_map);
+
+            // replace optimized joint positions in the full q
+            for (auto pair : joint_map)
+                ci_joint_map[pair.first] = pair.second;
+
+            // set references
+            _ci_model->mapToEigen(ci_joint_map, q_new);
+            _ci_model->mapToEigen(old_ci_joint_map, q_old);
+            auto task = _ci->getTask("Postural");
+            auto postural = std::dynamic_pointer_cast<XBot::Cartesian::PosturalTask>(task);
+            postural->setReferencePosture(q_new);
+
+            // compute
+            if (!_ci->update(_time, _ctrl_interpolation_time))
+                std::cout << "unable to solve" << std::endl;
+
+            // integrate
+            Eigen::VectorXd ci_qdot, ci_q;
+            _ci_model->getJointVelocity(ci_qdot);
+            q_old += ci_qdot * _ctrl_interpolation_time;
+            _ci_model->eigenToMap(q_old, ci_joint_map);
 
             // move
             if (_robot)
@@ -283,9 +295,10 @@ void RobotControllerCarModel::run()
             }
             else
             {
-                _model->setJointPosition(joint_map);
-                _model->update();
+                _ci_model->setJointPosition(ci_joint_map);
+                _ci_model->update();
             }
+            _time += _ctrl_interpolation_time;
         }
     }
     else

@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     // create trajectory;
     qstart = qhome;
     qgoal = qstart;
-    qgoal(0) += 6;
+    qgoal(0) += 4;
     XBot::HyperGraph::Simulator simulator(50, qstart, qgoal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
 
     auto configurations = simulator.getConfigurations();

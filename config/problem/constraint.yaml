@@ -1,8 +1,8 @@
 constraints:
     - collisions
-    # - joint_limits
-    # - velocity_limits
-    # - nominal_trajectory
+    - joint_limits
+    - velocity_limits
+    - nominal_trajectory
     # - trajectory_vel
     - kinematic
 
@@ -15,7 +15,7 @@ optimizer:
     num_local_vertices: 40
 
 nominal_trajectory:
-    weight: 0.1
+    weight: 1
     end_effectors:
         - "wheel_1"
         - "wheel_2"
@@ -23,7 +23,7 @@ nominal_trajectory:
         - "wheel_4"
 
 velocity_limits:
-    weight: 0.1
+    weight: 1
 
 trajectory_vel:
     weight: 0.01

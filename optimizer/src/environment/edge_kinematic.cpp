@@ -66,12 +66,9 @@ void EdgeKinematic::computeError()
     Eigen::Vector3d delta_pos = T.translation() - _T_ref.translation();
     // convert in millimiters
     delta_pos *= 1000;
-//    if (delta_pos(2) > 1)
-//        std::cout << "id: " << v1->id() << "  distal_link: " << _distal_link << "  -  pos:" << T.translation().transpose() << "   ref: " << _T_ref.translation().transpose() << "   delta: " << delta_pos.transpose() << std::endl;
+
     for (int i = 0; i < delta_pos.size(); i++)
         delta_pos(i) = pow(delta_pos(i), 2);
-
-//    delta_pos.lpNorm<1>();
 
     int ind = 0;
     for (auto index : _indices)
@@ -79,13 +76,4 @@ void EdgeKinematic::computeError()
         _error(ind) = delta_pos(index);
         ind++;
     }
-
-//    std::cout << _error.transpose()  << std::endl;
-
-//    std::cout << "_error: " << _error.transpose() << std::endl;
-
-//    if(delta_pos(2) > 0.1)
-//    {
-//        std::cout << "id: " << v1->id() << "   ref: " << _T_ref.translation().z() << "  current: " << T.translation().z() << "  error: " << delta_pos(2) << std::endl;
-//    }
 }

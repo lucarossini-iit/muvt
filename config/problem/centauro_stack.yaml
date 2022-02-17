@@ -3,7 +3,7 @@ solver_options:
     back_end: "osqp"
 
 stack:
-    - ["Waist", "Steering_FL", "Steering_FR", "Steering_HL","Steering_HR", "Postural"] #, "Gaze"]
+    - ["Steering_FL", "Steering_FR", "Steering_HL", "Steering_HR", "Postural"] #, "Gaze"]
     - ["Rolling_FL", "Rolling_FR", "Rolling_HL", "Rolling_HR"]
     #- ["Postural"]
 
@@ -157,7 +157,7 @@ RightArm:
 
 Postural:
     type: "Postural"
-    lambda: 0.01
+    lambda: 1
     disabled_joints:
       - ankle_yaw_1
       - ankle_yaw_2

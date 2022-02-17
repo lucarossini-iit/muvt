@@ -13,7 +13,7 @@ int main(int argc, char** argv)
         ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");
 
     ctrl_interpolation_time = 0.01;
-    opt_interpolation_time = 0.05;
+    opt_interpolation_time = 0.1;
     int r;
     if (ctrl_interpolation_time <= opt_interpolation_time)
         r = int(1/ctrl_interpolation_time);

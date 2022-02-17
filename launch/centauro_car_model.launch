@@ -58,7 +58,7 @@
         <node pkg="teb_test" type="robot_controller_car_model_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
             <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
             <param name="model_type" value="RBDL"/>
-            <param name="opt_interpolation_time" type="double" value="0.05"/>
+            <param name="opt_interpolation_time" type="double" value="0.1"/>
             <param name="ctrl_interpolation_time" type="double" value="0.01"/>
             <rosparam param="fixed_joints" command="load" file="$(find teb_test)/config/problem/fixed_joints.yaml"/>
         </node>
