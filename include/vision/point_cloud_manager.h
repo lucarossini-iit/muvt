@@ -49,6 +49,7 @@ public:
 private:
     void callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& msg);
     void callback_robot_filtered(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& msg);
+    void octomap_callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& msg);
 
     void voxelFiltering();
     void passThroughFilter();
@@ -60,7 +61,7 @@ private:
     void publishObjectMarkers();
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Subscriber _pc_sub, _pc_robot_filtered_sub;
+    ros::Subscriber _pc_sub, _pc_robot_filtered_sub, _octomap_sub;
     ros::Publisher _pc_voxel_pub, _pc_pass_through_pub, _pc_outlier_pub, _pc_planar_pub, _obj_pub, _ma_pub;
     ros::Publisher _time_pub;
     std::vector<ros::Publisher> _cc_pub;

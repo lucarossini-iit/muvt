@@ -15,13 +15,21 @@
 
     <group if="$(arg vision)">
         <!-- vision node -->
-        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435/D435_head_camera/depth/color/points"/>
+        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435i/D435i_camera/depth/color/points"/>
+<!--        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/velodyne_points"/>-->
+
+        <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+                <param name="resolution" value="0.05" />
+                <param name="frame_id" type="string" value="world" />
+                <param name="sensor_model/max_range" value="1.5" />
+                <remap from="cloud_in" to="/D435i/D435i_camera/depth/color/points" />
+        </node>
 
         <!-- robot_body_filter node -->
-        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">
+<!--        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">
           <rosparam command="load" file="$(find robot_body_filter_node)/config/config.yaml" />
           <remap from="cloud_in" to="/voxel" />
-        </node>
+        </node>-->
     </group>
 
 <!--    <group if="$(arg optimizer)">-->
@@ -55,7 +63,7 @@
         </node>
 
         <!-- robot control node -->
-        <node pkg="teb_test" type="robot_controller_car_model_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 5.0; $0 $@' ">
+        <node pkg="teb_test" type="robot_controller_car_model_node" name="robot_controller_node" output="screen" launch-prefix="bash -c 'sleep 7.0; $0 $@' ">
             <param name="is_model_floating_base" value="$(arg is_model_floating_base)"/>
             <param name="model_type" value="RBDL"/>
             <param name="opt_interpolation_time" type="double" value="0.1"/>

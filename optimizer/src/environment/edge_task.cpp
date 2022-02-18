@@ -80,11 +80,5 @@ void EdgeTask::computeError()
 
     Eigen::VectorXd diff = Eigen::VectorXd::Map(diff_vect.data(), diff_vect.size());
 
-    double S = 4;
-//    for (int i = 0; i < v->estimate().size(); i++)
-    for (int i = 0; i < diff.size(); i++)
-    {
-        double value = sqrt(pow(diff(i), S));
-        _error(i) = value;
-    }
+    _error = diff;
 }

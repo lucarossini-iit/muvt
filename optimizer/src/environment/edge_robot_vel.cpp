@@ -41,7 +41,7 @@ void EdgeRobotVel::computeError()
 
     for (int i = 0; i < q1.size(); i++)
     {
-        double value = pow(diff(i), S) + 1/pow(exp(diff(i) - _vel_min(i)), Sc) + pow(exp(diff(i) - _vel_max(i)), Sc) ;
+        double value = diff(i); // + 1/pow(exp(diff(i) - _vel_min(i)), Sc) + pow(exp(diff(i) - _vel_max(i)), Sc) ;
         _error(i) = value;
     }
 }

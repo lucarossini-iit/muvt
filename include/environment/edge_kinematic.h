@@ -3,6 +3,7 @@
 
 #include <XBotInterface/ModelInterface.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <Eigen/Geometry>
 
 #include <environment/unary_edge.h>
 #include <environment/vertex_robot_pos.h>
@@ -44,7 +45,7 @@ public:
 private:
     std::string _distal_link, _base_link;
     std::vector<int> _indices;
-    Eigen::Affine3d _T_ref;
+    Eigen::Affine3d _T_ref, _ref1, _ref2, _ref3, _ref4;
 
 };
 } }

@@ -8,15 +8,15 @@
 
 #include <environment/vertex_robot_pos.h>
 
- using namespace g2o;
+using namespace g2o;
 
- namespace XBot { namespace HyperGraph {
+namespace XBot { namespace HyperGraph {
 
- // The template argument defines the maximum number of link pairs of the robot and the number of DoFs of the robot
- class EdgeRobotVel : public BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos> {
- public:
-     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-     typedef BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos> BaseEdge;
+// The template argument defines the maximum number of link pairs of the robot and the number of DoFs of the robot
+class EdgeRobotVel : public BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos> {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    typedef BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos> BaseEdge;
 
      EdgeRobotVel(XBot::ModelInterface::Ptr model);
 

@@ -16,6 +16,7 @@
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 #include <sensor_msgs/JointState.h>
+#include <xbot_msgs/JointState.h>
 
 namespace XBot { namespace HyperGraph { namespace Controller {
 
@@ -32,14 +33,14 @@ private:
     void init_load_config();
     bool velocity_check(Eigen::VectorXd q_init, Eigen::VectorXd q_fin);
 
-//    void robot_callback(const ros::TimerEvent&);
+    void robot_callback(const xbot_msgs::JointStateConstPtr msg);
 
     void trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg);
 
     bool replay_service(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response & res);
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Subscriber _trj_sub;
+    ros::Subscriber _trj_sub, _xbot_sub;
     ros::Publisher _trj_index_pub, _postural_pub;
     ros::ServiceServer _replay_srv;
     trajectory_msgs::JointTrajectory _trajectory;

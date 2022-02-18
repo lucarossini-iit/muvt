@@ -65,7 +65,7 @@ void EdgeCollision::computeError()
     _model->update();
 
     double eps = 0.1;
-    double S = 0.0025;
+    double S = 0.05;
     double r = 0.0;
     int n = 2;
 
@@ -93,6 +93,11 @@ void EdgeCollision::computeError()
 
             if (distance > r + eps)
                 _error(index) = 0;
+            else if (distance < 0 )
+            {
+                double value = -4*(r + eps)/S * distance;
+                _error(index) = value;
+            }
             else
             {
                 double value = pow((-distance-(-r-eps))/S, n);

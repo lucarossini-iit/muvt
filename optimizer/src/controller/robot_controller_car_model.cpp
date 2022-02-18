@@ -21,16 +21,30 @@ _time(0.0)
     _replay_srv = _nh.advertiseService("replay_service", &RobotControllerCarModel::replay_service, this);
 
     _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotControllerCarModel::trajectory_callback, this);
+    _xbot_sub = _nh.subscribe<xbot_msgs::JointStateConstPtr>("/xbotcore/joint_states", 10, &RobotControllerCarModel::robot_callback, this);
 
     _trj_index_pub = _nh.advertise<std_msgs::Int16>("optimizer/trajectory_index", 10, true);
     _postural_pub = _nh.advertise<sensor_msgs::JointState>("/cartesian/Postural/reference", 10, true);
 
-    bool start = false;
+    start = false;
+
+    velodyne_joint_pos = 0;
 }
 
 void RobotControllerCarModel::trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg)
 {
     _trajectory = *msg;
+}
+
+void RobotControllerCarModel::robot_callback(const xbot_msgs::JointStateConstPtr msg)
+{
+    XBot::JointNameMap joint_map;
+    for (int i = 0; i < msg->name.size(); i++)
+    {
+        joint_map[msg->name[i]] = msg->motor_position[i];
+    }
+
+    velodyne_joint_pos = joint_map["velodyne_joint"];
 }
 
 bool RobotControllerCarModel::replay_service(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
@@ -184,10 +198,10 @@ bool RobotControllerCarModel::velocity_check(Eigen::VectorXd q_init, Eigen::Vect
     Eigen::VectorXd qdot = (q_fin - q_init)/(_ctrl_interpolation_time * num_steps);
     Eigen::VectorXd qdot_max;
     _model->getVelocityLimits(qdot_max);
-    double vel_max_fb_tr = 5.0;
-    double vel_max_fb_or = 1.0;
+    double vel_max_fb_tr = 0.25;
+    double vel_max_fb_or = 0.2;
     qdot_max(0) = vel_max_fb_tr; qdot_max(1) = vel_max_fb_tr; qdot_max(2) = vel_max_fb_tr; qdot_max(3) = vel_max_fb_or; qdot_max(4) = vel_max_fb_or; qdot_max(5) = vel_max_fb_or;
-    qdot_max /= 10;
+    qdot_max /= 1;
 
     for (int i = 0; i < qdot.size(); i++)
         if(qdot(i) > qdot_max(i) || qdot(i) < -qdot_max(i))
@@ -203,15 +217,22 @@ void RobotControllerCarModel::run()
     if(_robot)
     {
         _robot->sense();
-        _ci_model->setJointPosition(q_fb_old);
-        _ci_model->update();
+        if(!start)
+        {
+            _ci_model->syncFrom(*_robot);
+        }
+        else
+        {
+            _ci_model->setJointPosition(q_fb_old);
+            _ci_model->update();
+        }
     }
 
     _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));
 
     if (_replay)
     {
-        if (!start)
+        if (!start && _robot)
         {
             Eigen::VectorXd q_robot;
             _robot->getJointPosition(q_robot);

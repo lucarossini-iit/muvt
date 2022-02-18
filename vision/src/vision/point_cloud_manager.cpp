@@ -12,11 +12,12 @@ _cloud_self_robot_filtered(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_without_outliers(new pcl::PointCloud<pcl::PointXYZRGB>),
 _cloud_planar_segmented(new pcl::PointCloud<pcl::PointXYZRGB>),
 _isCallbackDone(false),
-_frame_id("pelvis")
+_frame_id("world")
 {
     // Subscribe to point cloud topic
     _pc_sub = _nh.subscribe(topic_name, 1, &PointCloudManager::callback, this);
     _pc_robot_filtered_sub = _nh.subscribe("cloud_filtered", 1, &PointCloudManager::callback_robot_filtered, this);
+    _octomap_sub = _nh.subscribe("octomap_point_cloud_centers", 1, &PointCloudManager::octomap_callback, this);
 
     // Advertise object topic
     _obj_pub = _nh.advertise<teb_test::ObjectMessageString>("optimizer/obstacles", 10, true);
@@ -34,8 +35,12 @@ void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &m
     // the lookupTransform in the callback)
     try
     {
-        _listener.waitForTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.3));
-        _listener.lookupTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), _transform);
+//        _listener.waitForTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), ros::Duration(0.3));
+//        _listener.lookupTransform(_frame_id, "D435_head_camera_color_optical_frame", ros::Time(0), _transform);
+//        _listener.waitForTransform(_frame_id, "velodyne_calib", ros::Time(0), ros::Duration(0.3));
+//        _listener.lookupTransform(_frame_id, "velodyne_calib", ros::Time(0), _transform);
+        _listener.waitForTransform(_frame_id, "D435i_camera_color_optical_frame", ros::Time(0), ros::Duration(10.0));
+        _listener.lookupTransform(_frame_id, "D435i_camera_color_optical_frame", ros::Time(0), _transform);
     }
     catch (tf::TransformException ex)
     {
@@ -58,6 +63,11 @@ void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &m
         _isCallbackDone = true;
 }
 
+void PointCloudManager::octomap_callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
+{
+    *_point_cloud += *msg;
+}
+
 void PointCloudManager::callback_robot_filtered(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
 {
     _cloud_self_robot_filtered = msg;
@@ -74,7 +84,7 @@ void PointCloudManager::voxelFiltering()
             // Create the filtering object: downsample the dataset using a leaf size of 1cm
             pcl::VoxelGrid<pcl::PointXYZRGB> vg;
             vg.setInputCloud (_point_cloud);
-            vg.setLeafSize (0.05, 0.05, 0.05);
+            vg.setLeafSize (0.02, 0.02, 0.02);
             auto tic = std::chrono::high_resolution_clock::now();
             vg.filter (*_cloud_voxel_filtered);
             auto toc = std::chrono::high_resolution_clock::now();
@@ -126,19 +136,25 @@ void PointCloudManager::clusterExtraction()
 
         // planar segmentation
 //        if (_cloud_pass_through_filtered->size() > 0)
-//        {
-//            auto tic_seg = std::chrono::high_resolution_clock::now();
+//        if (_point_cloud->size() > 0)
+        if(_cloud_voxel_filtered->size() > 0)
+        {
+            auto tic_seg = std::chrono::high_resolution_clock::now();
 //            planarSegmentation(_cloud_pass_through_filtered, _cloud_planar_segmented);
-//           auto toc_seg = std::chrono::high_resolution_clock::now();
-//            std::chrono::duration<float> fsec_seg = toc_seg - tic_seg;
-//            _times.data.push_back(fsec_seg.count());
-//        }
+//            planarSegmentation(_point_cloud, _cloud_planar_segmented);
+            planarSegmentation(_cloud_voxel_filtered, _cloud_planar_segmented);
+            auto toc_seg = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<float> fsec_seg = toc_seg - tic_seg;
+            _times.data.push_back(fsec_seg.count());
+        }
 
         // outliers statistical removal
-        if (_cloud_pass_through_filtered->size() > 0)
+//        if (_cloud_pass_through_filtered->size() > 0)
+        if (_cloud_planar_segmented->size() > 0)
         {
             auto tic_out = std::chrono::high_resolution_clock::now();
-            outlierRemoval(_cloud_pass_through_filtered, _cloud_without_outliers);
+//            outlierRemoval(_cloud_pass_through_filtered, _cloud_without_outliers);
+            outlierRemoval(_cloud_planar_segmented, _cloud_without_outliers);
             auto toc_out = std::chrono::high_resolution_clock::now();
             std::chrono::duration<float> fsec_out = toc_out - tic_out;
             _times.data.push_back(fsec_out.count());
@@ -206,9 +222,9 @@ void PointCloudManager::outlierRemoval(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in
     // Create the filtering object
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud (input);
-    sor.setMeanK (5);
+    sor.setMeanK(50);
     sor.setStddevMulThresh (1.0);
-    sor.filter (*output);
+    sor.filter(*output);
 }
 
 void PointCloudManager::planarSegmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output)
@@ -351,7 +367,7 @@ void PointCloudManager::run()
     _objects.objects.clear();
 
     voxelFiltering();
-    passThroughFilter();
+//    passThroughFilter();
     clusterExtraction();
     for (int i = 0; i < _transforms.size(); i++)
     {        

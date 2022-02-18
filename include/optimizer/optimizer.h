@@ -40,6 +40,7 @@
 #include <environment/obstacle.h>
 #include <environment/edge_trajectory_vel.h>
 #include <environment/edge_kinematic.h>
+#include <environment/edge_postural.h>
 
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>

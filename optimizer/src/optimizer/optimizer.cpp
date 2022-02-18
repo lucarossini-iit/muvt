@@ -317,7 +317,7 @@ void Optimizer::init_load_edges()
                 {
                     auto e_vel = new EdgeRobotVel(_model);
                     Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-                    info.setZero(); info *= weight; // info(0,0) = 0; info(1,1) = 1000000; info(2,2) = 100000000; info(3,3) = 1000000; info(4,4) = 1000000; info(5,5) = 1000000;
+                    info.setIdentity(); info *= weight;  info(0,0) = 0.1; info(1,1) = 0.1; info(2,2) = 0.1; info(3,3) = 0.1; info(4,4) = 0.1; info(5,5) = 0.1;
                     e_vel->setInformation(info);
                     e_vel->vertices()[0] = _optimizer.vertex(i);
                     e_vel->vertices()[1] = _optimizer.vertex(i+1);
@@ -417,7 +417,7 @@ void Optimizer::init_load_edges()
         else if (vc_name == "kinematic")
         {
             YAML_PARSE_OPTION(_optimizer_config[vc_name], distal_links, std::vector<std::string>, {});
-            std::vector<int> default_indices {0, 1, 2};
+            std::vector<int> default_indices {0, 1, 2, 3, 4, 5};
 
             for (auto link : distal_links)
             {
@@ -425,21 +425,47 @@ void Optimizer::init_load_edges()
                 YAML_PARSE_OPTION(_optimizer_config[vc_name][link], weight, double, 1);
                 for (int i = 0; i < _vertices.size(); i++)
                 {
+//                    if (weight.empty())
+//                    {
+//                        weight.resize(indices.size());
+//                        for (auto& w : weight)
+//                            w = 1;
+//                    }
+
                     auto e_kin = new EdgeKinematic(_model);
-                    e_kin->setIndices(indices);
+//                    for (auto index : indices)
+//                        std::cout << index << std::endl;
                     Eigen::MatrixXd info(indices.size(), indices.size());
                     info.setIdentity();
                     info *= weight;
+                    e_kin->setIndices(indices);
+                    e_kin->vertices()[0] = _optimizer.vertex(i);
                     e_kin->setInformation(info);
                     e_kin->setDistalLink(link);                
                     Eigen::Affine3d T;
                     _model->setJointPosition(_vertices[i]);
                     _model->update();
-                    _model->getPose(link, T);
-                    e_kin->setReference(T);
-                    e_kin->vertices()[0] = _optimizer.vertex(i);
+                    if(link != "com")
+                        _model->getPose(link, T);
+                    e_kin->setReference(T);                    
                     _optimizer.addEdge(e_kin);
                 }
+            }
+        }       
+        else if (vc_name == "postural")
+        {
+            YAML_PARSE_OPTION(_optimizer_config[vc_name], weight, double, 1);
+            for (int i = 0; i < _vertices.size(); i++)
+            {
+                auto e_postural = new EdgePostural(_model);
+                Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
+                info.setIdentity();
+                info *= weight;
+                e_postural->setInformation(info);
+                e_postural->vertices()[0] = _optimizer.vertex(i);
+                e_postural->resize();
+                e_postural->setReference(_vertices[i]);
+                _optimizer.addEdge(e_postural);
             }
         }
         else
@@ -702,7 +728,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     obstacle obs;
     obs.position = position;
     obs.orientation.coeffs() << 0, 0, 0, 1;
-    obs.size << 0.5, 0.1, 0.1;
+    obs.size << 0.5, 0.5, 0.5;
     obs.id = _obstacles.size();
     _obstacles.push_back(obs);
     update_edges();

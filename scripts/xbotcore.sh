@@ -1,3 +1,3 @@
 #!/bin/bash
-sleep 4
+sleep 6
 xbot2-core -S

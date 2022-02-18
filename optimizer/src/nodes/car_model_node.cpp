@@ -57,8 +57,8 @@ int main(int argc, char** argv)
     // create trajectory;
     qstart = qhome;
     qgoal = qstart;
-    qgoal(0) += 4;
-    XBot::HyperGraph::Simulator simulator(50, qstart, qgoal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
+    qgoal(0) += 10;
+    XBot::HyperGraph::Simulator simulator(100, qstart, qgoal, XBot::HyperGraph::Simulator::ScenarioType::ROBOTPOS);
 
     auto configurations = simulator.getConfigurations();
     std::vector<Eigen::VectorXd> q_vect;
