@@ -148,6 +148,11 @@ void Optimizer::update_kinetic_edge_reference_callback(const std_msgs::Float32Co
     }
 }
 
+void Optimizer::octomap_callback(const octomap_msgs::OctomapWithPoseConstPtr msg)
+{
+    _octomap = msg;
+}
+
 void Optimizer::update_edges()
 {
     auto vertices = _optimizer.vertices();
@@ -233,12 +238,13 @@ void Optimizer::init_load_config()
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
     _trj_index_sub = _nh.subscribe("trajectory_index", 10, &Optimizer::update_local_vertices_callback, this);
     _edge_kin_sub = _nh.subscribe("kin_reference", 10, &Optimizer::update_kinetic_edge_reference_callback, this);
+    _octomap_sub = _nh.subscribe("octomap", 10, &Optimizer::octomap_callback, this);
 
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
-    _vertices_pub = _nh.advertise<std_msgs::Int32MultiArray>("vertices", 10, this);
-    _time_pub = _nh.advertise<std_msgs::Float32MultiArray>("time", 10, this);
-    _err_pub = _nh.advertise<std_msgs::Float32>("error", 10, this);
+    _vertices_pub = _nh.advertise<std_msgs::Int32MultiArray>("vertices", 10, true);
+    _time_pub = _nh.advertise<std_msgs::Float32MultiArray>("time", 10, true);
+    _err_pub = _nh.advertise<std_msgs::Float32>("error", 10, true);
     _init_time = ros::Time::now();
 }
 

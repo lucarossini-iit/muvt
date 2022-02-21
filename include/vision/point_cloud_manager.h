@@ -26,6 +26,7 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/octree/octree.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
@@ -34,6 +35,9 @@
 #include <teb_test/ObjectMessageString.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <octomap_msgs/OctomapWithPose.h>
+#include <octomap_msgs/conversions.h>
+#include <octomap_ros/conversions.h>
 
 namespace XBot { namespace HyperGraph { namespace Utils {
 
@@ -59,10 +63,11 @@ private:
     void removePointsBelowPlane(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input, pcl::PointCloud<pcl::PointXYZRGB>::Ptr output, pcl::ModelCoefficients::Ptr coefficients);
     void generateObjectMsg();
     void publishObjectMarkers();
+    void publishOctomap();
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _pc_sub, _pc_robot_filtered_sub, _octomap_sub;
-    ros::Publisher _pc_voxel_pub, _pc_pass_through_pub, _pc_outlier_pub, _pc_planar_pub, _obj_pub, _ma_pub;
+    ros::Publisher _pc_voxel_pub, _pc_pass_through_pub, _pc_outlier_pub, _pc_planar_pub, _obj_pub, _ma_pub, _octomap_pub;
     ros::Publisher _time_pub;
     std::vector<ros::Publisher> _cc_pub;
     std::string _frame_id;

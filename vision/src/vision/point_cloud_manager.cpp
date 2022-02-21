@@ -27,6 +27,7 @@ _frame_id("world")
     _pc_outlier_pub = _nh.advertise<pcl::PointCloud<pcl::PointXYZRGB>>("outlier", 10, true);
     _ma_pub = _nh.advertise<visualization_msgs::MarkerArray>("markers", 10, true);
     _time_pub = _nh.advertise<std_msgs::Float64MultiArray>("times", 10, true);
+    _octomap_pub = _nh.advertise<octomap_msgs::OctomapWithPose>("optimizer/octomap", 10, true);
 }
 
 void PointCloudManager::callback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &msg)
@@ -357,6 +358,30 @@ void PointCloudManager::publishObjectMarkers()
         }
         _ma_pub.publish(ma);
     }
+}
+
+void PointCloudManager::publishOctomap()
+{
+        // create pcl octree - ultra fast
+    pcl::octree::OctreePointCloudVoxelCentroid<pcl::PointXYZRGB> octree(0.02);
+    octree.setInputCloud(_cloud_without_outliers);
+    octree.addPointsFromInputCloud();
+    std::vector<pcl::PointXYZRGB, Eigen::aligned_allocator<pcl::PointXYZRGB> > voxel_centers;
+    octree.getOccupiedVoxelCenters(voxel_centers);
+
+    // create octomap instance from pcl octree
+    octomap::OcTree final_octree(0.02);
+    for (const auto & voxel_center: voxel_centers) {
+        final_octree.updateNode(voxel_center.x, voxel_center.y, voxel_center.z, true,false);
+    }
+    final_octree.updateInnerOccupancy();
+
+    octomap_msgs::OctomapWithPose octomap;
+    octomap.header.frame_id = _frame_id;
+    octomap.header.stamp = ros::Time::now();
+    octomap_msgs::fullMapToMsg(final_octree, octomap.octomap);
+
+    _octomap_pub.publish(octomap);
 }
 
 void PointCloudManager::run()

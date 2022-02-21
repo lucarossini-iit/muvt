@@ -50,6 +50,7 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Float32.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <octomap_msgs/OctomapWithPose.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <teb_test/ObjectMessageString.h>
 #include <teb_test/SetObstacle.h>
@@ -90,9 +91,10 @@ private:
     void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
     void update_local_vertices_callback(const std_msgs::Int16ConstPtr& msg);
     void update_kinetic_edge_reference_callback(const std_msgs::Float32ConstPtr& msg);
+    void octomap_callback(const octomap_msgs::OctomapWithPoseConstPtr msg);
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Subscriber _obj_sub, _trj_index_sub, _edge_kin_sub;
+    ros::Subscriber _obj_sub, _trj_index_sub, _edge_kin_sub, _octomap_sub;
     ros::Publisher _sol_pub, _ee_trj_pub, _vertices_pub, _time_pub, _err_pub;
     ros::ServiceServer _create_obs_srv;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
@@ -110,6 +112,7 @@ private:
     bool _isJointCallbackDone;
     std::vector<double> _time_vector;
     ros::Time _init_time;
+    octomap_msgs::OctomapWithPoseConstPtr _octomap;
 };
 
 }}

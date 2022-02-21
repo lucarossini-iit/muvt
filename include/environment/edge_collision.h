@@ -10,6 +10,7 @@
 #include <environment/unary_edge.h>
 #include <environment/vertex_robot_pos.h>
 #include <environment/obstacle.h>
+#include <octomap_msgs/OctomapWithPose.h>
 
 using namespace g2o;
 
@@ -39,7 +40,7 @@ public:
         return os.good();
     }
 
-    void setObstacles(obstacles obs);
+    void setObstacles(const obstacles obs, const octomap_msgs::OctomapWithPosePtr octomap = nullptr);
     void resize(int size);
     void clear();
     void computeError();
