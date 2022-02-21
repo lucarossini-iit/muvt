@@ -74,6 +74,7 @@ void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg
 
 void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &msg)
 {
+    _active_vertices.clear();
     if (_vertices.size() == 0)
     {
         ROS_WARN("missing vertices!");
@@ -87,15 +88,14 @@ void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &ms
     }
 
     // find active vertices
-    std::vector<int> active_vertices;
     if(msg->data >= old_trajectory_index)
     {
         for (int i = 0; i < _num_local_vertices; i++)
         {
             if((msg->data + i) > _vertices.size()-1)
-                active_vertices.push_back(_vertices.size()-1 - i);
+                _active_vertices.push_back(_vertices.size()-1 - i);
             else
-                active_vertices.push_back(msg->data + i);
+                _active_vertices.push_back(msg->data + i);
         }
     }
     else
@@ -103,9 +103,9 @@ void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &ms
         for (int i = 0; i < _num_local_vertices; i++)
         {
             if ((msg->data - i) < 0)
-                active_vertices.push_back(i);
+                _active_vertices.push_back(i);
             else
-                active_vertices.push_back(msg->data - i);
+                _active_vertices.push_back(msg->data - i);
         }
     }
     auto vertices = _optimizer.vertices();
@@ -118,7 +118,7 @@ void Optimizer::update_local_vertices_callback(const std_msgs::Int16ConstPtr &ms
     }
 
     // active the computed vertices
-    for (auto index : active_vertices)
+    for (auto index : _active_vertices)
     {
         auto vertex = dynamic_cast<VertexRobotPos*>(vertices[index]);
         vertex->setFixed(false);
@@ -149,16 +149,6 @@ void Optimizer::update_kinetic_edge_reference_callback(const std_msgs::Float32Co
             }
         }
     }
-}
-
-void Optimizer::octomap_callback(const octomap_msgs::OctomapConstPtr msg)
-{
-//    _octomap->header.frame_id = "world";
-//    _octomap->header.stamp = ros::Time::now();
-    _octomap.octomap = *msg;
-    _octomap.header = msg->header;
-    _octomap.origin.position.x = 0; _octomap.origin.position.y = 0; _octomap.origin.position.z = 0;
-    _octomap.origin.orientation.x = 0; _octomap.origin.orientation.y = 0; _octomap.origin.orientation.z = 0; _octomap.origin.orientation.w = 1;
 }
 
 void Optimizer::update_edges()
@@ -239,6 +229,9 @@ void Optimizer::init_load_config()
     _num_local_vertices = num_local_vertices;
     old_trajectory_index = 0;
 
+    for (int i = 0; i <= _num_local_vertices; i++)
+        _active_vertices.push_back(i);
+
     _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("optimizer");
     _create_obs_srv = _nh.advertiseService("create_obstacle", &Optimizer::create_obstacle_service, this);
 
@@ -246,7 +239,6 @@ void Optimizer::init_load_config()
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
     _trj_index_sub = _nh.subscribe("trajectory_index", 10, &Optimizer::update_local_vertices_callback, this);
     _edge_kin_sub = _nh.subscribe("kin_reference", 10, &Optimizer::update_kinetic_edge_reference_callback, this);
-    _octomap_sub = _nh.subscribe("/octomap_binary", 10, &Optimizer::octomap_callback, this);
 
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
@@ -541,46 +533,75 @@ void Optimizer::optimize()
     _logger->add("opt_time", fsec.count());
 
     // publish residual error
-    std_msgs::Float32 err_msg;
+//    std_msgs::Float32 err_msg;
     double cum_err_coll = 0;
-    double cum_err_vel = 0;
-    for (auto vertex : vertices)
+//    double cum_err_vel = 0;
+
+//    err_msg.data = cum_err_coll;
+//    _err_pub.publish(err_msg);
+    if (!_active_vertices.empty())
     {
-        auto v = dynamic_cast<VertexRobotPos*>(vertex.second);
-
-        double error = 0;
-        for (auto edge : v->edges())
+        for (int ind : {_active_vertices[0], _active_vertices.back()})
         {
-            if (auto e = dynamic_cast<EdgeCollision*>(edge))
+            auto v = dynamic_cast<VertexRobotPos*>(_optimizer.vertex(ind));
+            for (auto edge : v->edges())
             {
-                e->computeError();
-                error = 0;
-                for (int i = 0; i < e->getError().size(); i++)
-                    error += e->getError()(i) * e->getError()(i);
-                cum_err_coll += std::sqrt(error);
-            }
+                if (auto e = dynamic_cast<EdgeKinematic*>(edge))
+                {
+                    e->computeError();
+                    if(e->getDistalLink() != "com")
+                    {
+                        std::string distal_link = e->getDistalLink();
+                        if (ind == _active_vertices[0])
+                        {
+                            _logger->add("kin_err_" + distal_link + "_z" + "_init", e->getError()(0));
+                            _logger->add("kin_err_" + distal_link + "_r" + "_init", e->getError()(1));
+                            _logger->add("kin_err_" + distal_link + "_p" + "_init", e->getError()(2));
+                        }
+                        else
+                        {
+                            _logger->add("kin_err_" + distal_link + "_z" + "_end", e->getError()(0));
+                            _logger->add("kin_err_" + distal_link + "_r" + "_end", e->getError()(1));
+                            _logger->add("kin_err_" + distal_link + "_p" + "_end", e->getError()(2));
+                        }
+                    }
+                    else
+                    {
+                        std::string distal_link = e->getDistalLink();
+                        if (ind == _active_vertices[0])
+                        {
+                            _logger->add("kin_err_" + distal_link + "_x" + "_init", e->getError()(0));
+                            _logger->add("kin_err_" + distal_link + "_y" + "_init", e->getError()(1));
+                        }
+                        else
+                        {
+                            _logger->add("kin_err_" + distal_link + "_x" + "_end", e->getError()(0));
+                            _logger->add("kin_err_" + distal_link + "_y" + "_end", e->getError()(1));
+                        }
+                    }
+                }
 
-            if (auto e = dynamic_cast<EdgeKinematic*>(edge))
-            {
-                e->computeError();
-                if(e->getDistalLink() != "com")
+                if (auto e = dynamic_cast<EdgeCollision*>(edge))
                 {
-                    std::string distal_link = e->getDistalLink();
-                    _logger->add("kin_err_" + distal_link + "_z", e->getError()(0));
-                    _logger->add("kin_err_" + distal_link + "_r", e->getError()(1));
-                    _logger->add("kin_err_" + distal_link + "_p", e->getError()(2));
-                }
-                else
-                {
-                    std::string distal_link = e->getDistalLink();
-                    _logger->add("kin_err_" + distal_link + "_x", e->getError()(0));
-                    _logger->add("kin_err_" + distal_link + "_y", e->getError()(1));
-                }
+                    double error;
+                    e->computeError();
+                    error = 0;
+                    for (int i = 0; i < e->getError().size(); i++)
+                        error += e->getError()(i) * e->getError()(i);
+                    cum_err_coll += std::sqrt(error);
+                    if (ind == *_active_vertices.begin())
+                    {
+                        _logger->add("coll_err_init", cum_err_coll);
+                    }
+                    else
+                    {
+                        _logger->add("coll_err_end", cum_err_coll);
+                    }
+                 }
             }
-        }    
+        }
     }
-    err_msg.data = cum_err_coll;
-    _err_pub.publish(err_msg);
+
 
     // save and publish solution
     trajectory_msgs::JointTrajectory solution;
