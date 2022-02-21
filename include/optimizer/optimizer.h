@@ -24,6 +24,7 @@
 #include <RobotInterfaceROS/ConfigFromParam.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
+#include <matlogger2/matlogger2.h>
 
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
@@ -65,6 +66,8 @@ public:
     Optimizer(std::vector<Eigen::VectorXd> vertices);
     Optimizer(std::vector<Eigen::VectorXd> vertices, XBot::ModelInterface::Ptr model);
 
+    ~Optimizer();
+
     void setVertices(std::vector<Eigen::VectorXd> vertices);
 
     void run();
@@ -100,6 +103,7 @@ private:
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
     ModelInterface::Ptr _model;
+    XBot::MatLogger2::Ptr _logger;
 
     YAML::Node _optimizer_config;
 

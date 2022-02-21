@@ -39,6 +39,7 @@ public:
     void setReference(Eigen::Affine3d T_ref);
     void setBaseLink(std::string base_link);
     void computeError();
+    Eigen::VectorXd getError() const {return _error;}
 //    void linearizeOplus();
 
 

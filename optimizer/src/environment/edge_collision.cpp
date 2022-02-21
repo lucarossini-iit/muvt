@@ -64,7 +64,7 @@ void EdgeCollision::computeError()
     _model->setJointPosition(v1->estimate());
     _model->update();
 
-    double eps = 0.1;
+    double eps = 0.05;
     double S = 0.05;
     double r = 0.0;
     int n = 2;
@@ -83,7 +83,7 @@ void EdgeCollision::computeError()
             if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
             {
                 // use higher distance threshold to compensate inaccuracies of the camera
-                eps = 0.1;
+                eps = 0.05;
             }
             else
             {

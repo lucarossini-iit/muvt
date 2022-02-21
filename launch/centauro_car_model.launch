@@ -18,17 +18,13 @@
         <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/D435i/D435i_camera/depth/color/points"/>
 <!--        <node pkg="teb_test" type="vision_node" name="vision_node" output="screen" args="/velodyne_points"/>-->
 
-        <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+        <!--<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
                 <param name="resolution" value="0.05" />
                 <param name="frame_id" type="string" value="world" />
                 <param name="sensor_model/max_range" value="1.5" />
-<!--                <param name="filter_ground" value="true"/>-->
-<!--                <param name="base_frame_id" value="world"/>-->
-<!--                <param name="ground_filter/distance" value = "0.1"/>-->
-<!--                <param name="ground_filter/plane_distance" value="-0.65"/>-->
                 <param name="latch" value="false"/>
                 <remap from="cloud_in" to="/planar" />
-        </node>
+        </node>-->
 
         <!-- robot_body_filter node -->
 <!--        <node pkg="robot_body_filter_node" type="robot_body_filter_node_node" name="robot_body_filter_node">

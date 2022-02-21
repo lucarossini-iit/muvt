@@ -43,6 +43,9 @@ _isJointCallbackDone(false)
     init_load_edges();
 
     frame_id = "world";
+    XBot::MatLogger2::Options opt;
+    opt.default_buffer_size = 1e7;
+    _logger = XBot::MatLogger2::MakeLogger("/tmp/optimizer_stats.mat", opt);
 }
 
 void Optimizer::object_callback(const teb_test::ObjectMessageStringConstPtr& msg)
@@ -534,6 +537,9 @@ void Optimizer::optimize()
     time.data.push_back(t.toSec());
     _time_pub.publish(time);
 
+    _logger->add("time", t.toSec());
+    _logger->add("opt_time", fsec.count());
+
     // publish residual error
     std_msgs::Float32 err_msg;
     double cum_err_coll = 0;
@@ -545,15 +551,31 @@ void Optimizer::optimize()
         double error = 0;
         for (auto edge : v->edges())
         {
-            if (dynamic_cast<EdgeCollision*>(edge) != nullptr)
+            if (auto e = dynamic_cast<EdgeCollision*>(edge))
             {
-                auto e = dynamic_cast<EdgeCollision*>(edge);
-                e->setObstacles(_obstacles);
                 e->computeError();
                 error = 0;
                 for (int i = 0; i < e->getError().size(); i++)
                     error += e->getError()(i) * e->getError()(i);
                 cum_err_coll += std::sqrt(error);
+            }
+
+            if (auto e = dynamic_cast<EdgeKinematic*>(edge))
+            {
+                e->computeError();
+                if(e->getDistalLink() != "com")
+                {
+                    std::string distal_link = e->getDistalLink();
+                    _logger->add("kin_err_" + distal_link + "_z", e->getError()(0));
+                    _logger->add("kin_err_" + distal_link + "_r", e->getError()(1));
+                    _logger->add("kin_err_" + distal_link + "_p", e->getError()(2));
+                }
+                else
+                {
+                    std::string distal_link = e->getDistalLink();
+                    _logger->add("kin_err_" + distal_link + "_x", e->getError()(0));
+                    _logger->add("kin_err_" + distal_link + "_y", e->getError()(1));
+                }
             }
         }    
     }
@@ -806,4 +828,9 @@ void Optimizer::interactive_markers_feedback(const visualization_msgs::Interacti
     int index = c - '0';
     _obstacles[index-1].position << feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z;
     update_edges();
+}
+
+Optimizer::~Optimizer()
+{
+    _logger.reset();
 }
