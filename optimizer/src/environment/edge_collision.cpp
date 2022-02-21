@@ -22,7 +22,7 @@ void EdgeCollision::clear()
     _cld->removeAllWorldCollision();
 }
 
-void EdgeCollision::setObstacles(const obstacles obs, const octomap_msgs::OctomapWithPosePtr octomap)
+void EdgeCollision::setObstacles(const obstacles obs)
 {
     _cld->removeAllWorldCollision();
 
@@ -51,8 +51,6 @@ void EdgeCollision::setObstacles(const obstacles obs, const octomap_msgs::Octoma
 
             wc.collision_objects.push_back(coll);
         }
-        if (octomap != nullptr)
-            wc.octomap = *octomap;
 
         _cld->setWorldCollisions(wc);
 //    }

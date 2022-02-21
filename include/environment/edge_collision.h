@@ -40,7 +40,7 @@ public:
         return os.good();
     }
 
-    void setObstacles(const obstacles obs, const octomap_msgs::OctomapWithPosePtr octomap = nullptr);
+    void setObstacles(const obstacles obs);
     void resize(int size);
     void clear();
     void computeError();

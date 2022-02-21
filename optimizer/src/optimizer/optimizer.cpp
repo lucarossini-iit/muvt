@@ -148,9 +148,14 @@ void Optimizer::update_kinetic_edge_reference_callback(const std_msgs::Float32Co
     }
 }
 
-void Optimizer::octomap_callback(const octomap_msgs::OctomapWithPoseConstPtr msg)
+void Optimizer::octomap_callback(const octomap_msgs::OctomapConstPtr msg)
 {
-    _octomap = msg;
+//    _octomap->header.frame_id = "world";
+//    _octomap->header.stamp = ros::Time::now();
+    _octomap.octomap = *msg;
+    _octomap.header = msg->header;
+    _octomap.origin.position.x = 0; _octomap.origin.position.y = 0; _octomap.origin.position.z = 0;
+    _octomap.origin.orientation.x = 0; _octomap.origin.orientation.y = 0; _octomap.origin.orientation.z = 0; _octomap.origin.orientation.w = 1;
 }
 
 void Optimizer::update_edges()
@@ -238,7 +243,7 @@ void Optimizer::init_load_config()
     _obj_sub = _nh.subscribe("obstacles", 10, &Optimizer::object_callback, this);
     _trj_index_sub = _nh.subscribe("trajectory_index", 10, &Optimizer::update_local_vertices_callback, this);
     _edge_kin_sub = _nh.subscribe("kin_reference", 10, &Optimizer::update_kinetic_edge_reference_callback, this);
-    _octomap_sub = _nh.subscribe("octomap", 10, &Optimizer::octomap_callback, this);
+    _octomap_sub = _nh.subscribe("/octomap_binary", 10, &Optimizer::octomap_callback, this);
 
     _sol_pub = _nh.advertise<trajectory_msgs::JointTrajectory>("solution", 10, true);
     _ee_trj_pub = _nh.advertise<visualization_msgs::MarkerArray>("trjectory", 1, true);
@@ -323,7 +328,7 @@ void Optimizer::init_load_edges()
                 {
                     auto e_vel = new EdgeRobotVel(_model);
                     Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-                    info.setIdentity(); info *= weight;  info(0,0) = 0.1; info(1,1) = 0.1; info(2,2) = 0.1; info(3,3) = 0.1; info(4,4) = 0.1; info(5,5) = 0.1;
+                    info.setIdentity(); info *= weight;  info(0,0) = 0; info(1,1) = 0; info(2,2) = 0; info(3,3) = 0; info(4,4) = 0; info(5,5) = 0;
                     e_vel->setInformation(info);
                     e_vel->vertices()[0] = _optimizer.vertex(i);
                     e_vel->vertices()[1] = _optimizer.vertex(i+1);
@@ -466,7 +471,7 @@ void Optimizer::init_load_edges()
                 auto e_postural = new EdgePostural(_model);
                 Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
                 info.setIdentity();
-                info *= weight;
+                info *= weight; info(0,0) = 0; info(1,1) = 0; info(2,2) = 0; info(3,3) = 0; info(4,4) = 0; info(5,5) = 0;
                 e_postural->setInformation(info);
                 e_postural->vertices()[0] = _optimizer.vertex(i);
                 e_postural->resize();

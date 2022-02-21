@@ -22,7 +22,12 @@
                 <param name="resolution" value="0.05" />
                 <param name="frame_id" type="string" value="world" />
                 <param name="sensor_model/max_range" value="1.5" />
-                <remap from="cloud_in" to="/D435i/D435i_camera/depth/color/points" />
+<!--                <param name="filter_ground" value="true"/>-->
+<!--                <param name="base_frame_id" value="world"/>-->
+<!--                <param name="ground_filter/distance" value = "0.1"/>-->
+<!--                <param name="ground_filter/plane_distance" value="-0.65"/>-->
+                <param name="latch" value="false"/>
+                <remap from="cloud_in" to="/planar" />
         </node>
 
         <!-- robot_body_filter node -->

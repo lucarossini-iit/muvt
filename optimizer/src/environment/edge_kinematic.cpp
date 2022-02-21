@@ -84,7 +84,7 @@ void EdgeKinematic::computeError()
         _model->getPose("wheel_2", T2);
         _model->getPose("wheel_3", T3);
         _model->getPose("wheel_4", T4);
-
+        _T_ref.translation() = (T1.translation() + T2.translation() + T3.translation() + T4.translation())/4;
 
         _model->getCOM(p_com);
 

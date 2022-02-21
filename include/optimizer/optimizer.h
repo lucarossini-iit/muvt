@@ -91,7 +91,7 @@ private:
     void interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
     void update_local_vertices_callback(const std_msgs::Int16ConstPtr& msg);
     void update_kinetic_edge_reference_callback(const std_msgs::Float32ConstPtr& msg);
-    void octomap_callback(const octomap_msgs::OctomapWithPoseConstPtr msg);
+    void octomap_callback(const octomap_msgs::OctomapConstPtr msg);
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _obj_sub, _trj_index_sub, _edge_kin_sub, _octomap_sub;
@@ -112,7 +112,7 @@ private:
     bool _isJointCallbackDone;
     std::vector<double> _time_vector;
     ros::Time _init_time;
-    octomap_msgs::OctomapWithPoseConstPtr _octomap;
+    octomap_msgs::OctomapWithPose _octomap;
 };
 
 }}
