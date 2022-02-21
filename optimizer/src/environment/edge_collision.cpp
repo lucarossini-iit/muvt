@@ -59,7 +59,7 @@ void EdgeCollision::setObstacles(const obstacles obs)
 void EdgeCollision::computeError()
 {
     int n_dof = _model->getJointNum();
-    const VertexRobotPos* v1 = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
+    VertexRobotPos* v1 = dynamic_cast<VertexRobotPos*>(_vertices[0]);
 
     _model->setJointPosition(v1->estimate());
     _model->update();
@@ -93,13 +93,19 @@ void EdgeCollision::computeError()
 
             if (distance > r + eps)
                 _error(index) = 0;
-            else if (distance < 0 )
-            {
-                double value = -4*(r + eps)/S * distance;
-                _error(index) = value;
-            }
             else
             {
+                // TODO: investigate random perturbation of the vertex when it get stuck in the obstacle (maybe should be done in optimizer.cpp)
+//                if (distance < 0)
+//                {
+//                    Eigen::VectorXd q_rand = v1->estimate();
+//                    q_rand.setRandom();
+//                    VertexRobotPos* v_rand = new VertexRobotPos();
+//                    v_rand->setDimension(_model->getJointNum());
+//                    v_rand->setEstimate(q_rand);
+//                    v_rand->setId(v1->id());
+//                    _vertices[0] = v_rand;
+//                }
                 double value = pow((-distance-(-r-eps))/S, n);
                 _error(index) = value;
 //                std::cout << i.getLinkNames().first << "  " << i.getLinkNames().second << "   " << i.getDistance() << std::endl;

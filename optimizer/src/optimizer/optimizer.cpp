@@ -328,7 +328,7 @@ void Optimizer::init_load_edges()
                 {
                     auto e_vel = new EdgeRobotVel(_model);
                     Eigen::MatrixXd info(_model->getJointNum(), _model->getJointNum());
-                    info.setIdentity(); info *= weight;  info(0,0) = 0; info(1,1) = 0; info(2,2) = 0; info(3,3) = 0; info(4,4) = 0; info(5,5) = 0;
+                    info.setIdentity(); info *= weight;  info(0,0) = 10; info(1,1) = 1000; info(2,2) = 1000; info(3,3) = 1000; info(4,4) = 1000; info(5,5) = 1000;
                     e_vel->setInformation(info);
                     e_vel->vertices()[0] = _optimizer.vertex(i);
                     e_vel->vertices()[1] = _optimizer.vertex(i+1);
@@ -348,7 +348,7 @@ void Optimizer::init_load_edges()
                 Eigen::MatrixXd info_t(end_effectors.size() * 3, end_effectors.size() * 3);
                 info_t.setIdentity();
                 if (i == 0 || i == _vertices.size() - 1)
-                    info_t *= weight;
+                    info_t *= 10000;
                 else
                     info_t *= weight;
                 e_t->setInformation(info_t);

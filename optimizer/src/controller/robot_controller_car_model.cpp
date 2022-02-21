@@ -18,6 +18,7 @@ _time(0.0)
     init_load_model();
     init_load_config();
 
+    _init_srv = _nh.advertiseService("init_service",  &RobotControllerCarModel::init_service, this);
     _replay_srv = _nh.advertiseService("replay_service", &RobotControllerCarModel::replay_service, this);
 
     _trj_sub = _nh.subscribe<trajectory_msgs::JointTrajectoryConstPtr>("optimizer/solution", 10, &RobotControllerCarModel::trajectory_callback, this);
@@ -45,6 +46,43 @@ void RobotControllerCarModel::robot_callback(const xbot_msgs::JointStateConstPtr
     }
 
     velodyne_joint_pos = joint_map["velodyne_joint"];
+}
+
+bool RobotControllerCarModel::init_service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    double T = 1;
+    double dt = 0.01;
+    Eigen::VectorXd q_init, q_fin, q_ref, qdot, ci_q;
+    _ci_model->getJointPosition(q_init);
+    q_ref = q_init;
+    ros::Rate rate(1/dt);
+
+    q_fin = Eigen::VectorXd::Map(_trajectory.points[0].positions.data(), _trajectory.points[0].positions.size());
+
+    for (int i = 0; i < T/dt; i++)
+    {
+        q_ref = q_init + ((q_fin - q_init) * i * dt / T);
+        _ci->setReferencePosture(q_ref);
+        _ci->update(i*dt/T, dt);
+        _ci_model->getJointVelocity(qdot);
+        _ci_model->getJointPosition(ci_q);
+        ci_q += qdot * dt;
+        if(_robot)
+        {
+            _robot->setPositionReference(ci_q);
+            _robot->move();
+        }
+        _ci_model->setJointPosition(ci_q);
+        _ci_model->update();
+        if(!_robot)
+            _rspub->publishTransforms(ros::Time::now(), _nh.getNamespace().substr(1));
+        rate.sleep();
+    }
+
+    trajectory_index = 1;
+
+    return true;
+
 }
 
 bool RobotControllerCarModel::replay_service(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)

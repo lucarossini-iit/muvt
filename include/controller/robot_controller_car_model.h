@@ -37,12 +37,13 @@ private:
 
     void trajectory_callback(trajectory_msgs::JointTrajectoryConstPtr msg);
 
+    bool init_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
     bool replay_service(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response & res);
 
     ros::NodeHandle _nh, _nhpr;
     ros::Subscriber _trj_sub, _xbot_sub;
     ros::Publisher _trj_index_pub, _postural_pub;
-    ros::ServiceServer _replay_srv;
+    ros::ServiceServer _init_srv, _replay_srv;
     trajectory_msgs::JointTrajectory _trajectory;
 
     XBot::ModelInterface::Ptr _model, _ci_model;
