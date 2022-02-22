@@ -24,8 +24,7 @@ grid on
 xline(0.1, 'k--', 'LineWidth', 6)
 set(gca, 'LineWidth', 3)
 set(gca, 'TickLabelInterpreter', 'latex')
-set(gca, 'FontSize', 65)
-set(gca, 'XTick', 0.1, 'XTickLabel', '$r + \varepsilon$')
+set(gca, 'FontSize', 30)
 set(gcf, 'Color', 'white')
 axis equal
 xlim([-0.01, 0.2])
