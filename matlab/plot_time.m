@@ -2,19 +2,20 @@ clear all
 close all
 clc
 
-load('optimizer_stats_good.mat')
+load('locomotion.mat')
+init_time = 20;
+fin_time = 100;
+replay_time = 30;
 
 %% plot opt time
 figure(1)
 hold on 
 
 % cut vertices
-opt_time = opt_time(find(time > 72));
-time = time(find(time > 72));
+opt_time = opt_time(find(time > init_time & time < fin_time));
+time = time(find(time > init_time & time < fin_time));
 
 time = time - ones(1,length(time))*time(1);
-opt_time = opt_time(find(time < 100));
-time = time(find(time < 100));
 
 % filter
 d1 = designfilt('lowpassiir','FilterOrder',12, ...
@@ -32,30 +33,28 @@ ylim([0.0, 0.1])
 xlabel('Time [s]')
 ylabel('Planning Time [s]')
 
-xline(17, 'k--', 'LineWidth', 2)
-xline(53, 'k--', 'LineWidth', 2)
-text(1, 0.09, {'Adding', 'obstacle 1'}, 'FontSize', 30)
-text(23, 0.09, "Adding obstacle 2", 'FontSize', 30)
-text(66, 0.09, "Replay trajectory", 'FontSize', 30)
+xline(replay_time, 'k--', 'LineWidth', 2)
+text(10, 0.1, "Setup", 'FontSize', 40)
+text(40, 0.1, "Replay trajectory", 'FontSize', 40)
 
 %% plot kin_error
-load('optimizer_stats_good.mat', 'time')
-kin_err_wheel_1_z_end = kin_err_wheel_1_z_end(find(time > 125 & time < 172));
-kin_err_wheel_2_z_end = kin_err_wheel_2_z_end(find(time > 125 & time < 172));
-kin_err_wheel_3_z_end = kin_err_wheel_3_z_end(find(time > 125 & time < 172));
-kin_err_wheel_4_z_end = kin_err_wheel_4_z_end(find(time > 125 & time < 172));
-kin_err_wheel_1_z_init = kin_err_wheel_1_z_init(find(time > 125 & time < 172));
-kin_err_wheel_2_z_init = kin_err_wheel_2_z_init(find(time > 125 & time < 172));
-kin_err_wheel_3_z_init = kin_err_wheel_3_z_init(find(time > 125 & time < 172));
-kin_err_wheel_4_z_init = kin_err_wheel_4_z_init(find(time > 125 & time < 172));
+load('locomotion.mat', 'time');
+kin_err_wheel_1_z_end = kin_err_wheel_1_z_end(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_2_z_end = kin_err_wheel_2_z_end(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_3_z_end = kin_err_wheel_3_z_end(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_4_z_end = kin_err_wheel_4_z_end(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_1_z_init = kin_err_wheel_1_z_init(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_2_z_init = kin_err_wheel_2_z_init(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_3_z_init = kin_err_wheel_3_z_init(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_4_z_init = kin_err_wheel_4_z_init(find(time > replay_time & time < fin_time-init_time));
 
-kin_err_wheel_1_z_init = kin_err_wheel_1_z_init ./ (ones(1, length(kin_err_wheel_1_z_init))*2);
-%kin_err_wheel_2_z_init = kin_err_wheel_2_z_init ./ (ones(1, length(kin_err_wheel_2_z_init))*2);
-%kin_err_wheel_3_z_init = kin_err_wheel_3_z_init ./ (ones(1, length(kin_err_wheel_3_z_init))*2);
-%kin_err_wheel_4_z_init = kin_err_wheel_4_z_init ./ (ones(1, length(kin_err_wheel_4_z_init))*2);
+% kin_err_wheel_1_z_init = kin_err_wheel_1_z_init ./ (ones(1, length(kin_err_wheel_1_z_init))*2);
+% kin_err_wheel_2_z_init = kin_err_wheel_2_z_init ./ (ones(1, length(kin_err_wheel_2_z_init))*2);
+% kin_err_wheel_3_z_init = kin_err_wheel_3_z_init ./ (ones(1, length(kin_err_wheel_3_z_init))*2);
+% kin_err_wheel_4_z_init = kin_err_wheel_4_z_init ./ (ones(1, length(kin_err_wheel_4_z_init))*2);
 
-time = time(find(time > 125 & time < 172));
-time = time - ones(1,length(time))*72;
+time = time(find(time > replay_time & time < fin_time-init_time));
+% time = time - ones(1,length(time))*time(1);
 
 % kin_err_wheel_1_z_end = kin_err_wheel_1_z_end(find(time < 100));
 % kin_err_wheel_2_z_end = kin_err_wheel_2_z_end(find(time < 100));
@@ -74,7 +73,7 @@ set(gca, 'LineWidth', 2)
 % set(gca, 'TickLabelInterpreter', 'latex')
 set(gca, 'FontSize', 30)
 set(gcf, 'Color', 'white')
-legend('first','last')
+legend('first vertex','last vertex')
 ylim([-0.15, 0.15])
 % title('Wheel FL')
 subplot(4,1,2)
@@ -119,12 +118,11 @@ label = ylabel(han, 'Error [m]', 'FontSize', 30);
 label.Position(1) = -0.09;
 
 %% collision error
-load('optimizer_stats_good.mat')
-
-coll_err_init = coll_err_init(find(time > 125 & time < 172));
-coll_err_end = coll_err_end(find(time > 125 & time < 172));
-time = time(find(time > 125 & time < 172));
-time = time - ones(1, length(time)) * 72;
+load('locomotion.mat', 'time');
+coll_err_init = coll_err_init(find(time > replay_time & time < fin_time-init_time));
+coll_err_end = coll_err_end(find(time > replay_time & time < fin_time-init_time));
+time = time(find(time > replay_time & time < fin_time-init_time));
+time = time - ones(1, length(time)) * time(1);
 
 figure(3)
 hold on
@@ -137,4 +135,4 @@ plot(time, coll_err_init, 'LineWidth', 5)
 plot(time, coll_err_end, 'LineWidth', 5)
 xlabel('Time [s]')
 ylabel('Error')
-legend('first', 'last')
+legend('first vertex', 'last vertex')
