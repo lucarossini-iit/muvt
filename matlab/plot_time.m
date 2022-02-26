@@ -4,8 +4,8 @@ clc
 
 load('locomotion.mat')
 init_time = 20;
-fin_time = 100;
-replay_time = 30;
+fin_time = 90;
+replay_time = 35;
 
 %% plot opt time
 figure(1)
@@ -39,22 +39,22 @@ text(40, 0.1, "Replay trajectory", 'FontSize', 40)
 
 %% plot kin_error
 load('locomotion.mat', 'time');
-kin_err_wheel_1_z_end = kin_err_wheel_1_z_end(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_2_z_end = kin_err_wheel_2_z_end(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_3_z_end = kin_err_wheel_3_z_end(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_4_z_end = kin_err_wheel_4_z_end(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_1_z_init = kin_err_wheel_1_z_init(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_2_z_init = kin_err_wheel_2_z_init(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_3_z_init = kin_err_wheel_3_z_init(find(time > replay_time & time < fin_time-init_time));
-kin_err_wheel_4_z_init = kin_err_wheel_4_z_init(find(time > replay_time & time < fin_time-init_time));
+kin_err_wheel_1_z_end = kin_err_wheel_1_z_end(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_2_z_end = kin_err_wheel_2_z_end(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_3_z_end = kin_err_wheel_3_z_end(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_4_z_end = kin_err_wheel_4_z_end(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_1_z_init = kin_err_wheel_1_z_init(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_2_z_init = kin_err_wheel_2_z_init(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_3_z_init = kin_err_wheel_3_z_init(find(time > init_time + replay_time & time < fin_time));
+kin_err_wheel_4_z_init = kin_err_wheel_4_z_init(find(time > init_time + replay_time & time < fin_time));
 
 % kin_err_wheel_1_z_init = kin_err_wheel_1_z_init ./ (ones(1, length(kin_err_wheel_1_z_init))*2);
 % kin_err_wheel_2_z_init = kin_err_wheel_2_z_init ./ (ones(1, length(kin_err_wheel_2_z_init))*2);
 % kin_err_wheel_3_z_init = kin_err_wheel_3_z_init ./ (ones(1, length(kin_err_wheel_3_z_init))*2);
 % kin_err_wheel_4_z_init = kin_err_wheel_4_z_init ./ (ones(1, length(kin_err_wheel_4_z_init))*2);
 
-time = time(find(time > replay_time & time < fin_time-init_time));
-% time = time - ones(1,length(time))*time(1);
+time = time(find(time > init_time + replay_time & time < fin_time));
+time = time - ones(1,length(time))*init_time;
 
 % kin_err_wheel_1_z_end = kin_err_wheel_1_z_end(find(time < 100));
 % kin_err_wheel_2_z_end = kin_err_wheel_2_z_end(find(time < 100));
@@ -119,10 +119,10 @@ label.Position(1) = -0.09;
 
 %% collision error
 load('locomotion.mat', 'time');
-coll_err_init = coll_err_init(find(time > replay_time & time < fin_time-init_time));
-coll_err_end = coll_err_end(find(time > replay_time & time < fin_time-init_time));
-time = time(find(time > replay_time & time < fin_time-init_time));
-time = time - ones(1, length(time)) * time(1);
+coll_err_init = coll_err_init(find(time > init_time + replay_time & time < fin_time));
+coll_err_end = coll_err_end(find(time > init_time + replay_time & time < fin_time));
+time = time(find(time > init_time + replay_time & time < fin_time));
+time = time - ones(1, length(time)) * init_time;
 
 figure(3)
 hold on
@@ -136,3 +136,50 @@ plot(time, coll_err_end, 'LineWidth', 5)
 xlabel('Time [s]')
 ylabel('Error')
 legend('first vertex', 'last vertex')
+
+
+%% manipulation
+load('manipulation.mat')
+init_time = 150;
+fin_time = 350;
+
+%% plot opt time
+figure(4)
+
+% cut vertices
+opt_time = opt_time(find(time > init_time & time < fin_time));
+coll_err_end = coll_err_end(find(time > init_time & time < fin_time));
+coll_err_init = coll_err_init(find(time > init_time & time < fin_time));
+time = time(find(time > init_time & time < fin_time));
+
+time = time - ones(1,length(time))*init_time;
+
+% filter
+d1 = designfilt('lowpassiir','FilterOrder',12, ...
+    'HalfPowerFrequency',0.15,'DesignMethod','butter');
+opt_time_filt = filtfilt(d1, opt_time);
+
+% plot
+subplot(2,1,1)
+hold on
+plot(time, opt_time, 'LineWidth', 1, 'Color', '#9FBBD6')
+plot(time, opt_time_filt, 'LineWidth',5)
+set(gca, 'LineWidth', 3)
+% set(gca, 'TickLabelInterpreter', 'latex')
+set(gca, 'FontSize', 30)
+set(gcf, 'Color', 'white')
+ylim([0.0, 0.06])
+xlabel('Time [s]')
+ylabel('Planning Time [s]')
+
+subplot(2,1,2)
+hold on
+plot(time, coll_err_init, 'LineWidth', 5)
+plot(time, coll_err_end, 'LineWidth', 5)
+set(gca, 'LineWidth', 3)
+% set(gca, 'TickLabelInterpreter', 'latex')
+set(gca, 'FontSize', 30)
+set(gcf, 'Color', 'white')
+
+
+
