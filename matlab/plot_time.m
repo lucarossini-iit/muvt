@@ -10,6 +10,7 @@ replay_time = 35;
 %% plot opt time
 figure(1)
 hold on 
+grid on
 
 % cut vertices
 opt_time = opt_time(find(time > init_time & time < fin_time));
@@ -34,8 +35,8 @@ xlabel('Time [s]')
 ylabel('Planning Time [s]')
 
 xline(replay_time, 'k--', 'LineWidth', 2)
-text(10, 0.1, "Setup", 'FontSize', 40)
-text(40, 0.1, "Replay trajectory", 'FontSize', 40)
+text(10, 0.095, "Setup", 'FontSize', 40)
+text(40, 0.095, "Replay trajectory", 'FontSize', 40)
 
 %% plot kin_error
 load('locomotion.mat', 'time');
@@ -139,12 +140,11 @@ legend('first vertex', 'last vertex')
 
 
 %% manipulation
-load('manipulation.mat')
-init_time = 150;
-fin_time = 350;
+load('manipulation_human.mat')
+init_time = 102;
+fin_time = 102+42;
 
-%% plot opt time
-figure(4)
+fig4 = figure(4)
 
 % cut vertices
 opt_time = opt_time(find(time > init_time & time < fin_time));
@@ -162,24 +162,34 @@ opt_time_filt = filtfilt(d1, opt_time);
 % plot
 subplot(2,1,1)
 hold on
+grid on
 plot(time, opt_time, 'LineWidth', 1, 'Color', '#9FBBD6')
 plot(time, opt_time_filt, 'LineWidth',5)
 set(gca, 'LineWidth', 3)
 % set(gca, 'TickLabelInterpreter', 'latex')
 set(gca, 'FontSize', 30)
 set(gcf, 'Color', 'white')
-ylim([0.0, 0.06])
-xlabel('Time [s]')
+ylim([0.0, 0.04])
+xlim([0.0, 42])
 ylabel('Planning Time [s]')
 
 subplot(2,1,2)
 hold on
+grid on
 plot(time, coll_err_init, 'LineWidth', 5)
 plot(time, coll_err_end, 'LineWidth', 5)
 set(gca, 'LineWidth', 3)
 % set(gca, 'TickLabelInterpreter', 'latex')
 set(gca, 'FontSize', 30)
 set(gcf, 'Color', 'white')
+xlim([0.0, 42])
+ylabel('Error')
+legend('first vertex', 'last vertex')
+han=axes(fig4,'visible','off'); 
+han.XLabel.Visible='on';
+han.YLabel.Visible='on';
+label = xlabel(han, 'Time [s]', 'FontSize', 30);
+label.Position(2) = -0.07;
 
 
 
