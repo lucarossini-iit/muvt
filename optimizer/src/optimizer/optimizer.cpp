@@ -782,7 +782,9 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     obstacle obs;
     obs.position = position;
     obs.orientation.coeffs() << 0, 0, 0, 1;
-    obs.size << 0.5, 0.5, 0.5;
+    Eigen::Vector3d size;
+    size << req.size.x, req.size.y, req.size.z;
+    obs.size = size;
     obs.id = _obstacles.size();
     _obstacles.push_back(obs);
     update_edges();
