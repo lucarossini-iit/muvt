@@ -236,8 +236,8 @@ bool RobotControllerCarModel::velocity_check(Eigen::VectorXd q_init, Eigen::Vect
     Eigen::VectorXd qdot = (q_fin - q_init)/(_ctrl_interpolation_time * num_steps);
     Eigen::VectorXd qdot_max;
     _model->getVelocityLimits(qdot_max);
-    double vel_max_fb_tr = 0.25;
-    double vel_max_fb_or = 0.2;
+    double vel_max_fb_tr = 0.1;
+    double vel_max_fb_or = 0.1;
     qdot_max(0) = vel_max_fb_tr; qdot_max(1) = vel_max_fb_tr; qdot_max(2) = vel_max_fb_tr; qdot_max(3) = vel_max_fb_or; qdot_max(4) = vel_max_fb_or; qdot_max(5) = vel_max_fb_or;
     qdot_max /= 1;
 
