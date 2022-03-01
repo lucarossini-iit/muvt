@@ -401,6 +401,7 @@ void Optimizer::init_load_edges()
                 info *= weight;
                 e_coll->setInformation(info);
                 e_coll->vertices()[0] = _optimizer.vertex(i);
+                e_coll->advertise();
                 _optimizer.addEdge(e_coll);
             }
         }
@@ -805,7 +806,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     m.pose.orientation.z = 0;
     m.pose.orientation.w = 1;
     m.scale.x = obs.size(0); m.scale.y = obs.size(1); m.scale.z = obs.size(2);
-    m.color.r = 1.0; m.color.g = 1.0; m.color.b = 0; m.color.a = 1.0;
+    m.color.r = 1.0; m.color.g = 1.0; m.color.b = 0; m.color.a = 0.3;
 
     visualization_msgs::InteractiveMarkerControl obs_control;
     obs_control.always_visible = true;

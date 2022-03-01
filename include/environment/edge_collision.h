@@ -44,6 +44,7 @@ public:
     void resize(int size);
     void clear();
     void computeError();
+    void advertise();
 
     Eigen::VectorXd getError() const;
 
@@ -51,6 +52,8 @@ public:
 
 private:
     std::shared_ptr<ComputeLinksDistance> _cld;
+    ros::Publisher _points_pub;
+    ros::NodeHandle _nh;
 
 }; } }
 
