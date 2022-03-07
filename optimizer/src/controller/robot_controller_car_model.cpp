@@ -194,9 +194,6 @@ void RobotControllerCarModel::init_load_config()
     _opt_interpolation_time = _nhpr.param("opt_interpolation_time", 0.0);
     _ctrl_interpolation_time = _nhpr.param("ctrl_interpolation_time", 0.0);
 
-//    _opt_interpolation_time = 0.1;
-//    _ctrl_interpolation_time = 0.01;
-
     if (_opt_interpolation_time == 0)
     {
         ROS_ERROR("missing mandatory private parameter 'opt_interpolation_time!");

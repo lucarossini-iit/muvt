@@ -6,10 +6,10 @@ int main(int argc, char** argv)
     ros::NodeHandle nh(""), nhpr("~");
 
     double ctrl_interpolation_time, opt_interpolation_time;
-//    opt_interpolation_time = nhpr.param("opt_interpolation_time", 0.0);
-//    ctrl_interpolation_time = nhpr.param("ctrl_interpolation_time", 0.0);
-    opt_interpolation_time = 0.1;
-    ctrl_interpolation_time = 0.01;
+    opt_interpolation_time = nhpr.param("opt_interpolation_time", 0.0);
+    ctrl_interpolation_time = nhpr.param("ctrl_interpolation_time", 0.0);
+//    opt_interpolation_time = 0.1;
+//    ctrl_interpolation_time = 0.01;
 
     if (opt_interpolation_time == 0)
     {

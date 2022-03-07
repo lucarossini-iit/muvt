@@ -132,10 +132,12 @@ int main(int argc, char** argv)
     std::cout << "[cartesio_planning]: start interpolating" << std::endl;
 
     double interpolation_time;
-    if (!nhpr.hasParam("interpolation_time") && !nhpr.getParam("interpolation_time", interpolation_time))
-        ROS_ERROR("mandatory parameter 'interpolation_time' missing!");
-    std::cout << "interpolation time: " << interpolation_time << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    interpolation_time = nhpr.param("interpolation_time", 0.0);
+    if (interpolation_time == 0)
+    {
+        ROS_ERROR("missing mandatory private parameter 'interpolation_time'!");
+        throw std::runtime_error("interpolation_time!");
+    }
 
     if(planner.getPlannerStatus() == ompl::base::PlannerStatus::APPROXIMATE_SOLUTION || planner.getPlannerStatus() == ompl::base::PlannerStatus::EXACT_SOLUTION)
     {
