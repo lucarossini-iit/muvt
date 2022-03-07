@@ -787,6 +787,12 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     size << req.size.x, req.size.y, req.size.z;
     obs.size = size;
     obs.id = _obstacles.size();
+     if (req.type == "box")
+         obs.type = visualization_msgs::Marker::CUBE;
+     else if (req.type == "cylinder")
+         obs.type = visualization_msgs::Marker::CYLINDER;
+     else if (req.type == "sphere")
+         obs.type = visualization_msgs::Marker::SPHERE;
     _obstacles.push_back(obs);
     update_edges();
 
@@ -797,7 +803,7 @@ bool Optimizer::create_obstacle_service (teb_test::SetObstacle::Request& req, te
     int_marker.description = "obstacle_" + std::to_string(_obstacles.size());
 
     visualization_msgs::Marker m;
-    m.type = visualization_msgs::Marker::CUBE;
+    m.type = obs.type;
     m.pose.position.x = 0;
     m.pose.position.y = 0;
     m.pose.position.z = 0;

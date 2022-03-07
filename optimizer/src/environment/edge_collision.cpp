@@ -41,10 +41,16 @@ void EdgeCollision::setObstacles(const obstacles obs)
             coll.header.frame_id = obstacle.frame_id;
             coll.header.stamp = ros::Time::now();
             coll.id = "obstacle_" + std::to_string(obstacle.id);
-
             coll.operation = moveit_msgs::CollisionObject::ADD;
+
             coll.primitives.resize(1);
-            coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+            if (obstacle.type == visualization_msgs::Marker::CUBE)
+                coll.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+            else if (obstacle.type == visualization_msgs::Marker::CYLINDER)
+                coll.primitives[0].type = shape_msgs::SolidPrimitive::CYLINDER;
+            else if (obstacle.type == visualization_msgs::Marker::SPHERE)
+                coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
+
             coll.primitives[0].dimensions = {obstacle.size(0), obstacle.size(1), obstacle.size(2)};
 
 //            coll.primitives[0].type = shape_msgs::SolidPrimitive::SPHERE;
@@ -84,7 +90,7 @@ void EdgeCollision::computeError()
     {
         double distance = 0;
         distance += i.getDistance();
-        if (v1->id() == 47 && i.getLinkNames().second.substr(0,14) == "world/obstacle")
+        if (v1->id() == 47 && i.getLinkNames().first == "wheel_1" && i.getLinkNames().second.substr(0,14) == "world/obstacle")
         {
             std::cout << "id: " << v1->id() << "  " << i.getLinkNames().first << "  -  " << i.getLinkNames().second << ": " << distance << std::endl;
             auto frame1 = i.getClosestPoints().first;
@@ -95,7 +101,7 @@ void EdgeCollision::computeError()
             point1.action = visualization_msgs::Marker::ADD;
             point1.header.frame_id = "world";
             point1.header.stamp = ros::Time::now();
-            point1.id = v1->id() + index;
+            point1.id = v1->id() + 1;
             point1.type = visualization_msgs::Marker::SPHERE;
             point1.scale.x = 0.02; point1.scale.y = 0.02; point1.scale.z = 0.02;
             point1.pose.position.x = frame1.p(0); point1.pose.position.y = frame1.p(1); point1.pose.position.z = frame1.p(2);
@@ -106,12 +112,15 @@ void EdgeCollision::computeError()
             point2.action = visualization_msgs::Marker::ADD;
             point2.header.frame_id = "world";
             point2.header.stamp = ros::Time::now();
-            point2.id = v1->id() + index;
+            point2.id = v1->id() + 2;
             point2.type = visualization_msgs::Marker::SPHERE;
             point2.scale.x = 0.02; point2.scale.y = 0.02; point2.scale.z = 0.02;
             point2.pose.position.x = frame2.p(0); point2.pose.position.y = frame2.p(1); point2.pose.position.z = frame2.p(2);
             point2.pose.orientation.x = 0; point2.pose.orientation.y = 0; point2.pose.orientation.z = 0; point2.pose.orientation.w = 1;
             point2.color.r = 1; point2.color.g = 1; point2.color.b = 1; point2.color.a = 1;
+
+            std::cout << "point1: " << point1.pose.position.x << ", " << point1.pose.position.y << ", " << point1.pose.position.z << std::endl;
+            std::cout << "point2: " << point2.pose.position.x << ", " << point2.pose.position.y << ", " << point2.pose.position.z << std::endl;
 
             ma.markers.push_back(point1);
             ma.markers.push_back(point2);

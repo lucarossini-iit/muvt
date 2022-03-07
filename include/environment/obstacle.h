@@ -1,6 +1,8 @@
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 
+#include <visualization_msgs/Marker.h>
+
 namespace XBot { namespace HyperGraph {
 
 struct obstacle {
@@ -9,6 +11,7 @@ struct obstacle {
     Eigen::Affine3d T;
     Eigen::Vector3d size;
     std::string frame_id;
+    visualization_msgs::Marker::_type_type type;
     int id;
 };
 } }

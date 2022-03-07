@@ -1,9 +1,9 @@
 <launch>
     <param name="use_sim_time" value="false"/>
 
-    <arg name="gazebo" default="true"/>
-    <arg name="vision" default="true"/>
-    <arg name="optimizer" default="true"/>
+    <arg name="gazebo" default="false"/>
+    <arg name="vision" default="false"/>
+    <arg name="optimizer" default="false"/>
     <arg name="logger" default="false"/>
     <arg name="vision" default="true"/>
     <arg name="is_model_floating_base" value="true"/>
