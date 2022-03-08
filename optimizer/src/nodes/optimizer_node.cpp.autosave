@@ -46,15 +46,22 @@ int main(int argc, char** argv)
 
     std::vector<Eigen::VectorXd> qList = readFromFileConfigs("joint_position");
     std::cout << "loaded " << qList.size() << " configurations" << std::endl;
+    
+    XBot::HyperGraph::Optimizer opt(qList);
 
     ros::Rate r(100);
 
-    for (auto q : qList)
+//    for (auto q : qList)
+//    {
+//        model->setJointPosition(q);
+//        model->update();
+//        rspub.publishTransforms(ros::Time::now(), "");
+//        r.sleep();
+//    }
+    
+    while (ros::ok())
     {
-        model->setJointPosition(q);
-        model->update();
-        rspub.publishTransforms(ros::Time::now(), "");
-        r.sleep();
+        
     }
 
     return true;

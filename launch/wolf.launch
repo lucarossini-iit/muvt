@@ -1,0 +1,14 @@
+<launch>
+    <!-- load URDF and SRDF -->
+    <param name="robot_description" command="$(find xacro)/xacro $(find wolf_description_utils)/../spot_description/robots/spot.urdf.xacro"/>
+    <param name="robot_description_semantic" command="$(find xacro)/xacro $(find wolf_description_utils)/../spot_description/robots/spot.srdf.xacro"/>
+
+    <node pkg="teb_test" name="optimizer" type="optimizer">
+        <param name="is_model_floating_base" value="true"/>
+        <param name="collision_urdf" textfile="$(find wolf_description_utils)/../spot_description/robots/spot_capsules.urdf"/>
+        <param name="optimizer_config" textfile="$(find teb_test)/config/problem/optimizer_config.yaml"/>
+    </node>
+
+    <node pkg="rviz" name="rviz" type="rviz" output="screen" args="-d $(find teb_test)/config/rviz/wolf.rviz"/>
+
+</launch>
