@@ -1,11 +1,11 @@
 constraints:
-    - collisions
+    # - collisions
     # - joint_limits
-    - velocity_limits
-    - nominal_trajectory
-    - trajectory_vel
-    - kinematic
-    - postural
+    # - velocity_limits
+    # - nominal_trajectory
+    # - trajectory_vel
+    # - kinematic
+    # - postural
 
 collisions:
     max_pair_link: 250

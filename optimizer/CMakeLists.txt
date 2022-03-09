@@ -26,6 +26,7 @@ include_directories(
 add_library(environment SHARED
             src/environment/unary_edge.cpp
             src/environment/edge_xyz.cpp
+            src/environment/robot_pos.cpp
             src/environment/vertex_robot_pos.cpp
             src/environment/edge_robot_pos.cpp
             src/environment/edge_collision.cpp

@@ -1,4 +1,4 @@
-#include <optimizer/optimizer.h>
+#include <teb_test/optimizer/optimizer.h>
 
 #include <cartesio_planning/planner/cartesio_ompl_planner.h>
 #include <cartesio_planning/validity_checker/validity_checker_context.h>
@@ -35,26 +35,83 @@ std::vector<Eigen::VectorXd> readFromFileConfigs(std::string fileName){
     return qList;
 }
 
+XBot::ModelInterface::Ptr createReducedModel(ros::NodeHandle nh, ros::NodeHandle nhpr,
+                                             std::string robot_description,
+                                             std::string robot_description_semantic,
+                                             std::string robot_description_joint_id_map)
+{
+    std::string urdf, srdf, jidmap;
+    XBot::ConfigOptions cfg;
+
+    std::cout << "generating ModelInterface using: " << std::endl;
+    std::cout << "- " << robot_description << std::endl;
+    std::cout << "- " << robot_description_semantic << std::endl;
+    std::cout << "- " << robot_description_joint_id_map << std::endl;
+
+    if (nh.hasParam(robot_description) && nh.getParam(robot_description, urdf))
+    {
+        cfg.set_urdf(urdf);
+    }
+    else
+    {
+        throw std::runtime_error(robot_description + " parameter not set!");
+    }
+
+    if (nh.hasParam(robot_description_semantic) && nh.getParam(robot_description_semantic, srdf))
+    {
+        cfg.set_srdf(srdf);
+    }
+    else
+    {
+        throw std::runtime_error(robot_description_semantic + " parameter not set!");
+    }
+
+    if (nh.hasParam(robot_description_joint_id_map) && nh.getParam(robot_description_joint_id_map, jidmap))
+    {
+        cfg.set_jidmap(jidmap);
+    }
+    else
+    {
+        if (!cfg.generate_jidmap())
+        {
+            throw std::runtime_error(robot_description_joint_id_map + " parameter not set, failed to auto-generate jidmap!");
+        }
+    }
+
+    std::string model_type;
+    bool is_model_floating_base;
+
+    cfg.set_parameter("model_type", nhpr.param<std::string>("model_type", "RBDL"));
+    cfg.set_parameter("is_model_floating_base", nhpr.param<bool>("is_model_floating_base", false));
+    cfg.set_parameter<std::string>("framework", "ROS");
+
+    auto model = XBot::ModelInterface::getModel(cfg);
+
+    return model;
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "optimizer_node");
     ros::NodeHandle nh(""), nhpr("~");
 
-    auto cfg = XBot::ConfigOptionsFromParamServer();
-    auto model = XBot::ModelInterface::getModel(cfg);
-    XBot::Cartesian::Utils::RobotStatePublisher rspub(model);
+    auto model_rf = createReducedModel(nh, nhpr, "robot_description_rf", "robot_description_semantic_rf", "robot_description_joint_id_map_rf");
+    auto model_lf = createReducedModel(nh, nhpr, "robot_description_lf", "robot_description_semantic_lf", "robot_description_joint_id_map_lf");
+    auto model_rh = createReducedModel(nh, nhpr, "robot_description_rh", "robot_description_semantic_rh", "robot_description_joint_id_map_rh");
+    auto model_lh = createReducedModel(nh, nhpr, "robot_description_lh", "robot_description_semantic_lh", "robot_description_joint_id_map_lh");
 
     std::vector<Eigen::VectorXd> qList = readFromFileConfigs("joint_position");
-    std::cout << "loaded " << qList.size() << " configurations" << std::endl;
+    
+    XBot::HyperGraph::Optimizer opt_rf(qList, model_rf);
+    XBot::HyperGraph::Optimizer opt_lf(qList, model_lf);
+    XBot::HyperGraph::Optimizer opt_rh(qList, model_rh);
+    XBot::HyperGraph::Optimizer opt_lh(qList, model_lh);
 
     ros::Rate r(100);
-
-    for (auto q : qList)
+    
+    while (ros::ok())
     {
-        model->setJointPosition(q);
-        model->update();
-        rspub.publishTransforms(ros::Time::now(), "");
-        r.sleep();
+        
     }
 
     return true;

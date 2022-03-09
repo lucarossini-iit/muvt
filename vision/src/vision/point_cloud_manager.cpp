@@ -1,4 +1,4 @@
- #include <vision/point_cloud_manager.h>
+#include <teb_test/vision/point_cloud_manager.h>
 
 using namespace XBot::HyperGraph::Utils;
 
