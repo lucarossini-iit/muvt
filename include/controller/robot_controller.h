@@ -7,7 +7,8 @@
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 
-#include <optimizer/optimizer.h>
+#include <teb_test/optimizer/optimizer.h>
+
 #include <simulator/simulator.h>
 
 #include <trajectory_msgs/JointTrajectory.h>
