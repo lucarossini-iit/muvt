@@ -1,4 +1,4 @@
-#include <environment/edge_postural.h>
+#include <environment/joint/edge_postural.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

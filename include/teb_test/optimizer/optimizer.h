@@ -30,18 +30,17 @@
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
 #include <simulator/simulator.h>
-#include <environment/edge_xyz.h>
-#include <environment/robot_pos.h>
-#include <environment/vertex_robot_pos.h>
-#include <environment/edge_robot_pos.h>
-#include <environment/edge_robot_vel.h>
-#include <environment/edge_joint_limits.h>
-#include <environment/edge_task.h>
-#include <environment/edge_collision.h>
+#include <environment/joint/robot_pos.h>
+#include <environment/joint/vertex_robot_pos.h>
+#include <environment/joint/edge_robot_pos.h>
+#include <environment/joint/edge_robot_vel.h>
+#include <environment/joint/edge_joint_limits.h>
+#include <environment/joint/edge_task.h>
+#include <environment/joint/edge_collision.h>
 #include <environment/obstacle.h>
-#include <environment/edge_trajectory_vel.h>
-#include <environment/edge_kinematic.h>
-#include <environment/edge_postural.h>
+#include <environment/joint/edge_trajectory_vel.h>
+#include <environment/joint/edge_kinematic.h>
+#include <environment/joint/edge_postural.h>
 
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>

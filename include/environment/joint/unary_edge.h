@@ -5,7 +5,7 @@
 
 #include <XBotInterface/ModelInterface.h>
 
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 

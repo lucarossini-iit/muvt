@@ -2,9 +2,8 @@
 #define SIMULATOR_H
 
 #include <g2o/types/slam3d/vertex_pointxyz.h>
-#include <environment/edge_xyz.h>
-#include <environment/edge_robot_pos.h>
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/edge_robot_pos.h>
+#include <environment/joint/vertex_robot_pos.h>
 
 namespace XBot { namespace HyperGraph {
     

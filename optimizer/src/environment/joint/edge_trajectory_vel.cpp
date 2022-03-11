@@ -1,4 +1,4 @@
-#include <environment/edge_trajectory_vel.h>
+#include <environment/joint/edge_trajectory_vel.h>
 
 using namespace XBot::HyperGraph;
 

@@ -1,7 +1,7 @@
 #ifndef EDGE_TRAJECTORY_VEL_H
 #define EDGE_TRAJECTORY_VEL_H
 
-#include <environment/unary_edge.h>
+#include <environment/joint/unary_edge.h>
 
 namespace XBot { namespace HyperGraph {
 

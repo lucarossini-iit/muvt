@@ -5,8 +5,8 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <Eigen/Geometry>
 
-#include <environment/unary_edge.h>
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/unary_edge.h>
+#include <environment/joint/vertex_robot_pos.h>
 #include <environment/obstacle.h>
 
 using namespace g2o;

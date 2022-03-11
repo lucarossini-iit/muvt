@@ -1,4 +1,4 @@
-#include <environment/edge_kinematic.h>
+#include <environment/joint/edge_kinematic.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

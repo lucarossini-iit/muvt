@@ -3,7 +3,7 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/vertex_robot_pos.h>
 
 #include <XBotInterface/ModelInterface.h>
 

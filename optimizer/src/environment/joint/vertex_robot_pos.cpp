@@ -1,4 +1,4 @@
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/vertex_robot_pos.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

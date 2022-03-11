@@ -7,8 +7,8 @@
 
 #include <eigen_conversions/eigen_msg.h>
 
-#include <environment/unary_edge.h>
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/unary_edge.h>
+#include <environment/joint/vertex_robot_pos.h>
 #include <environment/obstacle.h>
 #include <octomap_msgs/OctomapWithPose.h>
 

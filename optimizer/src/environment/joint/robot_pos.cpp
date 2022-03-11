@@ -1,4 +1,4 @@
-#include <environment/robot_pos.h>
+#include <environment/joint/robot_pos.h>
 
 using namespace XBot::HyperGraph;
 

@@ -1,4 +1,4 @@
-#include <environment/edge_collision.h>
+#include <environment/joint/edge_collision.h>
 #include <visualization_msgs/MarkerArray.h>
 
 using namespace XBot::HyperGraph;

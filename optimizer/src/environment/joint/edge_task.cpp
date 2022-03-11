@@ -1,4 +1,4 @@
-#include <environment/edge_task.h>
+#include <environment/joint/edge_task.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

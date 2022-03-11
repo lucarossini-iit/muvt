@@ -1,4 +1,4 @@
-#include <environment/edge_robot_vel.h>
+#include <environment/joint/edge_robot_vel.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

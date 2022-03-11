@@ -5,8 +5,8 @@
 
 #include <XBotInterface/ModelInterface.h>
 
-#include <environment/unary_edge.h>
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/unary_edge.h>
+#include <environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 

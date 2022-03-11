@@ -7,7 +7,7 @@
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
-#include <environment/vertex_robot_pos.h>
+#include <environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 

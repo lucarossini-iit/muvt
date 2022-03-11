@@ -1,4 +1,4 @@
-#include <environment/unary_edge.h>
+#include <environment/joint/unary_edge.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;

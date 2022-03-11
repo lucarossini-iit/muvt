@@ -1,4 +1,4 @@
-#include <environment/edge_joint_limits.h>
+#include <environment/joint/edge_joint_limits.h>
 
 using namespace XBot::HyperGraph;
 using namespace g2o;
