@@ -39,6 +39,11 @@ target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::Open
 
 add_library(contact SHARED
             src/environment/contact/contact.cpp)
+target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+
+add_library(planner SHARED
+            src/planner/dcm_planner.cpp)
+target_link_libraries(planner ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 add_library(simulator SHARED
     src/simulator/simulator.cpp)         
@@ -98,4 +103,10 @@ install(TARGETS urdf_parser_test_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS planner
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
 
