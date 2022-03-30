@@ -6,12 +6,50 @@ DCMPlanner::DCMPlanner():
 _nh(""),
 _nhpr("~")
 {
-    init_load_config();
-
     _zmp_pub = _nh.advertise<visualization_msgs::MarkerArray>("zmp", 1, true);
     _cp_pub = _nh.advertise<visualization_msgs::MarkerArray>("cp", 1, true);
     _com_pub = _nh.advertise<visualization_msgs::MarkerArray>("com", 1, true);
     _footstep_pub = _nh.advertise<visualization_msgs::MarkerArray>("footstep", 1, true);
+}
+
+void DCMPlanner::setNumSteps(const unsigned int n_steps)
+{
+    _n_steps = n_steps;
+}
+
+void DCMPlanner::setStepSize(const double step_size)
+{
+    _step_size = step_size;
+}
+
+void DCMPlanner::setStepTime(const double step_time)
+{
+    _step_time = step_time;
+}
+
+void DCMPlanner::setZCoM(const double z_com)
+{
+    _z_com = z_com;
+}
+
+unsigned int DCMPlanner::getNumSteps() const
+{
+    return _n_steps;
+}
+
+double DCMPlanner::getStepSize() const
+{
+    return _step_size;
+}
+
+double DCMPlanner::getStepTime() const
+{
+    return _step_time;
+}
+
+double DCMPlanner::getZCoM() const
+{
+    return _z_com;
 }
 
 void DCMPlanner::run()
@@ -101,35 +139,6 @@ void DCMPlanner::run()
     _footstep_pub.publish(ma_footstep);
 }
 
-void DCMPlanner::init_load_config()
-{
-    if(!_nhpr.hasParam("dcm_config"))
-    {
-        throw std::runtime_error("Mandatory private parameter 'dcm_config' missing");
-    }
-
-    // load planner config file (yaml)
-    std::string optimizer_config_string;
-    _nhpr.getParam("dcm_config", optimizer_config_string);
-
-    auto config = YAML::Load(optimizer_config_string);
-
-    YAML_PARSE_OPTION(config["dcm_planner"], z_com, double, 0);
-    _z_com = z_com;
-    if (_z_com == 0)
-        throw std::runtime_error("missing mandatory argument 'z_com'!");
-
-    YAML_PARSE_OPTION(config["dcm_planner"], T_step, double, 0);
-    _T_step = T_step;
-    if (_T_step == 0)
-        throw std::runtime_error("missing mandatory argument 'T_step'!");
-
-    YAML_PARSE_OPTION(config["dcm_planner"], step_size, double, 0.2);
-    _step_size = step_size;
-    if (_T_step == 0)
-        throw std::runtime_error("missing mandatory argument 'step_size'!");
-}
-
 void DCMPlanner::GenerateSteps(int n_steps)
 {
     // init steps
@@ -155,7 +164,7 @@ Eigen::Vector3d DCMPlanner::cp_trajectory(double time, Eigen::Vector3d init, Eig
     return csi_d;
 }
 
-Eigen::Vector3d DCMPlanner::com_trajectory(double time, Eigen::Vector3d cp, Eigen::VectorXd init)
+Eigen::Vector3d DCMPlanner::com_trajectory(double time, Eigen::Vector3d cp, Eigen::Vector3d init)
 {
     double omega = std::sqrt(9.81 / _z_com);
     double a = exp(omega * time) / (2*exp(omega * time) - 1);
@@ -165,6 +174,20 @@ Eigen::Vector3d DCMPlanner::com_trajectory(double time, Eigen::Vector3d cp, Eige
     com(2) = _z_com;
 
     return com;
+}
+
+Eigen::Vector3d DCMPlanner::com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init, double dt)
+{
+    double omega = std::sqrt(9.81 / _z_com);
+
+    Eigen::Vector3d x_old = init;
+    std::cout << "x_old: " << x_old.transpose() << std::endl;
+    std::cout << "cp: " << cp.transpose() << std::endl;
+    Eigen::Vector3d x_new = dt * (-omega * x_old + omega * cp) + x_old;
+    x_old = x_new;
+    std::cout << "x_new: " << x_new.transpose() << std::endl;
+
+    return x_new;
 }
 
 void DCMPlanner::ComputeZMPandCP()
@@ -177,7 +200,7 @@ void DCMPlanner::ComputeZMPandCP()
     for(int i = _footstep_sequence.size()-2; i >= 0; i--)
     {
         _footstep_sequence[i].state.zmp = _footstep_sequence[i].state.pose.translation();
-        _footstep_sequence[i].state.cp = _footstep_sequence[i].state.zmp + (_footstep_sequence[i+1].state.cp - _footstep_sequence[i].state.zmp) / exp(sqrt(9.81/_z_com)*_T_step);
+        _footstep_sequence[i].state.cp = _footstep_sequence[i].state.zmp + (_footstep_sequence[i+1].state.cp - _footstep_sequence[i].state.zmp) / exp(sqrt(9.81/_z_com)*_step_time);
     }
 
     // set the initial com position on the first zmp;
@@ -191,7 +214,7 @@ void DCMPlanner::ComputeZMPandCP()
     for (int ind = 0; ind < _footstep_sequence.size()-1; ind++)
     {
         time = 0;
-        while (time < _T_step)
+        while (time < _step_time)
         {
             auto cp = cp_trajectory(time, _footstep_sequence[ind].state.cp, _footstep_sequence[ind].state.zmp);
             _cp_trj[ind].push_back(cp);
@@ -200,13 +223,19 @@ void DCMPlanner::ComputeZMPandCP()
     }
 
     time = 0;
+    auto com_old = _com_trj.back();
     for (int i = 0; i < _cp_trj.size(); i++)
     {
         for (int j = 0; j < _cp_trj[i].size(); j++)
         {
-            _com_trj.push_back(com_trajectory(time, _cp_trj[i][j], _com_trj[0]));
-            time += dt;
+//            _com_trj.push_back(com_trajectory(time, _cp_trj[i][j], _com_trj[0]));
+//            time += dt;
+            _com_trj.push_back(com_trajectory_from_vel(_cp_trj[i][j], com_old, dt));
+            com_old = _com_trj.back();
         }
     }
+    std::cout << "final time: " << time << std::endl;
+    std::cout << "cp trajectory size: " << _cp_trj.size() * _cp_trj[0].size() << std::endl;
+    std::cout << "com trajectory size: " << _com_trj.size() << std::endl;
 }
 
