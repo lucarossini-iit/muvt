@@ -35,10 +35,12 @@ public:
     double getStepTime() const;
     double getStepSize() const;
 
-    void GenerateSteps(int n_steps);
-    void ComputeZMPandCP();
+    void generateSteps();
+    void solve();
 
-    void run();
+    void getSolution(std::vector<Contact>& footsteps,
+                     std::vector<Eigen::Vector3d>& cp_trj,
+                     std::vector<Eigen::Vector3d>& com_trj) const;
 
 private:
     Eigen::Vector3d cp_trajectory(double time, Eigen::Vector3d init, Eigen::Vector3d zmp);

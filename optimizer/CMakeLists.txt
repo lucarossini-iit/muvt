@@ -74,8 +74,11 @@ target_link_libraries(robot_controller_node controller)
 add_executable(urdf_parser_test_node test/urdf_parser_test_node.cpp)
 target_link_libraries(urdf_parser_test_node ${catkin_LIBRARIES} ${urdf_LIBRARIES} ${XBotInterface_LIBRARIES})
 
-add_executable(dcm_planner_test_node test/dcm_planner_test_node.cpp src/planner/dcm_planner.cpp)
-target_link_libraries(dcm_planner_test_node ${catkin_LIBRARIES} planner yaml-cpp contact)
+add_executable(planner_executor src/nodes/planner_executor_node src/nodes/planner_executor.cpp)
+target_link_libraries(planner_executor ${catkin_LIBRARIES}
+                                       ${XBotInterface_LIBRARIES}
+                                       ${cartesian_interface_LIBRARIES}
+                                       planner)
 
 install(TARGETS joint
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -117,7 +120,7 @@ install(TARGETS planner
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(TARGETS dcm_planner_test_node
+install(TARGETS planner_executor
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

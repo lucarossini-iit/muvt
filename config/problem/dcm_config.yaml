@@ -1,4 +1,5 @@
 dcm_planner:
     z_com: 0.92 #meter
-    T_step: 0.5 #second
+    step_time: 0.5 #second
     step_size: 0.2 #meter
+    n_steps: 10

@@ -1,6 +1,10 @@
 <launch>
+    <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
+    <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
+    <param name="cartesio_stack" textfile="$(find teb_test)/config/problem/cartesio_stack.yaml"/>
 
-    <node pkg="teb_test" type="dcm_planner_test_node" name="dcm_planner_test_node" output="screen">
+    <node pkg="teb_test" type="planner_executor" name="planner_executor" output="screen">
+        <param name="is_model_floating_base" value="true"/>
         <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>
     </node>
 
