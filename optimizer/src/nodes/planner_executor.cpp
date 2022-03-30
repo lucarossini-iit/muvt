@@ -19,6 +19,8 @@ _planner()
 
     // advertise services
     _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);
+
+    plan();
 }
 
 void PlannerExecutor::init_load_model()
@@ -47,6 +49,9 @@ void PlannerExecutor::init_load_model()
         else
             ROS_ERROR("world_frame_link %s does not exists, keeping original world!", world_frame_link.c_str());
     }
+
+    // RobotStatePublisher
+    _rspub = std::make_shared<Cartesian::Utils::RobotStatePublisher>(_model);
 }
 
 void PlannerExecutor::init_load_config()
@@ -107,17 +112,12 @@ bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::E
 
 void PlannerExecutor::publish_markers()
 {
-    std::cout << "starting publishing markers" << std::endl;
-    std::cout << "footstep size " << _footstep_seq.size() << std::endl;
-    std::cout << "cp size " << _cp_trj.size() << std::endl;
-    std::cout << "com size " << _com_trj.size() << std::endl;
-
     visualization_msgs::MarkerArray ma_zmp, ma_cp, ma_footstep, ma_com;
     for (int i = 0; i < _footstep_seq.size(); i++)
     {
         // publish zmp
         visualization_msgs::Marker m_zmp;
-        m_zmp.header.frame_id = "map";
+        m_zmp.header.frame_id = "world";
         m_zmp.header.stamp = ros::Time::now();
         m_zmp.id = i;
         m_zmp.action = visualization_msgs::Marker::ADD;
@@ -131,7 +131,7 @@ void PlannerExecutor::publish_markers()
 
         // publish footsteps
         visualization_msgs::Marker m_footstep;
-        m_footstep.header.frame_id = "map";
+        m_footstep.header.frame_id = "world";
         m_footstep.header.stamp = ros::Time::now();
         m_footstep.id = i;
         m_footstep.action = visualization_msgs::Marker::ADD;
@@ -148,7 +148,7 @@ void PlannerExecutor::publish_markers()
     for (int i = 0; i < _cp_trj.size(); i++)
     {
         visualization_msgs::Marker m_cp;
-        m_cp.header.frame_id = "map";
+        m_cp.header.frame_id = "world";
         m_cp.header.stamp = ros::Time::now();
         m_cp.id = i;
         m_cp.action = visualization_msgs::Marker::ADD;
@@ -165,7 +165,7 @@ void PlannerExecutor::publish_markers()
     for (int i = 0; i < _com_trj.size(); i++)
     {
         visualization_msgs::Marker m_com;
-        m_com.header.frame_id = "map";
+        m_com.header.frame_id = "world";
         m_com.header.stamp = ros::Time::now();
         m_com.id = i;
         m_com.action = visualization_msgs::Marker::ADD;
@@ -184,7 +184,7 @@ void PlannerExecutor::publish_markers()
     _footstep_pub.publish(ma_footstep);
 }
 
-void PlannerExecutor::run()
+void PlannerExecutor::plan()
 {
     // clear vectors
     if(!_footstep_seq.empty())
@@ -197,5 +197,42 @@ void PlannerExecutor::run()
     // solve and publish the solution
     _planner.solve();
     _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
+
+    // IK
+    // first trial: let's fix the left foot in the homing position and the right foot on the first position of the footstep sequence
+    Eigen::Affine3d T_left, T_right, T_com;
+    T_left.translation().x() = 0.0;
+    T_left.translation().y() = 0.1;
+    T_left.translation().z() = 0.0;
+    T_left.linear().setIdentity();
+
+    T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
+    T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
+    T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
+    T_right.linear().setIdentity();
+
+    auto task = _ci->getTask("l_sole");
+    auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+    task_l_foot->setPoseReference(T_left);
+
+    task = _ci->getTask("r_sole");
+    auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+    task_r_foot->setPoseReference(T_right);
+
+    _ci->setComPositionReference(_com_trj[0]);
+
+}
+
+void PlannerExecutor::run()
+{
     publish_markers();
+
+    _ci->update(0.0, 0.01);
+    Eigen::VectorXd q(_model->getJointNum()), dq(_model->getJointNum());
+    _model->getJointPosition(q);
+    _model->getJointVelocity(dq);
+    q += dq * 0.01;
+    _model->setJointPosition(q);
+    _model->update();
+    _rspub->publishTransforms(ros::Time::now(), "");
 }

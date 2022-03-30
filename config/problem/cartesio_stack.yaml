@@ -4,6 +4,8 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot", "Com"]
+    - ["TorsoRP"]
+    - ["Postural"]
 
 constraints: ["JointLimits", "VelocityLimits"]
 
@@ -24,3 +26,12 @@ RFoot:
 Com:
     type: "Com"
     indices: [0, 1, 2]
+
+TorsoRP:
+    type: "Cartesian"
+    distal_link: "DWYTorso"
+    indices: [3]
+
+Postural:
+    type: "Postural"
+    lambda: 0.1

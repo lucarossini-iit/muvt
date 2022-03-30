@@ -6,6 +6,7 @@
 
 // XBot and CartesI/O
 #include <XBotInterface/ModelInterface.h>
+#include <cartesian_interface/utils/RobotStatePublisher.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
 
@@ -30,6 +31,7 @@ private:
     void init_load_model();
     void init_load_config();
     void init_load_cartesian_interface();
+    void plan();
     void publish_markers();
 
     // ROS service definitions
@@ -40,6 +42,7 @@ private:
     ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _com_pub;
 
     ModelInterface::Ptr _model;
+    std::shared_ptr<Cartesian::Utils::RobotStatePublisher> _rspub;
     Cartesian::CartesianInterfaceImpl::Ptr _ci;
 
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;

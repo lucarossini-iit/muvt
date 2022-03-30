@@ -88,6 +88,7 @@ Eigen::Vector3d DCMPlanner::com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::V
 {
     double omega = std::sqrt(9.81 / _z_com);
     Eigen::Vector3d x_new = dt * (-omega * init + omega * cp) + init;
+    x_new(2) = _z_com;
 
     return x_new;
 }

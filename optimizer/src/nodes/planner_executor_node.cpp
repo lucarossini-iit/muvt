@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 
     PlannerExecutor executor;
 
-    ros::Rate r(10);
+    ros::Rate r(100);
     while (ros::ok())
     {
         executor.run();
