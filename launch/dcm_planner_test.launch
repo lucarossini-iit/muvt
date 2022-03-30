@@ -8,4 +8,7 @@
         <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>
     </node>
 
+    <node pkg="rviz" type="rviz" name="rviz" output="screen"
+        args="-d $(find teb_test)/config/rviz/dcm_planner.rviz"/>
+
 </launch>
