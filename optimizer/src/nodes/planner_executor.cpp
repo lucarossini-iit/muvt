@@ -112,7 +112,38 @@ void PlannerExecutor::init_load_cartesian_interface()
 bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
     _execute = !_execute;
-    std::cout << "\033[1m[planner_executor] \033[0m" << "executor state " << _execute << std::endl;
+
+    // reset
+    Eigen::Affine3d T_left, T_right, T_com;
+    T_left.translation().x() = 0.0;
+    T_left.translation().y() = 0.1;
+    T_left.translation().z() = 0.0;
+    T_left.linear().setIdentity();
+
+    T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
+    T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
+    T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
+    T_right.linear().setIdentity();
+
+    auto task = _ci->getTask("l_sole");
+    auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+    task_l_foot->setPoseReference(T_left);
+
+    task = _ci->getTask("r_sole");
+    auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+    task_r_foot->setPoseReference(T_right);
+
+    _ci->setComPositionReference(_com_trj[0]);
+    _ci->update(0, _planner.getdT());
+    Eigen::VectorXd q, dq;
+    _model->getJointPosition(q);
+    _model->getJointVelocity(dq);
+    q += dq * _planner.getdT();
+    _model->setJointPosition(q);
+    _model->update();
+    _rspub->publishTransforms(ros::Time::now(), "");
+
+    std::cout << "\033[1m[planner_executor] \033[0m" << "starting execution!" << std::endl;
     return true;
 }
 
@@ -233,36 +264,83 @@ void PlannerExecutor::run()
 {
     publish_markers();
 
-    _ci->update(0.0, _planner.getdT());
-    Eigen::VectorXd q(_model->getJointNum()), dq(_model->getJointNum());
-    _model->getJointPosition(q);
-    _model->getJointVelocity(dq);
-    q += dq * _planner.getdT();
-    _model->setJointPosition(q);
-    _model->update();
-    _rspub->publishTransforms(ros::Time::now(), "");
-
     if (_execute)
     {
+        ros::Rate r(100);
+        int index = 0;
         for(int i = 1; i < _footstep_seq.size(); i++)
         {
             double time = 0;
+            Eigen::Affine3d x_fin = _footstep_seq[i].state.pose;
+            Eigen::Affine3d x_init;
+            _model->getPose(_footstep_seq[i].getDistalLink(), x_init);
             while(time <= _planner.getStepTime())
             {
-                auto task = _ci->getTask(_footstep_seq[i].getDistalLink());
-                if (auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task))
+                // skip first step: only the com must move!
+                if (i > 1)
                 {
-
+                    auto task = _ci->getTask(_footstep_seq[i].getDistalLink());
+                    auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin);
+                    c_task->setPoseReference(x_ref);
                 }
+
+                _ci->setComPositionReference(_com_trj[index]);
+                _ci->update(time, _planner.getdT());
+                Eigen::VectorXd q, dq;
+                _model->getJointPosition(q);
+                _model->getJointVelocity(dq);
+                q += dq * _planner.getdT();
+                _model->setJointPosition(q);
+                _model->update();
+                _rspub->publishTransforms(ros::Time::now(), "");
+
+                time += _planner.getdT();
+                index++;
+                r.sleep();
             }
-
-
+            if (i == _footstep_seq.size() - 1)
+                _execute = false;
         }
+    }
+    else
+    {
+        _ci->update(0.0, _planner.getdT());
+        Eigen::VectorXd q(_model->getJointNum()), dq(_model->getJointNum());
+        _model->getJointPosition(q);
+        _model->getJointVelocity(dq);
+        q += dq * _planner.getdT();
+        _model->setJointPosition(q);
+        _model->update();
+        _rspub->publishTransforms(ros::Time::now(), "");
     }
 }
 
-Eigen::Vector3d parabolic_trajector(double time, Eigen::Vector3d x_init, Eigen::Vector3d x_fin)
+Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin)
 {
-    Eigen::Vector3d x;
+    double h = 0.05;
+    double step_time = _planner.getStepTime();
 
+    // compute z parabolic trajectory
+    double z_fin = x_fin.translation().z();
+    double z_init = x_init.translation().z();
+
+    double a = -4 / pow(step_time, 2) * h;
+    double b = -a * step_time;
+    double z = a * pow(time, 2) + b * time;
+
+    // linear trajectory for x and y
+    b = x_init.translation().x();
+    a = (x_fin.translation().x() - x_init.translation().x()) / step_time;
+    double x = a * time + b;
+
+    b = x_init.translation().y();
+    a = (x_fin.translation().y() - x_init.translation().y()) / step_time;
+    double y = a * time + b;
+
+    Eigen::Affine3d x_ref;
+    x_ref.translation() << x, y, z;
+    x_ref.linear().setIdentity();
+
+    return x_ref;
 }

@@ -64,6 +64,10 @@ void DCMPlanner::generateSteps()
     left_foot.state.pose.translation() << 0.0, 0.1, 0.0;
     right_foot.state.pose.translation() << 0.0, -0.1, 0.0;
 
+    // add the standing position
+    _footstep_sequence.push_back(right_foot);
+    _footstep_sequence.push_back(left_foot);
+
     // at the moment, always start walking with the right foot
     for (int i = 0; i < _n_steps; i++)
     {
@@ -72,6 +76,12 @@ void DCMPlanner::generateSteps()
 
         (i % 2 == 0) ? _footstep_sequence.push_back(right_foot) : _footstep_sequence.push_back(left_foot);
     }
+
+    // add last step to recover balanced position
+    if (_footstep_sequence.back().getDistalLink() == "l_sole")
+        _footstep_sequence.push_back(right_foot);
+    else
+        _footstep_sequence.push_back(right_foot);
 }
 
 Eigen::Vector3d DCMPlanner::cp_trajectory(double time, Eigen::Vector3d init, Eigen::Vector3d zmp)
@@ -108,10 +118,22 @@ void DCMPlanner::solve()
     _cp_trj.clear();
     _com_trj.clear();
 
+    // initialize first zmp in the middle of the starting feet position
+    Eigen::Affine3d T_first, T_second;
+    T_first = _footstep_sequence[0].state.pose;
+    T_second = _footstep_sequence[1].state.pose;
+    _footstep_sequence[0].state.zmp << (T_first.translation().x() + T_second.translation().x()) / 2,
+                                       (T_first.translation().y() + T_second.translation().y()) / 2,
+                                       0;
+
     // start from the last step and move backwards to the first one.
-    // follows the work done in 'Integration of vertical COM motion and angular momentum in an extended Capture Point tracking controller for bipedal walking'
-    _footstep_sequence.back().state.zmp = _footstep_sequence.back().state.pose.translation();
-    _footstep_sequence.back().state.cp = _footstep_sequence.back().state.pose.translation();
+    Eigen::Affine3d T_last, T_second_last;
+    T_last = _footstep_sequence.back().state.pose;
+    T_second_last = (*(_footstep_sequence.end() - 2)).state.pose;
+    _footstep_sequence.back().state.zmp << (T_last.translation().x() + T_second_last.translation().x()) / 2,
+                                           (T_last.translation().y() + T_second_last.translation().y()) / 2,
+                                           0;
+    _footstep_sequence.back().state.cp = _footstep_sequence.back().state.zmp;
 
     for(int i = _footstep_sequence.size()-2; i >= 0; i--)
     {

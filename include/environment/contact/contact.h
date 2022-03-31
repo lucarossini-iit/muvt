@@ -14,6 +14,9 @@ struct ContactState {
     Eigen::Vector3d zmp;
     // CP
     Eigen::Vector3d cp;
+
+    // time
+    double time;
 };
 
 class Contact {
