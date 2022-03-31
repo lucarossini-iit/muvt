@@ -6,6 +6,7 @@
 
 // XBot and CartesI/O
 #include <XBotInterface/ModelInterface.h>
+#include <XBotInterface/RobotInterface.h>
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
@@ -43,6 +44,7 @@ private:
     ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _com_pub;
 
     ModelInterface::Ptr _model;
+    RobotInterface::Ptr _robot;
     std::shared_ptr<Cartesian::Utils::RobotStatePublisher> _rspub;
     Cartesian::CartesianInterfaceImpl::Ptr _ci;
 

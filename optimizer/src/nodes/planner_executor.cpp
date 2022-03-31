@@ -22,6 +22,7 @@ _execute(false)
     _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);
 
     plan();
+    publish_markers();
 }
 
 void PlannerExecutor::init_load_model()
@@ -49,6 +50,17 @@ void PlannerExecutor::init_load_model()
         }
         else
             ROS_ERROR("world_frame_link %s does not exists, keeping original world!", world_frame_link.c_str());
+    }
+
+    // RobotInterface
+    try
+    {
+        _robot = RobotInterface::getRobot(cfg);
+        _robot->setControlMode(ControlMode::Position());
+    }
+    catch(std::runtime_error& e)
+    {
+        std::cout << "\033[1;31m[planner_executor] \033[0m" << "\033[31mRobotInterface not constructed!\033[0m" << std::endl;
     }
 
     // RobotStatePublisher
@@ -85,6 +97,10 @@ void PlannerExecutor::init_load_config()
 
     YAML_PARSE_OPTION(config["dcm_planner"], dt, double, 0.01);
     _planner.setdT(dt);
+
+//    Eigen::Vector3d com;
+//    _model->getCOM(com);
+//    _planner.setZCoM(com(2));
 
     // generate step sequence
     _planner.generateSteps();
@@ -262,8 +278,6 @@ void PlannerExecutor::plan()
 
 void PlannerExecutor::run()
 {
-    publish_markers();
-
     if (_execute)
     {
         ros::Rate r(100);
@@ -293,7 +307,15 @@ void PlannerExecutor::run()
                 q += dq * _planner.getdT();
                 _model->setJointPosition(q);
                 _model->update();
-                _rspub->publishTransforms(ros::Time::now(), "");
+                _rspub->publishTransforms(ros::Time::now(), "ci");
+
+                if (_robot)
+                {
+                    XBot::JointNameMap jmap;
+                    _model->eigenToMap(q, jmap);
+                    _robot->setPositionReference(jmap);
+                    _robot->move();
+                }
 
                 time += _planner.getdT();
                 index++;
@@ -312,7 +334,7 @@ void PlannerExecutor::run()
         q += dq * _planner.getdT();
         _model->setJointPosition(q);
         _model->update();
-        _rspub->publishTransforms(ros::Time::now(), "");
+        _rspub->publishTransforms(ros::Time::now(), "ci");
     }
 }
 
