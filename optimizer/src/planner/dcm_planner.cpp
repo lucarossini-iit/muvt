@@ -27,6 +27,11 @@ void DCMPlanner::setZCoM(const double z_com)
     _z_com = z_com;
 }
 
+void DCMPlanner::setdT(const double dt)
+{
+    _dt = dt;
+}
+
 unsigned int DCMPlanner::getNumSteps() const
 {
     return _n_steps;
@@ -45,6 +50,11 @@ double DCMPlanner::getStepTime() const
 double DCMPlanner::getZCoM() const
 {
     return _z_com;
+}
+
+double DCMPlanner::getdT() const
+{
+    return _dt;
 }
 
 void DCMPlanner::generateSteps()
@@ -84,10 +94,10 @@ Eigen::Vector3d DCMPlanner::com_trajectory(double time, Eigen::Vector3d cp, Eige
     return com;
 }
 
-Eigen::Vector3d DCMPlanner::com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init, double dt)
+Eigen::Vector3d DCMPlanner::com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init)
 {
     double omega = std::sqrt(9.81 / _z_com);
-    Eigen::Vector3d x_new = dt * (-omega * init + omega * cp) + init;
+    Eigen::Vector3d x_new = _dt * (-omega * init + omega * cp) + init;
     x_new(2) = _z_com;
 
     return x_new;
@@ -113,7 +123,6 @@ void DCMPlanner::solve()
     _com_trj.push_back(Eigen::Vector3d(_footstep_sequence[0].state.cp(0), _footstep_sequence[0].state.cp(1), _z_com));
 
     // compute CP desired trajectory
-    double dt = 0.01;
     double time = 0.0;
 
     _cp_trj.resize(_footstep_sequence.size() - 1);
@@ -125,19 +134,19 @@ void DCMPlanner::solve()
         {
             auto cp = cp_trajectory(time, _footstep_sequence[ind].state.cp, _footstep_sequence[ind].state.zmp);
             _cp_trj[ind].push_back(cp);
-            time += dt;
+            time += _dt;
         }
     }
 
-    time = 0;
+//    time = 0;
     auto com_old = _com_trj.back();
     for (int i = 0; i < _cp_trj.size(); i++)
     {
         for (int j = 0; j < _cp_trj[i].size(); j++)
         {
 //            _com_trj.push_back(com_trajectory(time, _cp_trj[i][j], _com_trj[0]));
-//            time += dt;
-            _com_trj.push_back(com_trajectory_from_vel(_cp_trj[i][j], com_old, dt));
+//            time += _dt;
+            _com_trj.push_back(com_trajectory_from_vel(_cp_trj[i][j], com_old));
             com_old = _com_trj.back();
         }
     }

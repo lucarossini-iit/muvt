@@ -29,11 +29,13 @@ public:
     void setZCoM(const double z_com);
     void setStepTime(const double step_time);
     void setStepSize(const double step_size);
+    void setdT(const double dt);
 
     unsigned int getNumSteps() const;
     double getZCoM() const;
     double getStepTime() const;
     double getStepSize() const;
+    double getdT() const;
 
     void generateSteps();
     void solve();
@@ -45,12 +47,13 @@ public:
 private:
     Eigen::Vector3d cp_trajectory(double time, Eigen::Vector3d init, Eigen::Vector3d zmp);
     Eigen::Vector3d com_trajectory(double time, Eigen::Vector3d cp, Eigen::Vector3d init);
-    Eigen::Vector3d com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init, double dt);
+    Eigen::Vector3d com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init);
 
     unsigned int _n_steps;
     double _z_com;
     double _step_time;
     double _step_size;
+    double _dt;
 
     std::vector<Contact> _footstep_sequence;
     std::vector<std::vector<Eigen::Vector3d>> _cp_trj;

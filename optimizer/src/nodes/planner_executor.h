@@ -48,6 +48,8 @@ private:
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
+
+    bool _execute;
 };
 } } }
 

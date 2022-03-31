@@ -5,7 +5,8 @@ using namespace XBot::HyperGraph::Planner;
 PlannerExecutor::PlannerExecutor():
 _nh(""),
 _nhpr("~"),
-_planner()
+_planner(),
+_execute(false)
 {
     init_load_model();
     init_load_config();
@@ -82,6 +83,9 @@ void PlannerExecutor::init_load_config()
     YAML_PARSE_OPTION(config["dcm_planner"], n_steps, double, 0);
     _planner.setNumSteps(n_steps);
 
+    YAML_PARSE_OPTION(config["dcm_planner"], dt, double, 0.01);
+    _planner.setdT(dt);
+
     // generate step sequence
     _planner.generateSteps();
     std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32mconfigs loaded! \033[0m" << std::endl;
@@ -97,7 +101,7 @@ void PlannerExecutor::init_load_cartesian_interface()
     }
     auto ik_yaml_goal = YAML::Load(cartesian_stack);
 
-    double ci_period = 0.01;
+    double ci_period = _planner.getdT();
     auto ci_ctx = std::make_shared<XBot::Cartesian::Context>(std::make_shared<XBot::Cartesian::Parameters>(ci_period), _model);
     auto ik_prob = XBot::Cartesian::ProblemDescription(ik_yaml_goal, ci_ctx);
 
@@ -107,6 +111,8 @@ void PlannerExecutor::init_load_cartesian_interface()
 
 bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
+    _execute = !_execute;
+    std::cout << "\033[1m[planner_executor] \033[0m" << "executor state " << _execute << std::endl;
     return true;
 }
 
@@ -227,12 +233,36 @@ void PlannerExecutor::run()
 {
     publish_markers();
 
-    _ci->update(0.0, 0.01);
+    _ci->update(0.0, _planner.getdT());
     Eigen::VectorXd q(_model->getJointNum()), dq(_model->getJointNum());
     _model->getJointPosition(q);
     _model->getJointVelocity(dq);
-    q += dq * 0.01;
+    q += dq * _planner.getdT();
     _model->setJointPosition(q);
     _model->update();
     _rspub->publishTransforms(ros::Time::now(), "");
+
+    if (_execute)
+    {
+        for(int i = 1; i < _footstep_seq.size(); i++)
+        {
+            double time = 0;
+            while(time <= _planner.getStepTime())
+            {
+                auto task = _ci->getTask(_footstep_seq[i].getDistalLink());
+                if (auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task))
+                {
+
+                }
+            }
+
+
+        }
+    }
+}
+
+Eigen::Vector3d parabolic_trajector(double time, Eigen::Vector3d x_init, Eigen::Vector3d x_fin)
+{
+    Eigen::Vector3d x;
+
 }
