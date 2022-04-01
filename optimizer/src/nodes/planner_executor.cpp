@@ -98,9 +98,10 @@ void PlannerExecutor::init_load_config()
     YAML_PARSE_OPTION(config["dcm_planner"], dt, double, 0.01);
     _planner.setdT(dt);
 
-//    Eigen::Vector3d com;
-//    _model->getCOM(com);
-//    _planner.setZCoM(com(2));
+    Eigen::Vector3d com;
+    _model->getCOM(com);
+    std::cout << "com: " << com.transpose() << std::endl;
+    _planner.setZCoM(com(2));
 
     // generate step sequence
     _planner.generateSteps();

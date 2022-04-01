@@ -122,12 +122,9 @@ void DCMPlanner::solve()
     Eigen::Affine3d T_first, T_second;
     T_first = _footstep_sequence[0].state.pose;
     T_second = _footstep_sequence[1].state.pose;
-    std::cout << "T_first: " << T_first.translation().transpose() << std::endl;
-    std::cout << "T_second: " << T_second.translation().transpose() << std::endl;
     _footstep_sequence[0].state.zmp << (T_first.translation().x() + T_second.translation().x()) / 2,
                                        (T_first.translation().y() + T_second.translation().y()) / 2,
                                        0;
-    std::cout << "first zmp: " << _footstep_sequence[0].state.zmp.transpose() << std::endl;
 
     // start from the last step and move backwards to the first one.
     Eigen::Affine3d T_last, T_second_last;

@@ -7,6 +7,7 @@
 
     <node pkg="teb_test" type="planner_executor" name="planner_executor" output="screen" launch-prefix="bash -c 'sleep 7.0; $0 $@'">
         <param name="is_model_floating_base" value="true"/>
+        <param name="world_frame_link" value="l_sole"/>
         <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>
     </node>
 
