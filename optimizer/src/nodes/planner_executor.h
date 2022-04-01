@@ -34,7 +34,7 @@ private:
     void init_load_cartesian_interface();
     void plan();
     void publish_markers();
-    Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin);
+    Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time);
 
     // ROS service definitions
     bool execute_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
@@ -53,6 +53,7 @@ private:
     DCMPlanner _planner;
 
     bool _execute;
+    bool _first_visit;
 };
 } } }
 

@@ -1,5 +1,6 @@
 <launch>
     <arg name="gazebo" default="true"/>
+    <param name="use_sim_time" value="false"/>
 
     <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
     <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
@@ -12,8 +13,10 @@
     </node>
 
     <group if="$(arg gazebo)">
-        <node pkg="gazebo_ros" type="gazebo" name="gazebo"
-            args="$(find teb_test)/config/world/cogimon.world"/>
+<!--        <node pkg="gazebo_ros" type="gazebo" name="gazebo"-->
+<!--            args="$(find teb_test)/config/world/cogimon.world"/>-->
+
+        <include file="$(find cogimon_gazebo)/launch/cogimon_world.launch"/>
 
         <node pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
     </group>

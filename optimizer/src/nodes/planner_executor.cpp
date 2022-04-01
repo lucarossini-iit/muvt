@@ -6,7 +6,8 @@ PlannerExecutor::PlannerExecutor():
 _nh(""),
 _nhpr("~"),
 _planner(),
-_execute(false)
+_execute(false),
+_first_visit(true)
 {
     init_load_model();
     init_load_config();
@@ -289,14 +290,24 @@ void PlannerExecutor::run()
             Eigen::Affine3d x_fin = _footstep_seq[i].state.pose;
             Eigen::Affine3d x_init;
             _model->getPose(_footstep_seq[i].getDistalLink(), x_init);
+            _first_visit = true;
             while(time <= _planner.getStepTime())
             {
                 // skip first step: only the com must move!
-                if (i > 1)
+                if (i > 2)
                 {
                     auto task = _ci->getTask(_footstep_seq[i].getDistalLink());
                     auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin);
+                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, 0, _planner.getStepTime());
+                    c_task->setPoseReference(x_ref);
+                }
+
+                // first step is half og the nominal one, thus we divide also also the step time
+                else if (i == 2 && time > _planner.getStepTime() / 2)
+                {
+                    auto task = _ci->getTask(_footstep_seq[i].getDistalLink());
+                    auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, _planner.getStepTime()/2, _planner.getStepTime());
                     c_task->setPoseReference(x_ref);
                 }
 
@@ -339,26 +350,32 @@ void PlannerExecutor::run()
     }
 }
 
-Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin)
+Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time)
 {
     double h = 0.05;
-    double step_time = _planner.getStepTime();
 
     // compute z parabolic trajectory
     double z_fin = x_fin.translation().z();
     double z_init = x_init.translation().z();
 
-    double a = -4 / pow(step_time, 2) * h;
-    double b = -a * step_time;
-    double z = a * pow(time, 2) + b * time;
+//    double a = -4 / pow(step_time, 2) * h;
+//    double b = -a * step_time;
+    double a = -4 / pow(step_time - t_init, 2) * h;
+    double b = -a * ((step_time*step_time - t_init*t_init) / (step_time - t_init));
+    double c = -a * pow(t_init, 2) - b * t_init;
+    double z = a * pow(time, 2) + b * time + c;
 
     // linear trajectory for x and y
-    b = x_init.translation().x();
-    a = (x_fin.translation().x() - x_init.translation().x()) / step_time;
+//    b = x_init.translation().x();
+//    a = (x_fin.translation().x() - x_init.translation().x()) / step_time;
+    a = (x_fin.translation().x() - x_init.translation().x()) / (step_time - t_init);
+    b = x_init.translation().x() - a * t_init;
     double x = a * time + b;
 
-    b = x_init.translation().y();
-    a = (x_fin.translation().y() - x_init.translation().y()) / step_time;
+//    b = x_init.translation().y();
+//    a = (x_fin.translation().y() - x_init.translation().y()) / step_time;
+    a = (x_fin.translation().y() - x_init.translation().y()) / (step_time - t_init);
+    b = x_init.translation().y() - a * t_init;
     double y = a * time + b;
 
     Eigen::Affine3d x_ref;
