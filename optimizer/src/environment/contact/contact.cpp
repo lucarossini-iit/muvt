@@ -10,6 +10,7 @@ Contact Contact::operator=(const Contact &other)
 {
     this->state.pose = other.state.pose;
     this->setDistalLink(other.getDistalLink());
+    return *this;
 }
 
 std::string Contact::getDistalLink() const

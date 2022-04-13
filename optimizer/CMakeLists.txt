@@ -14,6 +14,8 @@ find_package(urdf REQUIRED)
 
 find_package(ompl 1.5.0 REQUIRED)
 
+find_package(matlogger2 REQUIRED)
+
 include_directories(
     include
     ${OMPL_INCLUDE_DIRS}
@@ -21,6 +23,7 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${cartesian_interface_INCLUDE_DIRS}
     ${cartesio_planning_INCLUDE_DIRS}
+    ${matlogger2_INCLUDE_DIRS}
     ${GAZEBO_INCLUDE_DIRS})
 
 add_library(joint SHARED
@@ -38,8 +41,10 @@ add_library(joint SHARED
 target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl g2o::types_slam3d)
 
 add_library(contact SHARED
-            src/environment/contact/contact.cpp)
-target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+            src/environment/contact/contact.cpp
+            src/environment/contact/vertex_contact.cpp
+            src/environment/contact/edge_relative_pose.cpp)
+target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} g2o::core)
 
 add_library(planner SHARED
             src/planner/dcm_planner.cpp)
@@ -78,6 +83,7 @@ add_executable(planner_executor src/nodes/planner_executor_node src/nodes/planne
 target_link_libraries(planner_executor ${catkin_LIBRARIES}
                                        ${XBotInterface_LIBRARIES}
                                        ${cartesian_interface_LIBRARIES}
+                                       matlogger2::matlogger2
                                        planner)
 
 install(TARGETS joint

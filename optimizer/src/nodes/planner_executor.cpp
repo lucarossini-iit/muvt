@@ -6,9 +6,14 @@ PlannerExecutor::PlannerExecutor():
 _nh(""),
 _nhpr("~"),
 _planner(),
-_execute(false),
-_first_visit(true)
+_execute(false)
 {
+    // MatLogger2
+    MatLogger2::Options logger_opt;
+    logger_opt.default_buffer_size = 1e5;
+    _logger = MatLogger2::MakeLogger("/tmp/dcm_planner_logger", logger_opt);
+    _logger->set_buffer_mode(VariableBuffer::Mode::circular_buffer);
+
     init_load_model();
     init_load_config();
     init_load_cartesian_interface();
@@ -20,7 +25,7 @@ _first_visit(true)
     _footstep_pub = _nh.advertise<visualization_msgs::MarkerArray>("footstep", 1, true);
 
     // advertise services
-    _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);
+    _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);   
 
     plan();
     publish_markers();
@@ -80,29 +85,34 @@ void PlannerExecutor::init_load_config()
 
     auto config = YAML::Load(optimizer_config_string);
 
-    YAML_PARSE_OPTION(config["dcm_planner"], z_com, double, 0);
+    YAML_PARSE_OPTION(config["dcm_planner"], z_com, double, 0.0);
     if (z_com == 0)
         throw std::runtime_error("missing mandatory argument 'z_com'!");
     _planner.setZCoM(z_com);
 
-    YAML_PARSE_OPTION(config["dcm_planner"], step_time, double, 0);
+
+    YAML_PARSE_OPTION(config["dcm_planner"], step_time, double, 0.0);
     if (step_time == 0)
-        throw std::runtime_error("missing mandatory argument 'T_step'!");
+        throw std::runtime_error("missing mandatory argument 'step_time'!");
     _planner.setStepTime(step_time);
+    _logger->add("step_time", step_time);
 
     YAML_PARSE_OPTION(config["dcm_planner"], step_size, double, 0.2);
     _planner.setStepSize(step_size);
+    _logger->add("step_size", step_size);
 
-    YAML_PARSE_OPTION(config["dcm_planner"], n_steps, double, 0);
+    YAML_PARSE_OPTION(config["dcm_planner"], n_steps, double, 0.0);
     _planner.setNumSteps(n_steps);
+    _logger->add("n_steps", n_steps);
 
     YAML_PARSE_OPTION(config["dcm_planner"], dt, double, 0.01);
     _planner.setdT(dt);
+    _logger->add("dt", dt);
 
     Eigen::Vector3d com;
     _model->getCOM(com);
-    std::cout << "com: " << com.transpose() << std::endl;
     _planner.setZCoM(com(2));
+    _logger->add("z_com", _planner.getZCoM());
 
     // generate step sequence
     _planner.generateSteps();
@@ -278,10 +288,32 @@ void PlannerExecutor::plan()
 
 }
 
+bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose)
+{
+    // TODO: remvoe hardcoded foot size
+    // foot limits in foot frame
+    double x_max = 0.1;
+    double x_min = -0.1;
+    double y_max = 0.05;
+    double y_min = -0.05;
+
+    // foot limits in world frame
+    double foot_x_max = foot_pose.translation().x() + (foot_pose.linear() * Eigen::Vector3d(x_max, 0, 0))(0);
+    double foot_x_min = foot_pose.translation().x() + (foot_pose.linear() * Eigen::Vector3d(x_min, 0, 0))(0);
+    double foot_y_max = foot_pose.translation().y() + (foot_pose.linear() * Eigen::Vector3d(0, y_max, 0))(1);
+    double foot_y_min = foot_pose.translation().y() + (foot_pose.linear() * Eigen::Vector3d(0, y_min, 0))(1);
+
+    if(cp(0) > foot_x_min && cp(0) < foot_x_max && cp(1) > foot_y_min && cp(1) < foot_y_max)
+        return true;
+    else
+        return false;
+}
+
 void PlannerExecutor::run()
 {
     if (_execute)
     {
+        // only single stance phases with the robot oscillating between the footholds
         ros::Rate r(100);
         int index = 0;
         for(int i = 1; i < _footstep_seq.size(); i++)
@@ -290,7 +322,6 @@ void PlannerExecutor::run()
             Eigen::Affine3d x_fin = _footstep_seq[i].state.pose;
             Eigen::Affine3d x_init;
             _model->getPose(_footstep_seq[i].getDistalLink(), x_init);
-            _first_visit = true;
             while(time <= _planner.getStepTime())
             {
                 // skip first step: only the com must move!
@@ -321,6 +352,12 @@ void PlannerExecutor::run()
                 _model->update();
                 _rspub->publishTransforms(ros::Time::now(), "ci");
 
+                // add in logger
+                _logger->add("com_ref", _com_trj[index]);
+                Eigen::Vector3d com_logger;
+                _model->getCOM(com_logger);
+                _logger->add("com", com_logger);
+
                 if (_robot)
                 {
                     XBot::JointNameMap jmap;
@@ -336,6 +373,65 @@ void PlannerExecutor::run()
             if (i == _footstep_seq.size() - 1)
                 _execute = false;
         }
+
+        // double stance walk: the swing trajectory starts when the CP lays on the support polygon drawn by the single stance foot
+//        for (int i = 1; i < _footstep_seq.size(); i++)
+//        {
+//            double time = 0;
+//            Eigen::Affine3d x_fin = _footstep_seq[i+1].state.pose;
+//            Eigen::Affine3d x_init;
+//            _model->getPose(_footstep_seq[i+1].getDistalLink(), x_init);
+//            double t_init = 0.0;
+//            bool start_step = false;
+
+//            while(time <= _planner.getStepTime())
+//            {
+//                // skip first step: only the com must move!
+//                if (check_cp_inside_support_polygon(_cp_trj[index], _footstep_seq[i].state.pose) && start_step == false)
+//                {
+//                    std::cout << "cp in support polygon, start stepping..." << std::endl;
+//                    start_step = true;
+//                    t_init = time;
+//                }
+//                if(start_step && time < t_init + 0.15)
+//                {
+//                    auto task = _ci->getTask(_footstep_seq[i+1].getDistalLink());
+//                    auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+//                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, t_init, t_init + 0.15);
+//                    c_task->setPoseReference(x_ref);
+//                }
+
+//                _ci->setComPositionReference(_com_trj[index]);
+//                _ci->update(time, _planner.getdT());
+//                Eigen::VectorXd q, dq;
+//                _model->getJointPosition(q);
+//                _model->getJointVelocity(dq);
+//                q += dq * _planner.getdT();
+//                _model->setJointPosition(q);
+//                _model->update();
+//                _rspub->publishTransforms(ros::Time::now(), "ci");
+
+//                // add in logger
+//                _logger->add("com_ref", _com_trj[index]);
+//                Eigen::Vector3d com_logger;
+//                _model->getCOM(com_logger);
+//                _logger->add("com", com_logger);
+
+//                if (_robot)
+//                {
+//                    XBot::JointNameMap jmap;
+//                    _model->eigenToMap(q, jmap);
+//                    _robot->setPositionReference(jmap);
+//                    _robot->move();
+//                }
+
+//                time += _planner.getdT();
+//                index++;
+//                r.sleep();
+//            }
+//            if (i == _footstep_seq.size() - 1)
+//                _execute = false;
+//        }
     }
     else
     {

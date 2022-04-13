@@ -62,7 +62,11 @@ void DCMPlanner::generateSteps()
     // init steps
     Contact left_foot("l_sole"), right_foot("r_sole");
     left_foot.state.pose.translation() << 0.0, 0.1, 0.0;
+    left_foot.state.pose.linear().setIdentity();
+    left_foot.state.time = 0.0;
     right_foot.state.pose.translation() << 0.0, -0.1, 0.0;
+    right_foot.state.pose.linear().setIdentity();
+    right_foot.state.time = 0.0;
 
     // add the standing position
     _footstep_sequence.push_back(right_foot);
@@ -72,7 +76,11 @@ void DCMPlanner::generateSteps()
     for (int i = 0; i < _n_steps; i++)
     {
         right_foot.state.pose.translation().x() += _step_size;
+        right_foot.state.pose.linear().setIdentity();
+        right_foot.state.time += _step_time;
         left_foot.state.pose.translation().x() += _step_size;
+        left_foot.state.pose.linear().setIdentity();
+        left_foot.state.time += _step_time;
 
         (i % 2 == 0) ? _footstep_sequence.push_back(right_foot) : _footstep_sequence.push_back(left_foot);
     }
@@ -140,6 +148,8 @@ void DCMPlanner::solve()
         _footstep_sequence[i].state.zmp = _footstep_sequence[i].state.pose.translation();
         _footstep_sequence[i].state.cp = _footstep_sequence[i].state.zmp + (_footstep_sequence[i+1].state.cp - _footstep_sequence[i].state.zmp) / exp(sqrt(9.81/_z_com)*_step_time);
     }
+
+    _footstep_sequence[0].state.zmp = (_footstep_sequence[1].state.cp - std::exp(std::sqrt(9.81 / _z_com) * _step_time) * _footstep_sequence[0].state.cp) / (1 - std::exp(std::sqrt(9.81 / _z_com) * _step_time));
 
     // set the initial com position on the first zmp;
     _com_trj.push_back(Eigen::Vector3d(_footstep_sequence[0].state.cp(0), _footstep_sequence[0].state.cp(1), _z_com));

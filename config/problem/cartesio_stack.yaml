@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot", "Com"]
-    - ["TorsoRot"]
+    #- ["TorsoRot"]
     - ["Postural"]
 
 constraints: ["JointLimits", "VelocityLimits"]
@@ -25,7 +25,7 @@ RFoot:
 
 Com:
     type: "Com"
-    indices: [0, 1]
+    indices: [0, 1, 2]
 
 TorsoRot:
     type: "Cartesian"

@@ -39,6 +39,7 @@ void RobotPos::setJointPosition(Eigen::VectorXd q)
 void RobotPos::setNDoF(int n) 
 {
     _n = n;
+    _q.resize(n);
 }
 
 

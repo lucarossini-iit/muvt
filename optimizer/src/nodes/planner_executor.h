@@ -10,6 +10,7 @@
 #include <cartesian_interface/utils/RobotStatePublisher.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
 #include <cartesian_interface/CartesianInterfaceImpl.h>
+#include <matlogger2/matlogger2.h>
 
 // teb_test
 #include <teb_test/planner/dcm_planner.h>
@@ -28,12 +29,21 @@ public:
     void run();
 
 private:
-    // private member functions
+    // init functions
     void init_load_model();
     void init_load_config();
     void init_load_cartesian_interface();
+
+    // solve IK and execute the trajectory
     void plan();
+
+    // publish ROS Markers for footsteps, CP, ZMP and CoM trajectories
     void publish_markers();
+
+    // swing foot start motion condition
+    bool check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose);
+
+    // swing foot trajectories
     Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time);
 
     // ROS service definitions
@@ -47,13 +57,13 @@ private:
     RobotInterface::Ptr _robot;
     std::shared_ptr<Cartesian::Utils::RobotStatePublisher> _rspub;
     Cartesian::CartesianInterfaceImpl::Ptr _ci;
+    MatLogger2::MatLogger2::Ptr _logger;
 
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
 
     bool _execute;
-    bool _first_visit;
 };
 } } }
 
