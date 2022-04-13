@@ -90,43 +90,43 @@ void EdgeCollision::computeError()
     {
         double distance = 0;
         distance += i.getDistance();
-        if (v1->id() == 47 && i.getLinkNames().first == "wheel_1" && i.getLinkNames().second.substr(0,14) == "world/obstacle")
-        {
-            std::cout << "id: " << v1->id() << "  " << i.getLinkNames().first << "  -  " << i.getLinkNames().second << ": " << distance << std::endl;
-            auto frame1 = i.getClosestPoints().first;
-            auto frame2 = i.getClosestPoints().second;
+//        if (v1->id() == 47 && i.getLinkNames().first == "wheel_1" && i.getLinkNames().second.substr(0,14) == "world/obstacle")
+//        {
+//            std::cout << "id: " << v1->id() << "  " << i.getLinkNames().first << "  -  " << i.getLinkNames().second << ": " << distance << std::endl;
+//            auto frame1 = i.getClosestPoints().first;
+//            auto frame2 = i.getClosestPoints().second;
 
-            visualization_msgs::MarkerArray ma;
-            visualization_msgs::Marker point1;
-            point1.action = visualization_msgs::Marker::ADD;
-            point1.header.frame_id = "world";
-            point1.header.stamp = ros::Time::now();
-            point1.id = v1->id() + 1;
-            point1.type = visualization_msgs::Marker::SPHERE;
-            point1.scale.x = 0.02; point1.scale.y = 0.02; point1.scale.z = 0.02;
-            point1.pose.position.x = frame1.p(0); point1.pose.position.y = frame1.p(1); point1.pose.position.z = frame1.p(2);
-            point1.pose.orientation.x = 0; point1.pose.orientation.y = 0; point1.pose.orientation.z = 0; point1.pose.orientation.w = 1;
-            point1.color.r = 1; point1.color.g = 1; point1.color.b = 1; point1.color.a = 1;
+//            visualization_msgs::MarkerArray ma;
+//            visualization_msgs::Marker point1;
+//            point1.action = visualization_msgs::Marker::ADD;
+//            point1.header.frame_id = "world";
+//            point1.header.stamp = ros::Time::now();
+//            point1.id = v1->id() + 1;
+//            point1.type = visualization_msgs::Marker::SPHERE;
+//            point1.scale.x = 0.02; point1.scale.y = 0.02; point1.scale.z = 0.02;
+//            point1.pose.position.x = frame1.p(0); point1.pose.position.y = frame1.p(1); point1.pose.position.z = frame1.p(2);
+//            point1.pose.orientation.x = 0; point1.pose.orientation.y = 0; point1.pose.orientation.z = 0; point1.pose.orientation.w = 1;
+//            point1.color.r = 1; point1.color.g = 1; point1.color.b = 1; point1.color.a = 1;
 
-            visualization_msgs::Marker point2;
-            point2.action = visualization_msgs::Marker::ADD;
-            point2.header.frame_id = "world";
-            point2.header.stamp = ros::Time::now();
-            point2.id = v1->id() + 2;
-            point2.type = visualization_msgs::Marker::SPHERE;
-            point2.scale.x = 0.02; point2.scale.y = 0.02; point2.scale.z = 0.02;
-            point2.pose.position.x = frame2.p(0); point2.pose.position.y = frame2.p(1); point2.pose.position.z = frame2.p(2);
-            point2.pose.orientation.x = 0; point2.pose.orientation.y = 0; point2.pose.orientation.z = 0; point2.pose.orientation.w = 1;
-            point2.color.r = 1; point2.color.g = 1; point2.color.b = 1; point2.color.a = 1;
+//            visualization_msgs::Marker point2;
+//            point2.action = visualization_msgs::Marker::ADD;
+//            point2.header.frame_id = "world";
+//            point2.header.stamp = ros::Time::now();
+//            point2.id = v1->id() + 2;
+//            point2.type = visualization_msgs::Marker::SPHERE;
+//            point2.scale.x = 0.02; point2.scale.y = 0.02; point2.scale.z = 0.02;
+//            point2.pose.position.x = frame2.p(0); point2.pose.position.y = frame2.p(1); point2.pose.position.z = frame2.p(2);
+//            point2.pose.orientation.x = 0; point2.pose.orientation.y = 0; point2.pose.orientation.z = 0; point2.pose.orientation.w = 1;
+//            point2.color.r = 1; point2.color.g = 1; point2.color.b = 1; point2.color.a = 1;
 
-            std::cout << "point1: " << point1.pose.position.x << ", " << point1.pose.position.y << ", " << point1.pose.position.z << std::endl;
-            std::cout << "point2: " << point2.pose.position.x << ", " << point2.pose.position.y << ", " << point2.pose.position.z << std::endl;
+//            std::cout << "point1: " << point1.pose.position.x << ", " << point1.pose.position.y << ", " << point1.pose.position.z << std::endl;
+//            std::cout << "point2: " << point2.pose.position.x << ", " << point2.pose.position.y << ", " << point2.pose.position.z << std::endl;
 
-            ma.markers.push_back(point1);
-            ma.markers.push_back(point2);
+//            ma.markers.push_back(point1);
+//            ma.markers.push_back(point2);
 
-            _points_pub.publish(ma);
-        }
+//            _points_pub.publish(ma);
+//        }
 
         if (i.getLinkNames().first.substr(0,14) == "world/obstacle" || i.getLinkNames().second.substr(0,14) == "world/obstacle")
         {

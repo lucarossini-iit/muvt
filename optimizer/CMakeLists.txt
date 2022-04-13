@@ -43,7 +43,8 @@ target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::Open
 add_library(contact SHARED
             src/environment/contact/contact.cpp
             src/environment/contact/vertex_contact.cpp
-            src/environment/contact/edge_relative_pose.cpp)
+            src/environment/contact/edge_relative_pose.cpp
+            src/environment/contact/edge_collision.cpp)
 target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} g2o::core)
 
 add_library(planner SHARED
@@ -61,6 +62,11 @@ target_link_libraries(simulator joint
                                 ${cartesian_interface_LIBRARIES}
                                 ${OpenSoT_LIBRARIES}
                                 yaml-cpp)
+
+add_library(optimizer_contact src/optimizer/optimizer_contact.cpp)
+target_link_libraries(optimizer_contact ${catkin_LIBRARIES}
+                                        g2o::core
+                                        g2o::solver_csparse)
 
 add_library(controller src/controller/robot_controller.cpp)
 target_link_libraries(controller ${cartesian_interface_LIBRARIES})
@@ -84,7 +90,8 @@ target_link_libraries(planner_executor ${catkin_LIBRARIES}
                                        ${XBotInterface_LIBRARIES}
                                        ${cartesian_interface_LIBRARIES}
                                        matlogger2::matlogger2
-                                       planner)
+                                       planner
+                                       optimizer_contact)
 
 install(TARGETS joint
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -107,6 +114,11 @@ install(TARGETS controller
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS optimizer
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS optimizer_contact
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

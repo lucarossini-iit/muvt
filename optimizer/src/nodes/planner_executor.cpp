@@ -6,6 +6,7 @@ PlannerExecutor::PlannerExecutor():
 _nh(""),
 _nhpr("~"),
 _planner(),
+_g2o_optimizer(),
 _execute(false)
 {
     // MatLogger2
@@ -263,6 +264,35 @@ void PlannerExecutor::plan()
     _planner.solve();
     _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
 
+    // create g2o vertices
+    std::vector<OptimizableGraph::Vertex*> g2o_vertices;
+    for (int i = 0; i < _footstep_seq.size(); i++)
+    {
+        VertexContact* vertex = new VertexContact();
+        vertex->setId(i);
+        vertex->setEstimate(_footstep_seq[i]);
+        auto v = dynamic_cast<OptimizableGraph::Vertex*>(vertex);
+        g2o_vertices.push_back(v);
+    }
+    _g2o_optimizer.setVertices(g2o_vertices);
+
+
+    std::vector<OptimizableGraph::Edge*> g2o_edges;
+    for (int i = 0; i < g2o_vertices.size(); i++)
+    {
+        // joint limits
+        EdgeCollision* edge = new EdgeCollision();
+        Eigen::MatrixXd info(3, 3);
+        info.setIdentity();
+        edge->setInformation(info);
+        edge->setObstacles(Eigen::Vector3d(0.5, -0.1, 0.0));
+        edge->vertices()[0] = g2o_vertices[i];
+        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
+        g2o_edges.push_back(e);
+    }
+    _g2o_optimizer.setEdges(g2o_edges);
+    _g2o_optimizer.update();
+
     // IK
     // first trial: let's fix the left foot in the homing position and the right foot on the first position of the footstep sequence
     Eigen::Affine3d T_left, T_right, T_com;
@@ -311,6 +341,9 @@ bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen:
 
 void PlannerExecutor::run()
 {
+    // g2o local refinement
+    _g2o_optimizer.solve();
+
     if (_execute)
     {
         // only single stance phases with the robot oscillating between the footholds

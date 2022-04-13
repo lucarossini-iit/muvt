@@ -14,6 +14,9 @@
 
 // teb_test
 #include <teb_test/planner/dcm_planner.h>
+#include <teb_test/optimizer/optimizer_contact.h>
+#include <environment/contact/vertex_contact.h>
+#include <environment/contact/edge_collision.h>
 
 // msgs and srvs
 #include <visualization_msgs/MarkerArray.h>
@@ -62,6 +65,8 @@ private:
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
+
+    OptimizerContact _g2o_optimizer;
 
     bool _execute;
 };
