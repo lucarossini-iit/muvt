@@ -17,6 +17,7 @@ _execute(false)
 
     init_load_model();
     init_load_config();
+    init_interactive_marker();
     init_load_cartesian_interface();
 
     // advertise topics
@@ -120,6 +121,79 @@ void PlannerExecutor::init_load_config()
     std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32mconfigs loaded! \033[0m" << std::endl;
 }
 
+void PlannerExecutor::init_interactive_marker()
+{
+    _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("planner_executor");
+
+    visualization_msgs::InteractiveMarker int_marker;
+    int_marker.header.frame_id = "world";
+    int_marker.header.stamp = ros::Time::now();
+    int_marker.name = "obstacle";
+    int_marker.description = "obstacle";
+
+    visualization_msgs::Marker m;
+    m.type = visualization_msgs::Marker::SPHERE;
+    m.pose.position.x = 0.0;
+    m.pose.position.y = 0.0;
+    m.pose.position.z = 0.0;
+    m.pose.orientation.x = 0;
+    m.pose.orientation.y = 0;
+    m.pose.orientation.z = 0;
+    m.pose.orientation.w = 1;
+    m.scale.x = 0.5; m.scale.y = 0.5; m.scale.z = 0.5;
+    m.color.r = 1.0; m.color.g = 0.0; m.color.b = 0; m.color.a = 0.3;
+
+    visualization_msgs::InteractiveMarkerControl obs_control;
+    obs_control.always_visible = true;
+    obs_control.markers.push_back(m);
+    int_marker.controls.push_back(obs_control);
+    int_marker.pose.position.x = 0.5;
+    int_marker.pose.position.y = -1.2;
+    int_marker.pose.position.z = 0.0;
+
+    visualization_msgs::InteractiveMarkerControl move_control_x;
+    move_control_x.name = "move_x";
+    move_control_x.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_x);
+
+    visualization_msgs::InteractiveMarkerControl move_control_y;
+    move_control_y.name = "move_y";
+    Eigen::Matrix3d R;
+    R << cos(M_PI/2), -sin(M_PI/2), 0, sin(M_PI/2), cos(M_PI/2), 0, 0, 0, 1;
+    Eigen::Quaternion<double> quat(R);
+    tf::quaternionEigenToMsg(quat, move_control_y.orientation);
+    move_control_y.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_y);
+
+    visualization_msgs::InteractiveMarkerControl move_control_z;
+    move_control_z.name = "move_z";
+    R << cos(-M_PI/2), 0, sin(-M_PI/2), 0, 1, 0, -sin(-M_PI/2), 0, cos(-M_PI/2);
+    Eigen::Quaternion<double> quat_z(R);
+    tf::quaternionEigenToMsg(quat_z, move_control_z.orientation);
+    move_control_z.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
+    int_marker.controls.push_back(move_control_z);
+
+    _server->insert(int_marker);
+    _server->setCallback(int_marker.name, boost::bind(&PlannerExecutor::interactive_markers_feedback, this, _1));
+    _server->applyChanges();
+}
+
+void PlannerExecutor::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+{
+    std::cout << "moving obstacle to: " << feedback->pose.position.x << ", " << feedback->pose.position.y << ", " << feedback->pose.position.z << std::endl;
+    auto c = feedback->marker_name.back();
+    Eigen::Vector3d obs(feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z);
+
+    auto edges = _g2o_optimizer.getEdges();
+    for(auto edge : edges)
+    {
+        if(EdgeCollision* e = dynamic_cast<EdgeCollision*>(edge))
+        {
+            e->setObstacles(obs);
+        }
+    }
+}
+
 void PlannerExecutor::init_load_cartesian_interface()
 {
     std::string cartesian_stack;
@@ -186,7 +260,7 @@ void PlannerExecutor::publish_markers()
         m_zmp.header.frame_id = "world";
         m_zmp.header.stamp = ros::Time::now();
         m_zmp.id = i;
-        m_zmp.action = visualization_msgs::Marker::ADD;
+        m_zmp.action = visualization_msgs::Marker::MODIFY;
         m_zmp.type = visualization_msgs::Marker::SPHERE;
         m_zmp.scale.x = 0.01; m_zmp.scale.y = 0.01; m_zmp.scale.z = 0.01;
         m_zmp.color.r = 1; m_zmp.color.g = 0; m_zmp.color.b = 0; m_zmp.color.a = 1;
@@ -200,7 +274,7 @@ void PlannerExecutor::publish_markers()
         m_footstep.header.frame_id = "world";
         m_footstep.header.stamp = ros::Time::now();
         m_footstep.id = i;
-        m_footstep.action = visualization_msgs::Marker::ADD;
+        m_footstep.action = visualization_msgs::Marker::MODIFY;
         m_footstep.type = visualization_msgs::Marker::CUBE;
         m_footstep.scale.x = 0.2; m_footstep.scale.y = 0.1; m_footstep.scale.z = 0.02;
         m_footstep.color.r = 1; m_footstep.color.g = 1; m_footstep.color.b = 0; m_footstep.color.a = 0.5;
@@ -217,7 +291,7 @@ void PlannerExecutor::publish_markers()
         m_cp.header.frame_id = "world";
         m_cp.header.stamp = ros::Time::now();
         m_cp.id = i;
-        m_cp.action = visualization_msgs::Marker::ADD;
+        m_cp.action = visualization_msgs::Marker::MODIFY;
         m_cp.type = visualization_msgs::Marker::SPHERE;
         m_cp.scale.x = 0.01; m_cp.scale.y = 0.01; m_cp.scale.z = 0.01;
         m_cp.color.r = 0; m_cp.color.g = 0; m_cp.color.b = 1; m_cp.color.a = 1;
@@ -234,7 +308,7 @@ void PlannerExecutor::publish_markers()
         m_com.header.frame_id = "world";
         m_com.header.stamp = ros::Time::now();
         m_com.id = i;
-        m_com.action = visualization_msgs::Marker::ADD;
+        m_com.action = visualization_msgs::Marker::MODIFY;
         m_com.type = visualization_msgs::Marker::SPHERE;
         m_com.scale.x = 0.01; m_com.scale.y = 0.01; m_com.scale.z = 0.01;
         m_com.color.r = 1; m_com.color.g = 0; m_com.color.b = 1; m_com.color.a = 1;
@@ -280,12 +354,11 @@ void PlannerExecutor::plan()
     std::vector<OptimizableGraph::Edge*> g2o_edges;
     for (int i = 0; i < g2o_vertices.size(); i++)
     {
-        // joint limits
         EdgeCollision* edge = new EdgeCollision();
-        Eigen::MatrixXd info(3, 3);
+        Eigen::MatrixXd info(1, 1);
         info.setIdentity();
         edge->setInformation(info);
-        edge->setObstacles(Eigen::Vector3d(0.5, -0.1, 0.0));
+        edge->setObstacles(Eigen::Vector3d(0.5, -1.2, 0.0));
         edge->vertices()[0] = g2o_vertices[i];
         auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
         g2o_edges.push_back(e);
@@ -343,6 +416,10 @@ void PlannerExecutor::run()
 {
     // g2o local refinement
     _g2o_optimizer.solve();
+    _g2o_optimizer.getFootsteps(_footstep_seq);
+    _planner.setFootsteps(_footstep_seq);
+    _planner.solve();
+    _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
 
     if (_execute)
     {
@@ -477,6 +554,7 @@ void PlannerExecutor::run()
         _model->update();
         _rspub->publishTransforms(ros::Time::now(), "ci");
     }
+    publish_markers();
 }
 
 Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time)

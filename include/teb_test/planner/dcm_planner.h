@@ -30,6 +30,7 @@ public:
     void setStepTime(const double step_time);
     void setStepSize(const double step_size);
     void setdT(const double dt);
+    void setFootsteps(std::vector<Contact> footsteps);
 
     unsigned int getNumSteps() const;
     double getZCoM() const;

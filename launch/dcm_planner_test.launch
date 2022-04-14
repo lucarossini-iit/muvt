@@ -6,7 +6,13 @@
     <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
     <param name="cartesio_stack" textfile="$(find teb_test)/config/problem/cartesio_stack.yaml"/>
 
-    <node pkg="teb_test" type="planner_executor" name="planner_executor" output="screen" launch-prefix="bash -c 'sleep 7.0; $0 $@'">
+    <node if="$(arg gazebo)" pkg="teb_test" type="planner_executor" name="planner_executor" output="screen" launch-prefix="bash -c 'sleep 7.0; $0 $@'">
+        <param name="is_model_floating_base" value="true"/>
+        <param name="world_frame_link" value="l_sole"/>
+        <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>
+    </node>
+
+    <node unless="$(arg gazebo)" pkg="teb_test" type="planner_executor" name="planner_executor" output="screen">
         <param name="is_model_floating_base" value="true"/>
         <param name="world_frame_link" value="l_sole"/>
         <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>

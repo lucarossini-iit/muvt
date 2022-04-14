@@ -10,7 +10,7 @@
 
 namespace XBot { namespace HyperGraph {
 
-class EdgeCollision : public BaseUnaryEdge<3, Eigen::Vector3d, VertexContact> {
+class EdgeCollision : public BaseUnaryEdge<1, double, VertexContact> {
 public:
     EdgeCollision();
 

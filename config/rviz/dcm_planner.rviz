@@ -394,6 +394,15 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
+    - Class: rviz/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Update Topic: /planner_executor/update
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

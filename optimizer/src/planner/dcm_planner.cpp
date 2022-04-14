@@ -32,6 +32,12 @@ void DCMPlanner::setdT(const double dt)
     _dt = dt;
 }
 
+void DCMPlanner::setFootsteps(std::vector<Contact> footsteps)
+{
+    _footstep_sequence.clear();
+    _footstep_sequence = footsteps;
+}
+
 unsigned int DCMPlanner::getNumSteps() const
 {
     return _n_steps;
@@ -133,6 +139,9 @@ void DCMPlanner::solve()
     _footstep_sequence[0].state.zmp << (T_first.translation().x() + T_second.translation().x()) / 2,
                                        (T_first.translation().y() + T_second.translation().y()) / 2,
                                        0;
+    _footstep_sequence[0].state.cp = _footstep_sequence[0].state.zmp;
+
+
 
     // start from the last step and move backwards to the first one.
     Eigen::Affine3d T_last, T_second_last;
@@ -182,11 +191,16 @@ void DCMPlanner::solve()
             com_old = _com_trj.back();
         }
     }
+
 }
 
 
 void DCMPlanner::getSolution(std::vector<Contact>& footsteps, std::vector<Eigen::Vector3d>& cp_trj, std::vector<Eigen::Vector3d>& com_trj) const
 {
+    footsteps.clear();
+    cp_trj.clear();
+    com_trj.clear();
+
     footsteps = _footstep_sequence;
 
     for(auto i : _cp_trj)

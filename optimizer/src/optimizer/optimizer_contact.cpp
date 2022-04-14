@@ -51,3 +51,14 @@ void OptimizerContact::solve()
     _optimizer.initializeOptimization();
     _optimizer.optimize(10);
 }
+
+void OptimizerContact::getFootsteps(std::vector<Contact>& footsteps)
+{
+    footsteps.clear();
+    auto vertices = _optimizer.vertices();
+    for (int i = 0; i < vertices.size(); i++)
+    {
+        VertexContact* v = dynamic_cast<VertexContact*>(vertices[i]);
+        footsteps.push_back(v->estimate());
+    }
+}

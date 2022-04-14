@@ -3,6 +3,8 @@
 
 // ros
 #include <ros/ros.h>
+#include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
 
 // XBot and CartesI/O
 #include <XBotInterface/ModelInterface.h>
@@ -20,6 +22,8 @@
 
 // msgs and srvs
 #include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/InteractiveMarker.h>
+#include <interactive_markers/interactive_marker_server.h>
 #include <std_srvs/Empty.h>
 
 namespace XBot { namespace HyperGraph { namespace Planner {
@@ -35,6 +39,8 @@ private:
     // init functions
     void init_load_model();
     void init_load_config();
+    void init_interactive_marker();
+    void interactive_markers_feedback (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
     void init_load_cartesian_interface();
 
     // solve IK and execute the trajectory
@@ -55,6 +61,7 @@ private:
     ros::NodeHandle _nh, _nhpr;
     ros::ServiceServer _exec_srv;
     ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _com_pub;
+    std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
     ModelInterface::Ptr _model;
     RobotInterface::Ptr _robot;

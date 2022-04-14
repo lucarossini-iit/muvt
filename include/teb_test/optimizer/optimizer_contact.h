@@ -1,7 +1,6 @@
 #ifndef OPTIMIZER_CONTACT_H
 #define OPTIMIZER_CONTACT_H
 
-
 #include <g2o/config.h>
 #include "g2o/core/sparse_optimizer.h"
 #include "g2o/core/block_solver.h"
@@ -11,6 +10,8 @@
 #include <g2o/core/optimization_algorithm_levenberg.h>
 #include "g2o/core/optimization_algorithm_factory.h"
 #include <g2o/core/optimizable_graph.h>
+
+#include <environment/contact/vertex_contact.h>
 
 namespace XBot { namespace HyperGraph {
 
@@ -23,6 +24,8 @@ public:
 
     void setEdges(const std::vector<g2o::OptimizableGraph::Edge*> edges);
     std::vector<g2o::OptimizableGraph::Edge*> getEdges() const { return _edges; }
+
+    void getFootsteps(std::vector<Contact>& footsteps);
 
     void update();
 
