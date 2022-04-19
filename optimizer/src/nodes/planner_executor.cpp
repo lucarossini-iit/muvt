@@ -140,7 +140,7 @@ void PlannerExecutor::init_interactive_marker()
     m.pose.orientation.y = 0;
     m.pose.orientation.z = 0;
     m.pose.orientation.w = 1;
-    m.scale.x = 0.1; m.scale.y = 0.1; m.scale.z = 0.1;
+    m.scale.x = 0.5; m.scale.y = 0.5; m.scale.z = 0.5;
     m.color.r = 1.0; m.color.g = 0.0; m.color.b = 0; m.color.a = 0.3;
 
     visualization_msgs::InteractiveMarkerControl obs_control;
@@ -284,7 +284,7 @@ void PlannerExecutor::publish_markers()
     }
 
     // publish cp
-    for (int i = 0; i < _cp_trj.size(); i += 50)
+    for (int i = 0; i < _cp_trj.size(); i += 10)
     {
         visualization_msgs::Marker m_cp;
         m_cp.header.frame_id = "world";
@@ -301,7 +301,7 @@ void PlannerExecutor::publish_markers()
     }
 
     // publish com
-    for (int i = 0; i < _com_trj.size(); i += 50)
+    for (int i = 0; i < _com_trj.size(); i += 10)
     {
         visualization_msgs::Marker m_com;
         m_com.header.frame_id = "world";
@@ -344,7 +344,7 @@ void PlannerExecutor::plan()
         VertexContact* vertex = new VertexContact();
         vertex->setId(i);
         vertex->setEstimate(_footstep_seq[i]);
-        if (0 == i || 1 == i ||  (_footstep_seq.size() - 1) == i)
+        if (0 == i || 1 == i ||  (_footstep_seq.size() - 1) == i || (_footstep_seq.size() - 2) == i)
             vertex->setFixed(true);
         auto v = dynamic_cast<OptimizableGraph::Vertex*>(vertex);
         g2o_vertices.push_back(v);
@@ -365,7 +365,7 @@ void PlannerExecutor::plan()
         g2o_edges.push_back(e);
     }
 
-    for (int i = 2; i < g2o_vertices.size() - 2; i++)
+    for (int i = 0; i < g2o_vertices.size() - 1; i++)
     {
         VertexContact* vertex = dynamic_cast<VertexContact*>(g2o_vertices[i]);
         vertex->print();
@@ -383,7 +383,7 @@ void PlannerExecutor::plan()
 //        g2o_edges.push_back(e);
 
         EdgeRelativePose* edge_succ = new EdgeRelativePose();
-        Eigen::MatrixXd info_succ(1, 1);
+        Eigen::MatrixXd info_succ(3, 3);
         info_succ.setIdentity(); // info_succ *= 100;
         edge_succ->setInformation(info_succ);
         edge_succ->setStepTime(_planner.getStepTime());

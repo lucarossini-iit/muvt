@@ -35,6 +35,7 @@ public:
     bool checkVertices();
 
     void computeError();
+//    void linearizeOplus() { _jacobianOplusXi = Eigen::MatrixXd::Identity(3,3); _jacobianOplusXj = Eigen::MatrixXd::Identity(3,3); }
 
 private:
     double _step_time;

@@ -25,3 +25,11 @@ void Contact::setDistalLink(std::string distal_link)
 {
     _distal_link = distal_link;
 }
+
+void Contact::print()
+{
+    std::cout << "---------------------" << std::endl;
+    std::cout << "- DISTAL LINK: " << _distal_link << std::endl;
+    std::cout << "- POSE: \n " << state.pose.matrix() << std::endl;
+    std::cout << "---------------------" << std::endl;
+}

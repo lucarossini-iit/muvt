@@ -1,6 +1,8 @@
 #ifndef CONTACT_H
 #define CONTACT_H
 
+#include <iostream>
+
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -47,6 +49,8 @@ public:
         setDistalLink(c.getDistalLink());
         return *this;
     }
+
+    void print();
 
     ContactState state;
 
