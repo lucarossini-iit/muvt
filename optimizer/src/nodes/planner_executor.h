@@ -19,6 +19,7 @@
 #include <teb_test/optimizer/optimizer_contact.h>
 #include <environment/contact/vertex_contact.h>
 #include <environment/contact/edge_collision.h>
+#include <environment/contact/edge_relative_pose.h>
 
 // msgs and srvs
 #include <visualization_msgs/MarkerArray.h>

@@ -44,6 +44,8 @@ void OptimizerContact::update()
     {
         _optimizer.addEdge(e);
     }
+
+    std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32m" << "loaded " << _vertices.size() << " vertices, and " << _edges.size() << "edges!" <<  "\033[0m" << std::endl;
 }
 
 void OptimizerContact::solve()

@@ -9,6 +9,9 @@ _distal_link(distal_link)
 Contact Contact::operator=(const Contact &other)
 {
     this->state.pose = other.state.pose;
+    this->state.zmp = other.state.zmp;
+    this->state.cp = other.state.cp;
+    this->state.time = other.state.time;
     this->setDistalLink(other.getDistalLink());
     return *this;
 }

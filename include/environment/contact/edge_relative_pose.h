@@ -18,24 +18,27 @@ public:
 
     bool read(std::istream& is)
     {
-        Eigen::VectorXd meas;
-        internal::readVector(is, meas);
-        setMeasurement(meas);
-
         return is.good() || is.eof();
     }
 
     bool write(std::ostream& os) const
     {
-        Eigen::VectorXd p = measurement();
-        os << p;
-
         return os.good();
     }
+
+    void setStepTime(const double step_time) { _step_time = step_time; }
+    double getStepTime() const { return _step_time; }
+
+    void setStepSize(const double step_size) { _step_size = step_size; }
+    double getStepSize() const { return _step_size; }
 
     bool checkVertices();
 
     void computeError();
+
+private:
+    double _step_time;
+    double _step_size;
 };
 } }
 

@@ -15,6 +15,14 @@ bool VertexContact::write(std::ostream& os) const {
   return true;
 }
 
+void VertexContact::print() const
+{
+    std::cout << "VertexContact -- ID: " << _id << std::endl;
+    std::cout << "distal link: " << _estimate.getDistalLink() << std::endl;
+    std::cout << "pose: \n" << _estimate.state.pose.matrix() << std::endl;
+    std::cout << "time: " << _estimate.state.time << std::endl;
+}
+
 void VertexContact::setToOriginImpl()
 {
     _estimate.state.pose.setIdentity();

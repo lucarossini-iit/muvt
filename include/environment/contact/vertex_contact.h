@@ -18,6 +18,7 @@ public:
 
     virtual bool read(std::istream& is);
     virtual bool write(std::ostream& os) const;
+    void print() const;
 
     virtual bool setEstimateDataImpl(const double* est);
     virtual bool getEstimateData(double* est) const;

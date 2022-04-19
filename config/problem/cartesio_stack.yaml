@@ -4,7 +4,7 @@ solver_options:
 
 stack:
     - ["LFoot", "RFoot", "Com"]
-    #- ["TorsoRot"]
+    - ["TorsoRot"]
     - ["Postural"]
 
 constraints: ["JointLimits", "VelocityLimits"]
