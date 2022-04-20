@@ -33,11 +33,5 @@ void EdgeCollision::computeError()
         _error[0] = value;
         res = true;
     }
-//    if(res)
-//    {
-//        std::cout << "obstacle position: " << _obstacle.transpose() << std::endl;
-//        std::cout << v->estimate().getDistalLink() << " position: " << v->estimate().state.pose.translation().transpose() << std::endl;
-//        std::cout << "error: " << _error.transpose() << std::endl;
-//    }
 }
 

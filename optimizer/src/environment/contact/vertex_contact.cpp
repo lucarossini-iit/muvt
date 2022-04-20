@@ -4,7 +4,7 @@ using namespace XBot::HyperGraph;
 using namespace g2o;
 
 VertexContact::VertexContact():
-BaseVertex<6, Contact>()
+BaseVertex<7, Contact>()
 {}
 
 bool VertexContact::read(std::istream& is) {
@@ -43,7 +43,13 @@ bool VertexContact::getEstimateData(double* est) const
 void VertexContact::oplusImpl(const double* update)
 {
     Contact increment;
+//    std::cout << "UPDATE" << std::endl;
+//    for (int i = 0; i < 7; i++)
+//        std::cout << update[i] << std::endl;
     Utils::vectorToContact(update, increment);
+//    std::cout << "-------------------" << std::endl;
+//    std::cout << increment.state.pose.matrix() << std::endl;
+//    std::cout << "-------------------" << std::endl;
     _estimate.state.pose = _estimate.state.pose * increment.state.pose;
 }
 

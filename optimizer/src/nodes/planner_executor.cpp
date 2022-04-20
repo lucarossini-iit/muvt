@@ -394,6 +394,18 @@ void PlannerExecutor::plan()
         auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
         g2o_edges.push_back(e);
     }
+
+//    for (int i = 2; i < g2o_vertices.size(); i++)
+//    {
+//        EdgeSteering* edge = new EdgeSteering();
+//        Eigen::MatrixXd info(1, 1);
+//        info.setIdentity();
+//        edge->setInformation(info);
+//        edge->setPreviousContact(g2o_vertices[i-2]);
+//        edge->vertices()[0] = g2o_vertices[i];
+//        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
+//        g2o_edges.push_back(e);
+//    }
     _g2o_optimizer.setEdges(g2o_edges);
     _g2o_optimizer.update();
 

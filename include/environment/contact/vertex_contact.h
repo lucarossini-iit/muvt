@@ -9,7 +9,7 @@ using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
 
-class VertexContact : public BaseVertex<6, Contact> {
+class VertexContact : public BaseVertex<7, Contact> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     VertexContact();
