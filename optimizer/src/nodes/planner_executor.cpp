@@ -475,11 +475,11 @@ void PlannerExecutor::run()
                 }
 
                 // first step is half og the nominal one, thus we divide also also the step time
-                else if (i == 2 && time > _planner.getStepTime() / 2)
+                else if (i == 2 && time > _planner.getStepTime() / 3)
                 {
                     auto task = _ci->getTask(_footstep_seq[i].getDistalLink());
                     auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, _planner.getStepTime()/2, _planner.getStepTime());
+                    Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, _planner.getStepTime()/3, _planner.getStepTime());
                     c_task->setPoseReference(x_ref);
                 }
 
