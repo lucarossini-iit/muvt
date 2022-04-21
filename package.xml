@@ -18,9 +18,9 @@
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
 
-  <build_depend>cartesio_planning</build_depend>
-  <build_export_depend>cartesio_planning</build_export_depend>
-  <exec_depend>cartesio_planning</exec_depend>
+  <build_depend>libg2o</build_depend>
+  <build_export_depend>libg2o</build_export_depend>
+  <exec_depend>libg2o</exec_depend>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
