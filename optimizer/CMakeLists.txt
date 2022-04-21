@@ -15,6 +15,8 @@ find_package(ompl 1.5.0 REQUIRED)
 
 find_package(matlogger2 REQUIRED)
 
+find_package(CSparse REQUIRED)
+
 include_directories(
     include
     ${OMPL_INCLUDE_DIRS}
@@ -37,6 +39,7 @@ add_library(joint SHARED
             src/environment/joint/edge_kinematic.cpp
             src/environment/joint/edge_postural.cpp)
 target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl g2o::types_slam3d)
+    ${CSPARSE_INCLUDE_DIR})
 
 add_library(contact SHARED
             src/environment/contact/contact.cpp
