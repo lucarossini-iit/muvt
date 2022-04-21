@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.1.0)
 
 add_compile_options(-std=c++14)
 
-find_package(cartesio_planning REQUIRED)
 
 find_package(cartesian_interface REQUIRED)
 
@@ -22,7 +21,6 @@ include_directories(
     ${g2o_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     ${cartesian_interface_INCLUDE_DIRS}
-    ${cartesio_planning_INCLUDE_DIRS}
     ${matlogger2_INCLUDE_DIRS}
     ${GAZEBO_INCLUDE_DIRS})
 
@@ -72,14 +70,6 @@ target_link_libraries(optimizer_contact ${catkin_LIBRARIES}
 add_library(controller src/controller/robot_controller.cpp)
 target_link_libraries(controller ${cartesian_interface_LIBRARIES})
 
-add_executable(optimizer src/nodes/optimizer_node.cpp src/optimizer/optimizer.cpp)
-target_link_libraries(optimizer joint
-                                simulator
-                                ${catkin_LIBRARIES}
-                                ${cartesio_planning_LIBRARIES}
-                                g2o::core
-                                g2o::solver_csparse)
-
 add_executable(robot_controller_node src/nodes/robot_controller_node.cpp)
 target_link_libraries(robot_controller_node controller)
 
@@ -110,11 +100,6 @@ install(TARGETS simulator
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS controller
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(TARGETS optimizer
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
