@@ -55,20 +55,7 @@ bool VertexContact::getMinimalEstimateDataImpl(double *est)
 void VertexContact::oplusImpl(const double* update)
 {
     Contact increment;
-//    if (update[0] > 0.001)
-//    {
-//        std::cout << "UPDATE" << std::endl;
-//        for (int i = 0; i < 6; i++)
-//            std::cout << update[i] << std::endl;
-//    }
     Utils::minimalVectorToContact(update, increment);
-//    increment.state.pose.linear() << 0.9998477, -0.0174524, 0, 0.0174524, 0.9998477, 0, 0, 0, 1;
-//    if (update[0] > 0.001)
-//    {
-//        std::cout << "-------------------" << std::endl;
-//        std::cout << increment.state.pose.matrix() << std::endl;
-//        std::cout << "-------------------" << std::endl;
-//    }
     _estimate.state.pose.translation() = _estimate.state.pose.translation() + increment.state.pose.translation();
     _estimate.state.pose.linear() = _estimate.state.pose.linear() * increment.state.pose.linear();
 }

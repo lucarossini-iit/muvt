@@ -605,25 +605,13 @@ Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x
     // compute z parabolic trajectory
     double z_fin = x_fin.translation().z();
     double z_init = x_init.translation().z();
-
-//    double a = -4 / pow(step_time, 2) * h;
-//    double b = -a * step_time;
     double a = -4 / pow(step_time - t_init, 2) * h;
     double b = -a * ((step_time*step_time - t_init*t_init) / (step_time - t_init));
     double c = -a * pow(t_init, 2) - b * t_init;
     double z = a * pow(time, 2) + b * time + c;
 
     // linear trajectory for x and y
-//    b = x_init.translation().x();
-//    a = (x_fin.translation().x() - x_init.translation().x()) / step_time;
-//    a = (x_fin.translation().x() - x_init.translation().x()) / (step_time - t_init);
-//    b = x_init.translation().x() - a * t_init;
     double x = linear_interpolation(x_init.translation().x(), x_fin.translation().x(), step_time, t_init, time);
-
-//    b = x_init.translation().y();
-//    a = (x_fin.translation().y() - x_init.translation().y()) / step_time;
-//    a = (x_fin.translation().y() - x_init.translation().y()) / (step_time - t_init);
-//    b = x_init.translation().y() - a * t_init;
     double y = linear_interpolation(x_init.translation().y(), x_fin.translation().y(), step_time, t_init, time);
 
     // quaternion linear interpolation
