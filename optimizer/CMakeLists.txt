@@ -56,6 +56,9 @@ target_link_libraries(optimizer ${catkin_LIBRARIES}
                                 g2o::core
                                 g2o::solver_csparse)
 
+add_executable(test_node src/nodes/planner_executor_node.cpp src/nodes/planner_executor.cpp)
+target_link_libraries(test_node ${catkin_LIBRARIES} yaml-cpp optimizer planner contact)
+
 
 install(TARGETS contact
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -68,6 +71,11 @@ install(TARGETS optimizer
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS planner
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(TARGETS test_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

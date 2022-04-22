@@ -1,36 +1,10 @@
 <launch>
-    <arg name="gazebo" default="true"/>
-    <param name="use_sim_time" value="false"/>
 
-    <param name="robot_description" textfile="$(find cogimon_urdf)/urdf/cogimon.urdf"/>
-    <param name="robot_description_semantic" textfile="$(find cogimon_srdf)/srdf/cogimon.srdf"/>
-    <param name="cartesio_stack" textfile="$(find teb_test)/config/problem/cartesio_stack.yaml"/>
-
-    <node if="$(arg gazebo)" pkg="teb_test" type="planner_executor" name="planner_executor" output="screen" launch-prefix="bash -c 'sleep 7.0; $0 $@'">
-        <param name="is_model_floating_base" value="true"/>
-        <param name="world_frame_link" value="l_sole"/>
-        <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>
+    <node pkg="teb_test" type="test_node" name="test_node" output="screen">
+        <param name="dcm_config" textfile="$(find teb_test)/config/params/dcm_config.yaml"/>
     </node>
-
-    <node unless="$(arg gazebo)" pkg="teb_test" type="planner_executor" name="planner_executor" output="screen">
-        <param name="is_model_floating_base" value="true"/>
-        <param name="world_frame_link" value="l_sole"/>
-        <param name="dcm_config" textfile="$(find teb_test)/config/problem/dcm_config.yaml"/>
-    </node>
-
-    <group if="$(arg gazebo)">
-<!--        <node pkg="gazebo_ros" type="gazebo" name="gazebo"-->
-<!--            args="$(find teb_test)/config/world/cogimon.world"/>-->
-
-        <include file="$(find cogimon_gazebo)/launch/cogimon_world.launch"/>
-
-        <node pkg="teb_test" type="xbotcore.sh" name="xbot" output="screen"/>
-    </group>
-
-    <node pkg="tf" type="static_transform_publisher" name="world_connecter"
-        args="0 0 0 0 0 0 world ci/world 30"/>
 
     <node pkg="rviz" type="rviz" name="rviz" output="screen"
-        args="-d $(find teb_test)/config/rviz/dcm_planner.rviz"/>
+        args="-d $(find teb_test)/config/rviz/muvt_test.rviz"/>
 
 </launch>

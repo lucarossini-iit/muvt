@@ -9,11 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     rosconsole
     std_msgs
-    #interactive_markers
-
-    #tf tf_conversions
-    #visualization_msgs
-    #geometry_msgs
+    interactive_markers
+    visualization_msgs
+    geometry_msgs
     eigen_conversions
     )
 

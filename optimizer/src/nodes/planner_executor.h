@@ -39,11 +39,9 @@ public:
 
 private:
     // init functions
-    void init_load_model();
     void init_load_config();
     void init_interactive_marker();
     void interactive_markers_feedback (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
-    void init_load_cartesian_interface();
 
     // solve IK and execute the trajectory
     void plan();
@@ -57,27 +55,15 @@ private:
     // swing foot trajectories
     Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time);
 
-    // ROS service definitions
-    bool execute_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-
     ros::NodeHandle _nh, _nhpr;
-    ros::ServiceServer _exec_srv;
     ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _com_pub;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
-
-    ModelInterface::Ptr _model;
-    RobotInterface::Ptr _robot;
-    std::shared_ptr<Cartesian::Utils::RobotStatePublisher> _rspub;
-    Cartesian::CartesianInterfaceImpl::Ptr _ci;
-    MatLogger2::MatLogger2::Ptr _logger;
 
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
 
     OptimizerContact _g2o_optimizer;
-
-    bool _execute;
 };
 } } }
 
