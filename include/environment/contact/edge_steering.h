@@ -10,7 +10,7 @@ using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
 
-class EdgeSteering : public BaseUnaryEdge<1, double, VertexContact> {
+class EdgeSteering : public BaseUnaryEdge<3, Eigen::Vector3d, VertexContact> {
 public:
     EdgeSteering();
 
