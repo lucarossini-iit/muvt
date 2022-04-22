@@ -280,6 +280,11 @@ void PlannerExecutor::publish_markers()
         m_footstep.pose.position.x = _footstep_seq[i].state.pose.translation().x();
         m_footstep.pose.position.y = _footstep_seq[i].state.pose.translation().y();
         m_footstep.pose.position.z = _footstep_seq[i].state.pose.translation().z();
+        Eigen::Quaternion<double> q(_footstep_seq[i].state.pose.linear());
+        m_footstep.pose.orientation.x = q.coeffs().x();
+        m_footstep.pose.orientation.y = q.coeffs().y();
+        m_footstep.pose.orientation.z = q.coeffs().z();
+        m_footstep.pose.orientation.w = q.coeffs().w();
         ma_footstep.markers.push_back(m_footstep);
     }
 
@@ -357,7 +362,7 @@ void PlannerExecutor::plan()
     {
         EdgeCollision* edge = new EdgeCollision();
         Eigen::MatrixXd info(1, 1);
-        info.setIdentity();
+        info.setIdentity();  info *= 100;
         edge->setInformation(info);
         edge->setObstacles(Eigen::Vector3d(0.5, -1.2, 0.0));
         edge->vertices()[0] = g2o_vertices[i];
@@ -367,24 +372,9 @@ void PlannerExecutor::plan()
 
     for (int i = 0; i < g2o_vertices.size() - 1; i++)
     {
-        VertexContact* vertex = dynamic_cast<VertexContact*>(g2o_vertices[i]);
-        vertex->print();
-
-//        EdgeRelativePose* edge_prev = new EdgeRelativePose();
-//        Eigen::MatrixXd info(1, 1);
-//        info.setIdentity();
-//        edge_prev->setInformation(info);
-//        edge_prev->setStepTime(_planner.getStepTime());
-//        edge_prev->setStepSize(_planner.getStepSize());
-//        edge_prev->vertices()[0] = g2o_vertices[i];
-//        edge_prev->vertices()[1] = g2o_vertices[i-1];
-//        edge_prev->checkVertices();
-//        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_prev);
-//        g2o_edges.push_back(e);
-
         EdgeRelativePose* edge_succ = new EdgeRelativePose();
         Eigen::MatrixXd info_succ(3, 3);
-        info_succ.setIdentity(); // info_succ *= 100;
+        info_succ.setIdentity();  info_succ *= 100;
         edge_succ->setInformation(info_succ);
         edge_succ->setStepTime(_planner.getStepTime());
         edge_succ->setStepSize(_planner.getStepSize());
@@ -395,17 +385,17 @@ void PlannerExecutor::plan()
         g2o_edges.push_back(e);
     }
 
-//    for (int i = 2; i < g2o_vertices.size(); i++)
-//    {
-//        EdgeSteering* edge = new EdgeSteering();
-//        Eigen::MatrixXd info(1, 1);
-//        info.setIdentity();
-//        edge->setInformation(info);
-//        edge->setPreviousContact(g2o_vertices[i-2]);
-//        edge->vertices()[0] = g2o_vertices[i];
-//        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
-//        g2o_edges.push_back(e);
-//    }
+    for (int i = 2; i < g2o_vertices.size(); i++)
+    {
+        EdgeSteering* edge = new EdgeSteering();
+        Eigen::MatrixXd info(3, 3);
+        info.setIdentity();
+        edge->setInformation(info);
+        edge->setPreviousContact(g2o_vertices[i-2]);
+        edge->vertices()[0] = g2o_vertices[i];
+        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
+        g2o_edges.push_back(e);
+    }
     _g2o_optimizer.setEdges(g2o_edges);
     _g2o_optimizer.update();
 
@@ -436,7 +426,7 @@ void PlannerExecutor::plan()
 
 bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose)
 {
-    // TODO: remvoe hardcoded foot size
+    // TODO: remove hardcoded foot size
     // foot limits in foot frame
     double x_max = 0.1;
     double x_min = -0.1;
@@ -600,6 +590,14 @@ void PlannerExecutor::run()
     publish_markers();
 }
 
+double linear_interpolation(double init, double fin, double tf, double ti, double t)
+{
+    double a = (fin - init) / (tf - ti);
+    double b = init - a * ti;
+    double res = a * t + b;
+    return res;
+}
+
 Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time)
 {
     double h = 0.05;
@@ -618,19 +616,24 @@ Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x
     // linear trajectory for x and y
 //    b = x_init.translation().x();
 //    a = (x_fin.translation().x() - x_init.translation().x()) / step_time;
-    a = (x_fin.translation().x() - x_init.translation().x()) / (step_time - t_init);
-    b = x_init.translation().x() - a * t_init;
-    double x = a * time + b;
+//    a = (x_fin.translation().x() - x_init.translation().x()) / (step_time - t_init);
+//    b = x_init.translation().x() - a * t_init;
+    double x = linear_interpolation(x_init.translation().x(), x_fin.translation().x(), step_time, t_init, time);
 
 //    b = x_init.translation().y();
 //    a = (x_fin.translation().y() - x_init.translation().y()) / step_time;
-    a = (x_fin.translation().y() - x_init.translation().y()) / (step_time - t_init);
-    b = x_init.translation().y() - a * t_init;
-    double y = a * time + b;
+//    a = (x_fin.translation().y() - x_init.translation().y()) / (step_time - t_init);
+//    b = x_init.translation().y() - a * t_init;
+    double y = linear_interpolation(x_init.translation().y(), x_fin.translation().y(), step_time, t_init, time);
+
+    // quaternion linear interpolation
+    Eigen::Quaternion<double> q_init(x_init.linear()), q_fin(x_fin.linear()), q_slerp;
+    double normalized_time = time / step_time;
+    q_slerp = q_init.slerp(normalized_time, q_fin);
 
     Eigen::Affine3d x_ref;
     x_ref.translation() << x, y, z;
-    x_ref.linear().setIdentity();
+    x_ref.linear() = q_slerp.toRotationMatrix();
 
     return x_ref;
 }
