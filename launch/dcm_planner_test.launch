@@ -1,10 +1,10 @@
 <launch>
 
-    <node pkg="teb_test" type="test_node" name="test_node" output="screen">
-        <param name="dcm_config" textfile="$(find teb_test)/config/params/dcm_config.yaml"/>
+    <node pkg="muvt" type="test_node" name="test_node" output="screen">
+        <param name="dcm_config" textfile="$(find muvt)/config/params/dcm_config.yaml"/>
     </node>
 
     <node pkg="rviz" type="rviz" name="rviz" output="screen"
-        args="-d $(find teb_test)/config/rviz/muvt_test.rviz"/>
+        args="-d $(find muvt)/config/rviz/muvt_test.rviz"/>
 
 </launch>

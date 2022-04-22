@@ -4,11 +4,11 @@
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/optimizable_graph.h>
 
-#include <teb_test/environment/contact/vertex_contact.h>
+#include <muvt/environment/contact/vertex_contact.h>
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class EdgeSteering : public BaseUnaryEdge<3, Eigen::Vector3d, VertexContact> {
 public:

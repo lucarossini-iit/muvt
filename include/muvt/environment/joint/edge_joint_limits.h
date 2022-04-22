@@ -5,15 +5,15 @@
 
 #include <environment/joint/vertex_robot_pos.h>
 
-#include <XBotInterface/ModelInterface.h>
+#include <MuvtInterface/ModelInterface.h>
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class EdgeJointLimits : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
 public:
-    EdgeJointLimits(XBot::ModelInterface::Ptr model);
+    EdgeJointLimits(Muvt::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {
@@ -39,7 +39,7 @@ public:
     Eigen::VectorXd getError() const;
 
 private:
-    XBot::ModelInterface::Ptr _model;
+    Muvt::ModelInterface::Ptr _model;
 };
 
 } }

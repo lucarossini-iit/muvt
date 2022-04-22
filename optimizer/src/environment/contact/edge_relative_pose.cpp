@@ -1,7 +1,7 @@
-#include <teb_test/environment/contact/edge_relative_pose.h>
+#include <muvt/environment/contact/edge_relative_pose.h>
 
 using namespace g2o;
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 
 EdgeRelativePose::EdgeRelativePose():
 BaseBinaryEdge<3, Eigen::Vector3d, VertexContact, VertexContact>()

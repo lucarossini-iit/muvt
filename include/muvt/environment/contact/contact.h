@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 struct ContactState {
     Eigen::Affine3d pose;

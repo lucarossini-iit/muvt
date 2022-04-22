@@ -1,20 +1,20 @@
-#ifndef EDGE_TASK_H
-#define EDGE_TASK_H
+#ifndef EDGE_POSTURAL_H
+#define EDGE_POSTURAL_H
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <XBotInterface/ModelInterface.h>
+#include <MuvtInterface/ModelInterface.h>
 
 #include <environment/joint/unary_edge.h>
 #include <environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
-class EdgeTask : public UnaryEdge {
+class EdgePostural : public UnaryEdge {
 public:
-    EdgeTask(XBot::ModelInterface::Ptr model);
+    EdgePostural(Muvt::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {
@@ -27,7 +27,6 @@ public:
     }
 
     void setReference(Eigen::VectorXd ref);
-    void setEndEffectors(std::vector<std::string> ee);
 
     bool resize();
 
@@ -39,9 +38,8 @@ public:
 
 private:
     Eigen::VectorXd _ref;
-    std::vector<Eigen::Affine3d> _T_ref;
-    std::vector<std::string> _ee;
 };
 
 } }
-#endif // EDGE_TASK_H
+
+#endif // EDGE_POSTURAL_H

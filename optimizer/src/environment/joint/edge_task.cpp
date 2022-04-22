@@ -1,9 +1,9 @@
 #include <environment/joint/edge_task.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeTask::EdgeTask(XBot::ModelInterface::Ptr model):
+EdgeTask::EdgeTask(Muvt::ModelInterface::Ptr model):
 UnaryEdge(model)
 {}
 

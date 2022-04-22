@@ -3,7 +3,7 @@
 
 #include <visualization_msgs/Marker.h>
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 struct obstacle {
     Eigen::Vector3d position;

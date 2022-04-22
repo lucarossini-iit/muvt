@@ -1,8 +1,8 @@
 <package format="2">
-  <name>teb_test</name>
+  <name>muvt</name>
   <version>1.2.4</version>
   <description>
-  test with g2o package
+  muvt local planner using g2o package
   </description>
   <maintainer email="luca.rossini@iit.it">luca</maintainer>
   <license>BSD</license>

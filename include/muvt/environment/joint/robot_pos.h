@@ -5,7 +5,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class RobotPos {
 public:

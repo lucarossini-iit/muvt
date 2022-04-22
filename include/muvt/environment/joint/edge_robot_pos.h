@@ -3,7 +3,7 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <XBotInterface/ModelInterface.h>
+#include <MuvtInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
@@ -11,13 +11,13 @@
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
     
 class EdgeRobotPos : public BaseUnaryEdge<30, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
-    EdgeRobotPos(XBot::ModelInterface::Ptr& model,
+    EdgeRobotPos(Muvt::ModelInterface::Ptr& model,
                  int max_pair_link);
     
     bool read(std::istream& is)
@@ -45,7 +45,7 @@ public:
     unsigned int ID;
     
 private:
-    XBot::ModelInterface::Ptr _model;
+    Muvt::ModelInterface::Ptr _model;
     int _max_pair_link;
 
 }; } }

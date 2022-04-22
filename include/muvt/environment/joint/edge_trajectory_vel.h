@@ -3,11 +3,11 @@
 
 #include <environment/joint/unary_edge.h>
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class EdgeTrajectoryVel : public UnaryEdge {
 public:
-    EdgeTrajectoryVel(XBot::ModelInterface::Ptr model);
+    EdgeTrajectoryVel(Muvt::ModelInterface::Ptr model);
 
     bool read(std::istream& is){ return true; }
     bool write(std::ostream &os) const { return true; }

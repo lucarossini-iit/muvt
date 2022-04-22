@@ -1,7 +1,7 @@
 #ifndef EDGE_KINEMATIC_H
 #define EDGE_KINEMATIC_H
 
-#include <XBotInterface/ModelInterface.h>
+#include <MuvtInterface/ModelInterface.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <Eigen/Geometry>
 
@@ -11,13 +11,13 @@
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class EdgeKinematic : public UnaryEdge {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    EdgeKinematic(XBot::ModelInterface::Ptr model);
+    EdgeKinematic(Muvt::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {

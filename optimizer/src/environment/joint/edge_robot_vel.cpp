@@ -1,9 +1,9 @@
 #include <environment/joint/edge_robot_vel.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeRobotVel::EdgeRobotVel(XBot::ModelInterface::Ptr model):
+EdgeRobotVel::EdgeRobotVel(Muvt::ModelInterface::Ptr model):
 BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos>(),
 _model(model)
 {
@@ -56,7 +56,7 @@ Eigen::VectorXd EdgeRobotVel::getVelocities() const
     return _vel;
 }
 
-EdgeRobotUnaryVel::EdgeRobotUnaryVel(XBot::ModelInterface::Ptr model):
+EdgeRobotUnaryVel::EdgeRobotUnaryVel(Muvt::ModelInterface::Ptr model):
 BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos>(),
 _model(model)
 {}

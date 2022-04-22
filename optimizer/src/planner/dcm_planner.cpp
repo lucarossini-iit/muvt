@@ -1,6 +1,6 @@
-#include <teb_test/planner/dcm_planner.h>
+#include <muvt/planner/dcm_planner.h>
 
-using namespace XBot::HyperGraph::Planner;
+using namespace Muvt::HyperGraph::Planner;
 
 DCMPlanner::DCMPlanner():
 _nh(""),

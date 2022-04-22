@@ -11,9 +11,9 @@
 #include "g2o/core/optimization_algorithm_factory.h"
 #include <g2o/core/optimizable_graph.h>
 
-#include <teb_test/environment/contact/vertex_contact.h>
+#include <muvt/environment/contact/vertex_contact.h>
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class OptimizerContact {
 public:

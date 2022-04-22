@@ -10,15 +10,15 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-// teb_test
-#include <teb_test/environment/contact/contact.h>
+// muvt
+#include <muvt/environment/contact/contact.h>
 
 // msg and srv
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
 
-namespace XBot { namespace HyperGraph { namespace Planner {
+namespace Muvt { namespace HyperGraph { namespace Planner {
 
 class DCMPlanner {
 

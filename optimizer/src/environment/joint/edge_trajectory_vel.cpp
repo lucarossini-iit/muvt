@@ -1,8 +1,8 @@
 #include <environment/joint/edge_trajectory_vel.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 
-EdgeTrajectoryVel::EdgeTrajectoryVel(XBot::ModelInterface::Ptr model):
+EdgeTrajectoryVel::EdgeTrajectoryVel(Muvt::ModelInterface::Ptr model):
 UnaryEdge(model)
 {}
 

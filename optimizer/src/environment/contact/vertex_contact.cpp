@@ -1,6 +1,6 @@
-#include <teb_test/environment/contact/vertex_contact.h>
+#include <muvt/environment/contact/vertex_contact.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
 VertexContact::VertexContact():

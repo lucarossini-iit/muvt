@@ -1,10 +1,10 @@
 #include <environment/joint/edge_collision.h>
 #include <visualization_msgs/MarkerArray.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeCollision::EdgeCollision(XBot::ModelInterface::Ptr model, std::shared_ptr<ComputeLinksDistance> cld, int max_pair_link):
+EdgeCollision::EdgeCollision(Muvt::ModelInterface::Ptr model, std::shared_ptr<ComputeLinksDistance> cld, int max_pair_link):
 UnaryEdge(model),
 _cld(cld),
 _nh("")

@@ -3,11 +3,11 @@
 
 #include <g2o/core/base_binary_edge.h>
 
-#include <teb_test/environment/contact/vertex_contact.h>
+#include <muvt/environment/contact/vertex_contact.h>
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 // At the moment, we consider the bipedal case. An extension to a multi-contact case can be done using
 // a BaseMultiEdge

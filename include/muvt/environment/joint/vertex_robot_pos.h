@@ -10,7 +10,7 @@
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 // The template argument defines the number of DoFs of the robot
 class VertexRobotPos : public BaseDynamicVertex<Eigen::VectorXd>{

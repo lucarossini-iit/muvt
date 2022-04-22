@@ -6,29 +6,20 @@
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
 
-// XBot and CartesI/O
-#include <XBotInterface/ModelInterface.h>
-#include <XBotInterface/RobotInterface.h>
-#include <cartesian_interface/utils/RobotStatePublisher.h>
-#include <RobotInterfaceROS/ConfigFromParam.h>
-#include <cartesian_interface/CartesianInterfaceImpl.h>
-#include <matlogger2/matlogger2.h>
-
-// teb_test
-#include <teb_test/planner/dcm_planner.h>
-#include <teb_test/optimizer/optimizer_contact.h>
-#include <teb_test/environment/contact/vertex_contact.h>
-#include <teb_test/environment/contact/edge_collision.h>
-#include <teb_test/environment/contact/edge_relative_pose.h>
-#include <teb_test/environment/contact/edge_steering.h>
+// muvt
+#include <muvt/planner/dcm_planner.h>
+#include <muvt/optimizer/optimizer.h>
+#include <muvt/environment/contact/vertex_contact.h>
+#include <muvt/environment/contact/edge_collision.h>
+#include <muvt/environment/contact/edge_relative_pose.h>
+#include <muvt/environment/contact/edge_steering.h>
 
 // msgs and srvs
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <interactive_markers/interactive_marker_server.h>
-#include <std_srvs/Empty.h>
 
-namespace XBot { namespace HyperGraph { namespace Planner {
+namespace Muvt { namespace HyperGraph { namespace Planner {
 
 class PlannerExecutor {
 

@@ -3,19 +3,19 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <XBotInterface/ModelInterface.h>
+#include <MuvtInterface/ModelInterface.h>
 
 #include <environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class UnaryEdge : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    UnaryEdge(XBot::ModelInterface::Ptr model);
+    UnaryEdge(Muvt::ModelInterface::Ptr model);
 
     virtual bool read(std::istream& is) = 0;
     virtual bool write(std::ostream& os) const = 0;
@@ -23,7 +23,7 @@ public:
     virtual void computeError() = 0;
 
 protected:
-    XBot::ModelInterface::Ptr _model;
+    Muvt::ModelInterface::Ptr _model;
 };
 
 } }

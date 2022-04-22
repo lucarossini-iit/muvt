@@ -1,7 +1,7 @@
-#include <teb_test/environment/contact/edge_collision.h>
+#include <muvt/environment/contact/edge_collision.h>
 
 using namespace g2o;
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 
 EdgeCollision::EdgeCollision():
 BaseUnaryEdge<1, double, VertexContact>()

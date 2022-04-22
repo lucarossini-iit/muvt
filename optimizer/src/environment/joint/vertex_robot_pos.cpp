@@ -1,6 +1,6 @@
 #include <environment/joint/vertex_robot_pos.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
 VertexRobotPos::VertexRobotPos():

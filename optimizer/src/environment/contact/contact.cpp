@@ -1,6 +1,6 @@
-#include <teb_test/environment/contact/contact.h>
+#include <muvt/environment/contact/contact.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 
 Contact::Contact(std::string distal_link):
 _distal_link(distal_link)

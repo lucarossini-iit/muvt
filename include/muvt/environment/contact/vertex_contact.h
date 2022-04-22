@@ -3,11 +3,11 @@
 
 #include <g2o/core/base_vertex.h>
 
-#include <teb_test/environment/contact/contact.h>
+#include <muvt/environment/contact/contact.h>
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class VertexContact : public BaseVertex<6, Contact> {
 public:

@@ -1,9 +1,9 @@
 #include <environment/joint/edge_postural.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgePostural::EdgePostural(XBot::ModelInterface::Ptr model):
+EdgePostural::EdgePostural(Muvt::ModelInterface::Ptr model):
 UnaryEdge(model)
 {}
 

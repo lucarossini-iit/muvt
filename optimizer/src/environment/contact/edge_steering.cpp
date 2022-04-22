@@ -1,6 +1,6 @@
-#include <teb_test/environment/contact/edge_steering.h>
+#include <muvt/environment/contact/edge_steering.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
 EdgeSteering::EdgeSteering():

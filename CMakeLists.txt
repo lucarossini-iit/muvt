@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.0)
-project(teb_test)
+project(muvt)
 
 add_compile_options(-std=c++14)
 
@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES teb_test
+    LIBRARIES muvt
     CATKIN_DEPENDS roscpp
     DEPENDS
     )

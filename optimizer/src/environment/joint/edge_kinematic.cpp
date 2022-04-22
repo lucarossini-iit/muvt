@@ -1,9 +1,9 @@
 #include <environment/joint/edge_kinematic.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeKinematic::EdgeKinematic(XBot::ModelInterface::Ptr model):
+EdgeKinematic::EdgeKinematic(Muvt::ModelInterface::Ptr model):
 UnaryEdge(model)
 {
 //    setDimension(3);

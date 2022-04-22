@@ -1,7 +1,7 @@
 #ifndef EDGE_COLLISION_H
 #define EDGE_COLLISION_H
 
-#include <XBotInterface/ModelInterface.h>
+#include <MuvtInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
@@ -14,7 +14,7 @@
 
 using namespace g2o;
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class EdgeCollision : public UnaryEdge {
 public:
@@ -22,7 +22,7 @@ public:
 
     typedef std::vector<obstacle> obstacles;
 
-    EdgeCollision(XBot::ModelInterface::Ptr model,
+    EdgeCollision(Muvt::ModelInterface::Ptr model,
                   std::shared_ptr<ComputeLinksDistance> dist,
                   int max_pair_link);
 

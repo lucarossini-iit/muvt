@@ -1,9 +1,9 @@
 #include <environment/joint/edge_joint_limits.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeJointLimits::EdgeJointLimits(XBot::ModelInterface::Ptr model):
+EdgeJointLimits::EdgeJointLimits(Muvt::ModelInterface::Ptr model):
 BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos>(),
 _model(model)
 {}

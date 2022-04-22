@@ -1,7 +1,7 @@
-#include <teb_test/optimizer/optimizer.h>
+#include <muvt/optimizer/optimizer.h>
 
 using namespace g2o;
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 
 OptimizerContact::OptimizerContact()
 {

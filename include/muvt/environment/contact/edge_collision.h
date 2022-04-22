@@ -6,9 +6,9 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <teb_test/environment/contact/vertex_contact.h>
+#include <muvt/environment/contact/vertex_contact.h>
 
-namespace XBot { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph {
 
 class EdgeCollision : public BaseUnaryEdge<1, double, VertexContact> {
 public:

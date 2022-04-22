@@ -1,6 +1,6 @@
 #include <environment/joint/robot_pos.h>
 
-using namespace XBot::HyperGraph;
+using namespace Muvt::HyperGraph;
 
 RobotPos::RobotPos() 
 {
