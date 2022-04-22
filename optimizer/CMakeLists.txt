@@ -23,7 +23,6 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${cartesian_interface_INCLUDE_DIRS}
     ${matlogger2_INCLUDE_DIRS}
-    ${GAZEBO_INCLUDE_DIRS}
     ${CSPARSE_INCLUDE_DIR})
 
 find_path(COMPILE_JOINT_LIBRARY base_dynamic_vertex.h PATHS ${g2o_INCLUDE_DIRS}/g2o/core/)
