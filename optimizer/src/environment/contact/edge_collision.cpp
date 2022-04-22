@@ -1,4 +1,4 @@
-#include <environment/contact/edge_collision.h>
+#include <teb_test/environment/contact/edge_collision.h>
 
 using namespace g2o;
 using namespace XBot::HyperGraph;

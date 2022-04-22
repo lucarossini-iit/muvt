@@ -3,7 +3,7 @@
 
 #include <g2o/core/base_vertex.h>
 
-#include <environment/contact/contact.h>
+#include <teb_test/environment/contact/contact.h>
 
 using namespace g2o;
 

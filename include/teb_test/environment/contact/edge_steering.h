@@ -4,7 +4,7 @@
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/optimizable_graph.h>
 
-#include <environment/contact/vertex_contact.h>
+#include <teb_test/environment/contact/vertex_contact.h>
 
 using namespace g2o;
 

@@ -11,7 +11,7 @@
 #include "g2o/core/optimization_algorithm_factory.h"
 #include <g2o/core/optimizable_graph.h>
 
-#include <environment/contact/vertex_contact.h>
+#include <teb_test/environment/contact/vertex_contact.h>
 
 namespace XBot { namespace HyperGraph {
 

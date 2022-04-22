@@ -11,7 +11,7 @@
 #include <Eigen/Geometry>
 
 // teb_test
-#include <environment/contact/contact.h>
+#include <teb_test/environment/contact/contact.h>
 
 // msg and srv
 #include <visualization_msgs/Marker.h>

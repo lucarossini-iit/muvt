@@ -1,4 +1,4 @@
-#include <teb_test/optimizer/optimizer_contact.h>
+#include <teb_test/optimizer/optimizer.h>
 
 using namespace g2o;
 using namespace XBot::HyperGraph;
