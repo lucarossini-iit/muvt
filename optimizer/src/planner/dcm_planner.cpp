@@ -63,6 +63,11 @@ double DCMPlanner::getdT() const
     return _dt;
 }
 
+void DCMPlanner::setInitialContacts(std::vector<Contact> contacts)
+{
+
+}
+
 void DCMPlanner::generateSteps()
 {
     // init steps
@@ -95,7 +100,7 @@ void DCMPlanner::generateSteps()
     if (_footstep_sequence.back().getDistalLink() == "l_sole")
         _footstep_sequence.push_back(right_foot);
     else
-        _footstep_sequence.push_back(right_foot);
+        _footstep_sequence.push_back(left_foot);
 }
 
 Eigen::Vector3d DCMPlanner::cp_trajectory(double time, Eigen::Vector3d init, Eigen::Vector3d zmp)

@@ -72,6 +72,18 @@ private:
     } \
     /* End macro for option parsing */
 
+#define YAML_PARSE(yaml, name, type) \
+    if(yaml[#name]) \
+{ \
+    type value = yaml[#name].as<type>(); \
+    std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
+    name = value; \
+    } \
+    else { \
+    throw std::runtime_error("No option '" #name "' specified, abort"); \
+    } \
+    /* End macro for option parsing */
+
 namespace std
 {
 
