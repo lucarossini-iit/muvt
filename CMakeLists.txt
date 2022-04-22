@@ -3,6 +3,8 @@ project(teb_test)
 
 add_compile_options(-std=c++14)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 option(BUILD_VISION "Build vision executables" ON)
 option(BUILD_OPTIMIZER "Build optimizer executables and libraries" ON)
 
