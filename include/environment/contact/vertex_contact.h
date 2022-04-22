@@ -9,7 +9,7 @@ using namespace g2o;
 
 namespace XBot { namespace HyperGraph {
 
-class VertexContact : public BaseVertex<7, Contact> {
+class VertexContact : public BaseVertex<6, Contact> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     VertexContact();
@@ -24,9 +24,9 @@ public:
     virtual bool getEstimateData(double* est) const;
     virtual int estimateDimension() const { return 7; }
 
-    virtual bool setMinimalEstimateDataImpl(const double* est) { return setEstimateDataImpl(est); }
-    virtual bool getMinimalEstimateDataImpl(double* est) { return getEstimateData(est); }
-    virtual int minimalEstimateDimension() const { return estimateDimension(); }
+    virtual bool setMinimalEstimateDataImpl(const double* est);
+    virtual bool getMinimalEstimateDataImpl(double* est);
+    virtual int minimalEstimateDimension() const { return 6; }
 
     virtual void oplusImpl(const double* update);
 
@@ -35,6 +35,8 @@ public:
 namespace Utils {
 void vectorToContact(const double* v, Contact& c);
 void contactToVector(const Contact c, double* v);
+void minimalVectorToContact(const double* v, Contact& c);
+void contactToMinimalVector(const Contact c, double* v);
 }
 } }
 #endif // VERTEX_CONTACT_H

@@ -4,7 +4,7 @@ using namespace XBot::HyperGraph;
 using namespace g2o;
 
 VertexContact::VertexContact():
-BaseVertex<7, Contact>()
+BaseVertex<6, Contact>()
 {}
 
 bool VertexContact::read(std::istream& is) {
@@ -40,17 +40,37 @@ bool VertexContact::getEstimateData(double* est) const
     return true;
 }
 
+bool VertexContact::setMinimalEstimateDataImpl(const double *est)
+{
+    Utils::minimalVectorToContact(est, _estimate);
+    return true;
+}
+
+bool VertexContact::getMinimalEstimateDataImpl(double *est)
+{
+    Utils::contactToMinimalVector(_estimate, est);
+    return true;
+}
+
 void VertexContact::oplusImpl(const double* update)
 {
     Contact increment;
-//    std::cout << "UPDATE" << std::endl;
-//    for (int i = 0; i < 7; i++)
-//        std::cout << update[i] << std::endl;
-    Utils::vectorToContact(update, increment);
-//    std::cout << "-------------------" << std::endl;
-//    std::cout << increment.state.pose.matrix() << std::endl;
-//    std::cout << "-------------------" << std::endl;
-    _estimate.state.pose = _estimate.state.pose * increment.state.pose;
+//    if (update[0] > 0.001)
+//    {
+//        std::cout << "UPDATE" << std::endl;
+//        for (int i = 0; i < 6; i++)
+//            std::cout << update[i] << std::endl;
+//    }
+    Utils::minimalVectorToContact(update, increment);
+//    increment.state.pose.linear() << 0.9998477, -0.0174524, 0, 0.0174524, 0.9998477, 0, 0, 0, 1;
+//    if (update[0] > 0.001)
+//    {
+//        std::cout << "-------------------" << std::endl;
+//        std::cout << increment.state.pose.matrix() << std::endl;
+//        std::cout << "-------------------" << std::endl;
+//    }
+    _estimate.state.pose.translation() = _estimate.state.pose.translation() + increment.state.pose.translation();
+    _estimate.state.pose.linear() = _estimate.state.pose.linear() * increment.state.pose.linear();
 }
 
 void Utils::vectorToContact(const double* v, Contact& c)
@@ -65,4 +85,30 @@ void Utils::contactToVector(const Contact c, double* v)
     est.head(3) = c.state.pose.translation();
     Eigen::Quaternion<double> q(c.state.pose.linear());
     est.tail(4) << q.coeffs().x(), q.coeffs().y(), q.coeffs().z(), q.coeffs().w();
+}
+
+void Utils::minimalVectorToContact(const double *v, Contact &c)
+{
+    c.state.pose.translation() << v[0], v[1], v[2];
+    double w = 1 - (std::pow(v[3], 2) + std::pow(v[4], 2) + std::pow(v[5], 2));
+    if (w<0)
+        c.state.pose.linear().setIdentity();
+    else
+    {
+        w=std::sqrt(w);
+        Eigen::Quaternion<double> q(w, v[3], v[4], v[5]);
+        c.state.pose.linear() = q.toRotationMatrix();
+    }
+}
+
+void Utils::contactToMinimalVector(const Contact c, double *v)
+{
+    v[0] = c.state.pose.translation().x();
+    v[1] = c.state.pose.translation().y();
+    v[2] = c.state.pose.translation().z();
+    Eigen::Quaternion<double> q(c.state.pose.linear());
+    q.normalize();
+    v[3] = q.coeffs().x();
+    v[4] = q.coeffs().y();
+    v[5] = q.coeffs().z();
 }
