@@ -63,10 +63,10 @@ double DCMPlanner::getdT() const
     return _dt;
 }
 
-void DCMPlanner::setInitialContacts(std::vector<Contact> contacts)
-{
-
-}
+//void DCMPlanner::setInitialContacts(std::vector<Contact> contacts)
+//{
+//
+//}
 
 void DCMPlanner::generateSteps()
 {
