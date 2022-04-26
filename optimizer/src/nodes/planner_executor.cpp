@@ -6,6 +6,7 @@ PlannerExecutor::PlannerExecutor():
 _nh(""),
 _nhpr("~"),
 _planner(),
+_base_link_frame("map"), // FIXME hardcoded
 _g2o_optimizer()
 {
     init_load_config();
@@ -16,6 +17,7 @@ _g2o_optimizer()
     _cp_pub = _nh.advertise<visualization_msgs::MarkerArray>("cp", 1, true);
     _com_pub = _nh.advertise<visualization_msgs::MarkerArray>("com", 1, true);
     _footstep_pub = _nh.advertise<visualization_msgs::MarkerArray>("footstep", 1, true);
+    _footstep_name_pub = _nh.advertise<visualization_msgs::MarkerArray>("footstep_name", 1, true);
 
     plan();
     publish_markers();
@@ -56,9 +58,11 @@ void PlannerExecutor::init_load_config()
     std::vector<Contact> contacts;
     std::vector<double> init_pose(7); // x y z qx qy qz qw
     YAML_PARSE(config["dcm_planner"], contact_names, std::vector<std::string>);
+    _contact_names = contact_names;
+    _n_contacts = contact_names.size();
     for(unsigned int i=0; i<contact_names.size();i++)
     {
-      YAML_PARSE(config["dcm_planner"][contact_names[i]], init_pose, std::vector<double>);
+      YAML_PARSE(config["dcm_planner"][_contact_names[i]], init_pose, std::vector<double>);
       Contact c(contact_names[i]);
       c.state.pose.translation() << init_pose[0], init_pose[1], init_pose[2];
       Eigen::Quaterniond q;
@@ -81,7 +85,7 @@ void PlannerExecutor::init_interactive_marker()
     _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("planner_executor");
 
     visualization_msgs::InteractiveMarker int_marker;
-    int_marker.header.frame_id = "map";
+    int_marker.header.frame_id = _base_link_frame;
     int_marker.header.stamp = ros::Time::now();
     int_marker.name = "obstacle";
     int_marker.description = "obstacle";
@@ -150,12 +154,13 @@ void PlannerExecutor::interactive_markers_feedback(const visualization_msgs::Int
 
 void PlannerExecutor::publish_markers()
 {
-    visualization_msgs::MarkerArray ma_zmp, ma_cp, ma_footstep, ma_com;
-    for (int i = 0; i < _footstep_seq.size(); i++)
+    visualization_msgs::MarkerArray ma_zmp, ma_cp, ma_footstep, ma_footstep_name, ma_com;
+    double color_scale = 0.0;
+    for (unsigned int i = 0; i < _footstep_seq.size(); i++)
     {
         // publish zmp
         visualization_msgs::Marker m_zmp;
-        m_zmp.header.frame_id = "map";
+        m_zmp.header.frame_id = _base_link_frame;
         m_zmp.header.stamp = ros::Time::now();
         m_zmp.id = i;
         m_zmp.action = visualization_msgs::Marker::MODIFY;
@@ -168,14 +173,24 @@ void PlannerExecutor::publish_markers()
         ma_zmp.markers.push_back(m_zmp);
 
         // publish footsteps
-        visualization_msgs::Marker m_footstep;
-        m_footstep.header.frame_id = "map";
-        m_footstep.header.stamp = ros::Time::now();
-        m_footstep.id = i;
+        visualization_msgs::Marker m_footstep, m_footstep_name;
+        m_footstep.header.frame_id = m_footstep_name.header.frame_id = _base_link_frame;
+        m_footstep.header.stamp = m_footstep_name.header.stamp = ros::Time::now();
+        m_footstep.id = m_footstep_name.id = i;
         m_footstep.action = visualization_msgs::Marker::MODIFY;
         m_footstep.type = visualization_msgs::Marker::CUBE;
+        m_footstep_name.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+        m_footstep_name.action = visualization_msgs::Marker::ADD;
+        m_footstep_name.text = _contact_names[i%_n_contacts];
         m_footstep.scale.x = 0.2; m_footstep.scale.y = 0.1; m_footstep.scale.z = 0.02;
-        m_footstep.color.r = 1; m_footstep.color.g = 1; m_footstep.color.b = 0; m_footstep.color.a = 0.5;
+        m_footstep_name.scale.x = 0.1; m_footstep_name.scale.y = 0.1; m_footstep_name.scale.z = 0.1;
+        m_footstep_name.color.r = 1; m_footstep_name.color.g = 1; m_footstep_name.color.b = 1; m_footstep_name.color.a = 1.0;
+        if((i+1)%_n_contacts == 0)
+          color_scale = color_scale + _n_contacts;
+        m_footstep.color.r = color_scale / static_cast<double>(_footstep_seq.size());
+        m_footstep.color.g = 1.0 - m_footstep.color.r;
+        m_footstep.color.b = 0;
+        m_footstep.color.a = 0.5;
         m_footstep.pose.position.x = _footstep_seq[i].state.pose.translation().x();
         m_footstep.pose.position.y = _footstep_seq[i].state.pose.translation().y();
         m_footstep.pose.position.z = _footstep_seq[i].state.pose.translation().z();
@@ -184,14 +199,16 @@ void PlannerExecutor::publish_markers()
         m_footstep.pose.orientation.y = q.coeffs().y();
         m_footstep.pose.orientation.z = q.coeffs().z();
         m_footstep.pose.orientation.w = q.coeffs().w();
+        m_footstep_name.pose = m_footstep.pose;
         ma_footstep.markers.push_back(m_footstep);
+        ma_footstep_name.markers.push_back(m_footstep_name);
     }
 
     // publish cp
     for (int i = 0; i < _cp_trj.size(); i += 10)
     {
         visualization_msgs::Marker m_cp;
-        m_cp.header.frame_id = "map";
+        m_cp.header.frame_id = _base_link_frame;
         m_cp.header.stamp = ros::Time::now();
         m_cp.id = i;
         m_cp.action = visualization_msgs::Marker::MODIFY;
@@ -208,7 +225,7 @@ void PlannerExecutor::publish_markers()
     for (int i = 0; i < _com_trj.size(); i += 10)
     {
         visualization_msgs::Marker m_com;
-        m_com.header.frame_id = "map";
+        m_com.header.frame_id = _base_link_frame;
         m_com.header.stamp = ros::Time::now();
         m_com.id = i;
         m_com.action = visualization_msgs::Marker::MODIFY;
@@ -225,6 +242,7 @@ void PlannerExecutor::publish_markers()
     _cp_pub.publish(ma_cp);
     _com_pub.publish(ma_com);
     _footstep_pub.publish(ma_footstep);
+    _footstep_name_pub.publish(ma_footstep_name);
 }
 
 void PlannerExecutor::plan()
@@ -243,7 +261,7 @@ void PlannerExecutor::plan()
 
     // create g2o vertices
     std::vector<OptimizableGraph::Vertex*> g2o_vertices;
-    for (int i = 0; i < _footstep_seq.size(); i++)
+    for (unsigned int i = 0; i < _footstep_seq.size(); i++)
     {
         VertexContact* vertex = new VertexContact();
         vertex->setId(i);
@@ -257,19 +275,19 @@ void PlannerExecutor::plan()
 
 
     std::vector<OptimizableGraph::Edge*> g2o_edges;
-    for (int i = 0; i < g2o_vertices.size(); i++)
+    for (unsigned int i = 0; i < g2o_vertices.size(); i++)
     {
         EdgeCollision* edge = new EdgeCollision();
         Eigen::MatrixXd info(1, 1);
         info.setIdentity();  info *= 100;
         edge->setInformation(info);
-        edge->setObstacles(Eigen::Vector3d(0.5, -1.2, 0.0));
+        edge->setObstacles(Eigen::Vector3d(0.5, -1.2, 0.0)); // FIXME hardcoded
         edge->vertices()[0] = g2o_vertices[i];
         auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
         g2o_edges.push_back(e);
     }
 
-    for (int i = 0; i < g2o_vertices.size() - 1; i++)
+    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
     {
         EdgeRelativePose* edge_succ = new EdgeRelativePose();
         Eigen::MatrixXd info_succ(3, 3);
@@ -284,7 +302,7 @@ void PlannerExecutor::plan()
         g2o_edges.push_back(e);
     }
 
-    for (int i = 2; i < g2o_vertices.size(); i++)
+    for (unsigned int i = 2; i < g2o_vertices.size(); i++)
     {
         EdgeSteering* edge = new EdgeSteering();
         Eigen::MatrixXd info(3, 3);

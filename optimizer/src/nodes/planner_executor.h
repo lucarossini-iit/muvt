@@ -47,12 +47,16 @@ private:
     Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time);
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _com_pub;
+    ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _footstep_name_pub, _com_pub;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
+
+    std::string _base_link_frame;
+    std::vector<std::string> _contact_names;
+    unsigned int _n_contacts;
 
     OptimizerContact _g2o_optimizer;
 };

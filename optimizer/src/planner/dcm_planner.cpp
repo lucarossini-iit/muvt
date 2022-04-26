@@ -68,22 +68,22 @@ double DCMPlanner::getdT() const
 void DCMPlanner::generateSteps(const std::vector<Contact>& initial_footsteps)
 {
 
-    unsigned int n_feet = initial_footsteps.size();
+    _n_feet = initial_footsteps.size();
     std::vector<Contact> current_steps = initial_footsteps;
 
     _footstep_sequence = current_steps;
 
-    // at the moment, always start walking with the right foot
+    // at the moment, always start walking with the first foot in the contact names list
     for (unsigned int i = 0; i < _n_steps; i++)
     {
-        for(unsigned int j = 0; j < n_feet; j++)
+        for(unsigned int j = 0; j < _n_feet; j++)
         {
           current_steps[j].state.pose.translation().x() += _step_size;
           current_steps[j].state.pose.linear().setIdentity();
           current_steps[j].state.time += _step_time;
         }
 
-        unsigned int next_foot = i % n_feet;
+        unsigned int next_foot = i % _n_feet;
 
         _footstep_sequence.push_back(current_steps[next_foot]);
     }
@@ -130,32 +130,38 @@ void DCMPlanner::solve()
     _com_trj.clear();
 
     // initialize first zmp in the middle of the starting feet position
-    Eigen::Affine3d T_first, T_second;
-    T_first = _footstep_sequence[0].state.pose;
-    T_second = _footstep_sequence[1].state.pose;
-    _footstep_sequence[0].state.zmp << (T_first.translation().x() + T_second.translation().x()) / 2,
-                                       (T_first.translation().y() + T_second.translation().y()) / 2,
-                                       0;
+    double avg_x = 0.0;
+    double avg_y = 0.0;
+    for(unsigned int i = 0; i<_n_feet; i++) // Take the first n since they are the initial footsteps
+    {
+      avg_x = _footstep_sequence[i].state.pose.translation().x() + avg_x;
+      avg_y = _footstep_sequence[i].state.pose.translation().y() + avg_y;
+    }
+    avg_x = avg_x / _n_feet;
+    avg_y = avg_y / _n_feet;
+    _footstep_sequence[0].state.zmp << avg_x, avg_y, 0;
     _footstep_sequence[0].state.cp = _footstep_sequence[0].state.zmp;
 
-
-
-    // start from the last step and move backwards to the first one.
-    Eigen::Affine3d T_last, T_second_last;
-    T_last = (*(_footstep_sequence.end() - 1)).state.pose;
-    T_second_last = (*(_footstep_sequence.end() - 2)).state.pose;
-    _footstep_sequence.back().state.zmp << (T_last.translation().x() + T_second_last.translation().x()) / 2,
-                                           (T_last.translation().y() + T_second_last.translation().y()) / 2,
-                                           0;
+    // start from the last step and move backwards
+    avg_x = 0.0;
+    avg_y = 0.0;
+    for(unsigned int i = 0; i<_n_feet; i++) // Take the last n since they are the final footsteps
+    {
+      avg_x = (*(_footstep_sequence.end() - (i+1))).state.pose.translation().x() + avg_x;
+      avg_y = (*(_footstep_sequence.end() - (i+1))).state.pose.translation().y() + avg_y;
+    }
+    avg_x = avg_x / _n_feet;
+    avg_y = avg_y / _n_feet;
+    _footstep_sequence.back().state.zmp  << avg_x, avg_y, 0;
     _footstep_sequence.back().state.cp = _footstep_sequence.back().state.zmp;
 
-    for(int i = _footstep_sequence.size()-2; i > 0; i--)
+    for(int i = _footstep_sequence.size()-_n_feet; i > 0; i--)
     {
         _footstep_sequence[i].state.zmp = _footstep_sequence[i].state.pose.translation();
-        _footstep_sequence[i].state.cp = _footstep_sequence[i].state.zmp + (_footstep_sequence[i+1].state.cp - _footstep_sequence[i].state.zmp) / exp(sqrt(9.81/_z_com)*_step_time);
+        _footstep_sequence[i].state.cp = _footstep_sequence[i].state.zmp + (_footstep_sequence[i+1].state.cp - _footstep_sequence[i].state.zmp) / exp(sqrt(GRAVITY/_z_com)*_step_time);
     }
 
-    _footstep_sequence[0].state.zmp = (_footstep_sequence[1].state.cp - std::exp(std::sqrt(9.81 / _z_com) * _step_time) * _footstep_sequence[0].state.cp) / (1 - std::exp(std::sqrt(9.81 / _z_com) * _step_time));
+    _footstep_sequence[0].state.zmp = (_footstep_sequence[1].state.cp - std::exp(std::sqrt(GRAVITY / _z_com) * _step_time) * _footstep_sequence[0].state.cp) / (1 - std::exp(std::sqrt(GRAVITY / _z_com) * _step_time));
 
     // set the initial com position on the first zmp;
     _com_trj.push_back(Eigen::Vector3d(_footstep_sequence[0].state.cp(0), _footstep_sequence[0].state.cp(1), _z_com));
@@ -178,9 +184,9 @@ void DCMPlanner::solve()
 
 //    time = 0;
     auto com_old = _com_trj.back();
-    for (int i = 0; i < _cp_trj.size(); i++)
+    for (unsigned int i = 0; i < _cp_trj.size(); i++)
     {
-        for (int j = 0; j < _cp_trj[i].size(); j++)
+        for (unsigned int j = 0; j < _cp_trj[i].size(); j++)
         {
 //            _com_trj.push_back(com_trajectory(time, _cp_trj[i][j], _com_trj[0]));
 //            time += _dt;

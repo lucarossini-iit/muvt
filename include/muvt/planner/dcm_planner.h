@@ -51,6 +51,7 @@ private:
     Eigen::Vector3d com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init);
 
     unsigned int _n_steps;
+    unsigned int _n_feet;
     double _z_com;
     double _step_time;
     double _step_size;
