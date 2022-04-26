@@ -54,30 +54,24 @@ void PlannerExecutor::init_load_config()
 
     std::vector<std::string> contact_names;
     std::vector<Contact> contacts;
-    std::vector<double> contact_init_pose(7); // xyz qx qy qz qw
-    std::string distal_link;
+    std::vector<double> init_pose(7); // x y z qx qy qz qw
     YAML_PARSE(config["dcm_planner"], contact_names, std::vector<std::string>);
     for(unsigned int i=0; i<contact_names.size();i++)
     {
-      YAML_PARSE(config["dcm_planner"][contact_names[i]], contact_init_pose, std::vector<double>);
-      YAML_PARSE(config["dcm_planner"][contact_names[i]], distal_link, std::string);
-      Contact c(distal_link);
-      c.state.pose.translation() << contact_init_pose[0], contact_init_pose[1], contact_init_pose[2];
+      YAML_PARSE(config["dcm_planner"][contact_names[i]], init_pose, std::vector<double>);
+      Contact c(contact_names[i]);
+      c.state.pose.translation() << init_pose[0], init_pose[1], init_pose[2];
       Eigen::Quaterniond q;
-      q.x() = contact_init_pose[3];
-      q.y() = contact_init_pose[4];
-      q.z() = contact_init_pose[5];
-      q.w() = contact_init_pose[6];
+      q.x() = init_pose[3];
+      q.y() = init_pose[4];
+      q.z() = init_pose[5];
+      q.w() = init_pose[6];
       c.state.pose.linear() << q.toRotationMatrix();
 
       contacts.push_back(c);
     }
 
-
-    // generate step sequence
-    //_planner.generateSteps();
-
-    _planner.setFootsteps(contacts);
+    _planner.generateSteps(contacts);
 
     std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32mconfigs loaded! \033[0m" << std::endl;
 }

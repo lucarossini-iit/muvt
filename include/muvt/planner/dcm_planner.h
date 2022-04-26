@@ -25,12 +25,12 @@ class DCMPlanner {
 public:
     DCMPlanner();
 
-    void setNumSteps(const unsigned int n_steps);
-    void setZCoM(const double z_com);
-    void setStepTime(const double step_time);
-    void setStepSize(const double step_size);
-    void setdT(const double dt);
-    void setFootsteps(std::vector<Contact> footsteps);
+    void setNumSteps(const unsigned int& n_steps);
+    void setZCoM(const double& z_com);
+    void setStepTime(const double& step_time);
+    void setStepSize(const double& step_size);
+    void setdT(const double& dt);
+    void setFootsteps(const std::vector<Contact>& footsteps);
 
     unsigned int getNumSteps() const;
     double getZCoM() const;
@@ -38,7 +38,7 @@ public:
     double getStepSize() const;
     double getdT() const;
 
-    void generateSteps();
+    void generateSteps(const std::vector<Contact>& initial_footsteps);
     void solve();
 
     void getSolution(std::vector<Contact>& footsteps,
