@@ -12,6 +12,7 @@
 #include <muvt/environment/contact/vertex_contact.h>
 #include <muvt/environment/contact/edge_collision.h>
 #include <muvt/environment/contact/edge_relative_pose.h>
+#include <muvt/environment/contact/edge_multi_relative_poses.h>
 #include <muvt/environment/contact/edge_steering.h>
 
 // msgs and srvs

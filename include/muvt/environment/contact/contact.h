@@ -58,6 +58,22 @@ private:
     std::string _distal_link;
 
 };
+
+inline Eigen::Vector3d compute3dError(const Eigen::Vector3d& v1, const Eigen::Vector3d& v2)
+{
+  Eigen::Vector3d error;
+  auto diff = v2 - v1;
+
+  double S = 2, Sc = 100;
+
+  error[0] = 1/exp(Sc*diff(0) - Sc*0.1) + exp(Sc*diff(0) - Sc*0.3);
+  //if (v1->estimate().getDistalLink() == "l_sole") // FIXME hardcoded
+      //error[1] = 1/exp(Sc*diff(1) + Sc*0.3) + exp(Sc*diff(1) + Sc*0.15);
+  //else
+      error[1] = 1/exp(Sc*diff(1) - Sc*0.15) + exp(Sc*diff(1) - Sc*0.3);
+  error[2] = diff(2) * diff(2);
+}
+
 } }
 
 #endif // CONTACT_H

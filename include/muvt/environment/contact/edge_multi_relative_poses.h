@@ -1,7 +1,7 @@
-#ifndef EDGE_RELATIVE_POSE_H
-#define EDGE_RELATIVE_POSE_H
+#ifndef EDGE_MULTI_RELATIVE_POSES_H
+#define EDGE_MULTI_RELATIVE_POSES_H
 
-#include <g2o/core/base_binary_edge.h>
+#include <g2o/core/base_multi_edge.h>
 
 #include <muvt/environment/contact/vertex_contact.h>
 
@@ -12,9 +12,9 @@ namespace Muvt { namespace HyperGraph {
 // At the moment, we consider the bipedal case. An extension to a multi-contact case can be done using
 // a BaseMultiEdge
 
-class EdgeRelativePose : public BaseBinaryEdge<3, Eigen::Vector3d, VertexContact, VertexContact> {
+class EdgeMultiRelativePoses : public BaseMultiEdge<12, std::vector<Eigen::Vector3d>> {
 public:
-    EdgeRelativePose();
+    EdgeMultiRelativePoses(unsigned int n_edges);
 
     bool read(std::istream& is)
     {
@@ -40,7 +40,8 @@ public:
 private:
     double _step_time;
     double _step_size;
+    unsigned int _n_edges;
 };
 } }
 
-#endif // EDGE_RELATIVE_POSE_H
+#endif // EDGE_MULTI_RELATIVE_POSES_H
