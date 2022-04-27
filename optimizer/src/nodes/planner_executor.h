@@ -1,7 +1,8 @@
 #ifndef PLANNER_EXECUTOR_H
 #define PLANNER_EXECUTOR_H
 
-// ros
+// ros and stdlib
+#include <algorithm>
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>

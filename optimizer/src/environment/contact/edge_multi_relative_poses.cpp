@@ -3,39 +3,37 @@
 using namespace g2o;
 using namespace Muvt::HyperGraph;
 
-EdgeMultiRelativePoses::EdgeMultiRelativePoses(unsigned int n_edges):
-BaseMultiEdge<12, std::vector<Eigen::Vector3d>>(),_n_edges(n_edges)
+EdgeMultiRelativePoses::EdgeMultiRelativePoses(unsigned int n_contacts):
+BaseMultiEdge<-1, Eigen::VectorXd>(),
+_n_contacts(n_contacts)
 {
-  _vertices.resize(_n_edges);
+  _vertices.resize(_n_contacts);
+  _error.resize(3 * (_n_contacts - 1));
+  _l_limits.resize(3 * (_n_contacts - 1));
+  _u_limits.resize(3 * (_n_contacts - 1));
 }
 
-bool EdgeMultiRelativePoses::checkVertices()
+bool EdgeMultiRelativePoses::setLimits(const Eigen::VectorXd l_limits, const Eigen::VectorXd u_limits)
 {
-    //auto v1 = dynamic_cast<VertexContact*>(_vertices[0]);
-    //auto v2 = dynamic_cast<VertexContact*>(_vertices[1]);
-    //
-    //// the two contact must occur sequentially ( CRAWL )
-    //if (v2->estimate().state.time != v1->estimate().state.time - _step_time && v2->estimate().state.time != v1->estimate().state.time + _step_time)
-    //{
-    //    std::cout << "step_time: " << _step_time << std::endl;
-    //    std::cout << "vertex " << v1->id() << " and " << v2->id() << " are not adjacent contacts" << std::endl;
-    //    return false;
-    //}
-    //
-    //// check if the two vertices refer to the same distal link
-    //if (v1->estimate().getDistalLink() == v2->estimate().getDistalLink())
-    //{
-    //    std::cout << "step_time: " << _step_time << std::endl;
-    //    std::cout << "vertex " << v1->id() << " and " << v2->id() << " refer to the same distal link" << std::endl;
-    //    return false;
-    //}
+    if (l_limits.size() != _l_limits.size())
+    {
+        throw std::runtime_error("Error while initializing EdgeMultiRelativePoses: lower limits vector size is wrong!");
+        return false;
+    }
+    if (u_limits.size() != _u_limits.size())
+    {
+        throw std::runtime_error("Error while initializing EdgeMultiRelativePoses: upper limits vector size is wrong!");
+        return false;
+    }
 
+    _l_limits = l_limits;
+    _u_limits = u_limits;
     return true;
 }
 
 void EdgeMultiRelativePoses::computeError()
 {
-    for(unsigned int i = 0; i<_n_edges-1; i++)
+    for(unsigned int i = 0; i < _n_contacts - 1; i++)
     {
       auto v1 = dynamic_cast<VertexContact*>(_vertices[i]);
       auto v2 = dynamic_cast<VertexContact*>(_vertices[i+1]);
