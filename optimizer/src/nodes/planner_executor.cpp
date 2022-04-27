@@ -181,11 +181,11 @@ void PlannerExecutor::publish_markers()
         m_footstep.header.stamp = m_footstep_name.header.stamp = ros::Time::now();
         m_footstep.id = m_footstep_name.id = i;
         m_footstep.action = visualization_msgs::Marker::MODIFY;
-        m_footstep.type = visualization_msgs::Marker::SPHERE;
+        m_footstep.type = visualization_msgs::Marker::CUBE;
         m_footstep_name.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
         m_footstep_name.action = visualization_msgs::Marker::ADD;
         m_footstep_name.text = _footstep_seq[i].getDistalLink() + std::to_string(i);
-        m_footstep.scale.x = 0.05; m_footstep.scale.y = 0.05; m_footstep.scale.z = 0.05;
+        m_footstep.scale.x = 0.2; m_footstep.scale.y = 0.1; m_footstep.scale.z = 0.01;
         m_footstep_name.scale.x = 0.1; m_footstep_name.scale.y = 0.1; m_footstep_name.scale.z = 0.1;
         m_footstep_name.color.r = 1; m_footstep_name.color.g = 1; m_footstep_name.color.b = 1; m_footstep_name.color.a = 1.0;
         if((i+1)%_n_contacts == 0)
@@ -290,20 +290,20 @@ void PlannerExecutor::plan()
         g2o_edges.push_back(e);
     }
 
-//    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
-//    {
-//        EdgeRelativePose* edge_succ = new EdgeRelativePose();
-//        Eigen::MatrixXd info_succ(3, 3);
-//        info_succ.setIdentity();  info_succ *= 100;
-//        edge_succ->setInformation(info_succ);
-//        edge_succ->setStepTime(_planner.getStepTime());
-//        edge_succ->setStepSize(_planner.getStepSize());
-//        edge_succ->vertices()[0] = g2o_vertices[i];
-//        edge_succ->vertices()[1] = g2o_vertices[i+1];
-//        edge_succ->checkVertices();
-//        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
-//        g2o_edges.push_back(e);
-//    }
+    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
+    {
+        EdgeRelativePose* edge_succ = new EdgeRelativePose();
+        Eigen::MatrixXd info_succ(3, 3);
+        info_succ.setIdentity();  info_succ *= 100;
+        edge_succ->setInformation(info_succ);
+        edge_succ->setStepTime(_planner.getStepTime());
+        edge_succ->setStepSize(_planner.getStepSize());
+        edge_succ->vertices()[0] = g2o_vertices[i];
+        edge_succ->vertices()[1] = g2o_vertices[i+1];
+        edge_succ->checkVertices();
+        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
+        g2o_edges.push_back(e);
+    }
 
 //    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
 //    {
@@ -321,25 +321,25 @@ void PlannerExecutor::plan()
 //        g2o_edges.push_back(e);
 //    }
 
-    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i += _n_contacts)
-    {
-        for (int j = 0; j < _n_contacts; j++)
-        {
-            EdgeMultiRelativePoses* edge = new EdgeMultiRelativePoses(_n_contacts);
-        }
-    }
+//    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i += _n_contacts)
+//    {
+//        for (int j = 0; j < _n_contacts; j++)
+//        {
+//            EdgeMultiRelativePoses* edge = new EdgeMultiRelativePoses(_n_contacts);
+//        }
+//    }
 
-    //for (unsigned int i = 2; i < g2o_vertices.size(); i++)
-    //{
-    //    EdgeSteering* edge = new EdgeSteering();
-    //    Eigen::MatrixXd info(3, 3);
-    //    info.setIdentity();
-    //    edge->setInformation(info);
-    //    edge->setPreviousContact(g2o_vertices[i-2]);
-    //    edge->vertices()[0] = g2o_vertices[i];
-    //    auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
-    //    g2o_edges.push_back(e);
-    //}
+    for (unsigned int i = 2; i < g2o_vertices.size(); i++)
+    {
+        EdgeSteering* edge = new EdgeSteering();
+        Eigen::MatrixXd info(3, 3);
+        info.setIdentity();
+        edge->setInformation(info);
+        edge->setPreviousContact(g2o_vertices[i-2]);
+        edge->vertices()[0] = g2o_vertices[i];
+        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
+        g2o_edges.push_back(e);
+    }
     _g2o_optimizer.setEdges(g2o_edges);
     _g2o_optimizer.update();
 }
