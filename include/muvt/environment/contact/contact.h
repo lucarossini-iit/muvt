@@ -20,7 +20,6 @@ struct ContactState {
     // time
     double time;
 
-    bool active;
 };
 
 class Contact {
@@ -33,6 +32,9 @@ public:
 
     void setDistalLink(std::string distal_link);
     std::string getDistalLink() const;
+
+    void setContactSequence(const int sequence);
+    int getContactSequence() const;
 
     // operator to combine two RobotPos (sum of vectors)
     inline Contact operator + (const Contact& c) const
@@ -50,12 +52,37 @@ public:
         return *this;
     }
 
+    inline bool operator > (const Contact& c)
+    {
+        if (_sequence > c.getContactSequence())
+            return true;
+        else
+            return false;
+    }
+
+    inline bool operator == (const Contact& c)
+    {
+        if (_sequence == c.getContactSequence())
+            return true;
+        else
+            return false;
+    }
+
+    inline bool operator < (const Contact& c)
+    {
+        if (_sequence < c.getContactSequence())
+            return true;
+        else
+            return false;
+    }
+
     void print();
 
     ContactState state;
 
 private:
     std::string _distal_link;
+    int _sequence;
 
 };
 
