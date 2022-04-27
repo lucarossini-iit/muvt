@@ -14,10 +14,11 @@
 dcm_planner:
     z_com: 0.9 #meter
     step_time: 0.75 #second
-    step_size: 0.4 #meter
+    step_size: 0.3 #meter
     n_steps: 12
     dt: 0.01 #second
     contact_names: ["lf_foot","rh_foot","rf_foot","lh_foot"]
+    contact_sequence: [3, 4, 1, 2]
     lf_foot:
         init_pose: [0.3,0.3,0.0,0.0,0.0,0.0,1.0]
     rh_foot:
