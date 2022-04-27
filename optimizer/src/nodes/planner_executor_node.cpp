@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     ros::Rate r(1/dt);
     while (ros::ok())
     {
-        executor.run();
+//        executor.run();
         ros::spinOnce();
         r.sleep();
     }
