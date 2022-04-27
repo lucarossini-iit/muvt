@@ -1,6 +1,28 @@
+#dcm_planner:
+#    z_com: 0.9 #meter
+#    step_time: 0.75 #second
+#    step_size: 0.2 #meter
+#    n_steps: 10
+#    dt: 0.01 #second
+#    contact_names: ["l_sole","r_sole"]
+#    l_sole:
+#        init_pose: [0.0,0.1,0.0,0.0,0.0,0.0,1.0]
+#    r_sole:
+#        init_pose: [0.0,-0.1,0.0,0.0,0.0,0.0,1.0]
+
+
 dcm_planner:
     z_com: 0.9 #meter
     step_time: 0.75 #second
-    step_size: 0.2 #meter
-    n_steps: 10
+    step_size: 0.4 #meter
+    n_steps: 12
     dt: 0.01 #second
+    contact_names: ["lf_foot","rh_foot","rf_foot","lh_foot"]
+    lf_foot:
+        init_pose: [0.3,0.3,0.0,0.0,0.0,0.0,1.0]
+    rh_foot:
+        init_pose: [-0.3,-0.3,0.0,0.0,0.0,0.0,1.0]
+    rf_foot:
+        init_pose: [0.3,-0.3,0.0,0.0,0.0,0.0,1.0]
+    lh_foot:
+        init_pose: [-0.3,0.3,0.0,0.0,0.0,0.0,1.0]

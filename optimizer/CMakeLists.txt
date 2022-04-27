@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 3.1.0)
 
 add_compile_options(-std=c++14)
 
-find_package(g2o REQUIRED)
+find_package(G2O REQUIRED)
 
 find_package(CSparse REQUIRED)
 
 include_directories(
     include
-    ${g2o_INCLUDE_DIRS}
+    ${G2O_INCLUDE_DIR}
     ${catkin_INCLUDE_DIRS}
     ${CSPARSE_INCLUDE_DIR})
 
@@ -29,7 +29,7 @@ if(COMPILE_JOINT_LIBRARY)
                 src/environment/joint/edge_trajectory_vel.cpp
                 src/environment/joint/edge_kinematic.cpp
                 src/environment/joint/edge_postural.cpp)
-    target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl g2o::types_slam3d)
+    target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl ${G2O_TYPES_SLAM3D})
 
     install(TARGETS joint
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -45,37 +45,19 @@ add_library(contact SHARED
             src/environment/contact/edge_relative_pose.cpp
             src/environment/contact/edge_collision.cpp
             src/environment/contact/edge_steering.cpp)
-target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} g2o::core)
+target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${G2O_CORE_LIBRARY})
 
 add_library(planner SHARED
             src/planner/dcm_planner.cpp)
 target_link_libraries(planner ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} contact)
 
 add_library(optimizer src/optimizer/optimizer.cpp)
-target_link_libraries(optimizer ${catkin_LIBRARIES}
-                                g2o::core
-                                g2o::solver_csparse)
+target_link_libraries(optimizer ${catkin_LIBRARIES} ${G2O_CORE_LIBRARY} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_SOLVER_CSPARSE})
 
 add_executable(test_node src/nodes/planner_executor_node.cpp src/nodes/planner_executor.cpp)
 target_link_libraries(test_node ${catkin_LIBRARIES} yaml-cpp optimizer planner contact)
 
-
-install(TARGETS contact
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(TARGETS optimizer
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(TARGETS planner
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(TARGETS test_node
+install(TARGETS contact optimizer planner test_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

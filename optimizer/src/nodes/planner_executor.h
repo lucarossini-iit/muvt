@@ -47,12 +47,16 @@ private:
     Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time);
 
     ros::NodeHandle _nh, _nhpr;
-    ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _com_pub;
+    ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _footstep_name_pub, _com_pub;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
+
+    std::string _base_link_frame;
+    std::vector<std::string> _contact_names;
+    unsigned int _n_contacts;
 
     OptimizerContact _g2o_optimizer;
 };
@@ -69,6 +73,18 @@ private:
     } \
     else { \
     std::cout << "No option '" #name "' specified, using default" << std::endl; \
+    } \
+    /* End macro for option parsing */
+
+#define YAML_PARSE(yaml, name, type) \
+    if(yaml[#name]) \
+{ \
+    type value = yaml[#name].as<type>(); \
+    std::cout << "Found " #type " option '" #name "' with value = " << value << std::endl; \
+    name = value; \
+    } \
+    else { \
+    throw std::runtime_error("No option '" #name "' specified, abort"); \
     } \
     /* End macro for option parsing */
 
