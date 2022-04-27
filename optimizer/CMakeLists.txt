@@ -43,6 +43,7 @@ add_library(contact SHARED
             src/environment/contact/contact.cpp
             src/environment/contact/vertex_contact.cpp
             src/environment/contact/edge_relative_pose.cpp
+            src/environment/contact/edge_multi_relative_poses.cpp
             src/environment/contact/edge_collision.cpp
             src/environment/contact/edge_steering.cpp)
 target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${G2O_CORE_LIBRARY})

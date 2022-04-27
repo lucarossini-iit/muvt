@@ -287,32 +287,48 @@ void PlannerExecutor::plan()
         g2o_edges.push_back(e);
     }
 
+    //for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
+    //{
+    //    EdgeRelativePose* edge_succ = new EdgeRelativePose();
+    //    Eigen::MatrixXd info_succ(3, 3);
+    //    info_succ.setIdentity();  info_succ *= 100;
+    //    edge_succ->setInformation(info_succ);
+    //    edge_succ->setStepTime(_planner.getStepTime());
+    //    edge_succ->setStepSize(_planner.getStepSize());
+    //    edge_succ->vertices()[0] = g2o_vertices[i];
+    //    edge_succ->vertices()[1] = g2o_vertices[i+1];
+    //    edge_succ->checkVertices();
+    //    auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
+    //    g2o_edges.push_back(e);
+    //}
+
     for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
     {
-        EdgeRelativePose* edge_succ = new EdgeRelativePose();
-        Eigen::MatrixXd info_succ(3, 3);
+        EdgeMultiRelativePoses* edge_succ = new EdgeMultiRelativePoses(_n_contacts);
+        Eigen::MatrixXd info_succ(_n_contacts*3, _n_contacts*3);
         info_succ.setIdentity();  info_succ *= 100;
         edge_succ->setInformation(info_succ);
         edge_succ->setStepTime(_planner.getStepTime());
         edge_succ->setStepSize(_planner.getStepSize());
-        edge_succ->vertices()[0] = g2o_vertices[i];
-        edge_succ->vertices()[1] = g2o_vertices[i+1];
+        for(unsigned int j=0; j<_n_contacts; j++)
+          edge_succ->vertices()[j] = g2o_vertices[i+j];
+        std::cout << "INIT" << std::endl;
         edge_succ->checkVertices();
         auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
         g2o_edges.push_back(e);
     }
 
-    for (unsigned int i = 2; i < g2o_vertices.size(); i++)
-    {
-        EdgeSteering* edge = new EdgeSteering();
-        Eigen::MatrixXd info(3, 3);
-        info.setIdentity();
-        edge->setInformation(info);
-        edge->setPreviousContact(g2o_vertices[i-2]);
-        edge->vertices()[0] = g2o_vertices[i];
-        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
-        g2o_edges.push_back(e);
-    }
+    //for (unsigned int i = 2; i < g2o_vertices.size(); i++)
+    //{
+    //    EdgeSteering* edge = new EdgeSteering();
+    //    Eigen::MatrixXd info(3, 3);
+    //    info.setIdentity();
+    //    edge->setInformation(info);
+    //    edge->setPreviousContact(g2o_vertices[i-2]);
+    //    edge->vertices()[0] = g2o_vertices[i];
+    //    auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
+    //    g2o_edges.push_back(e);
+    //}
     _g2o_optimizer.setEdges(g2o_edges);
     _g2o_optimizer.update();
 }
