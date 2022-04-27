@@ -82,22 +82,19 @@ void DCMPlanner::generateSteps(const std::vector<Contact>& initial_footsteps)
 
     current_steps = _footstep_sequence;
 
-    // at the moment, always start walking with the first foot in the contact names list
+    // TODO: manage orientation
     for (unsigned int i = 0; i < _n_steps; i++)
     {
         unsigned int next_foot = i % _n_feet;
-        current_steps[next_foot].state.pose.translation().x() += _step_size;
+        if (_n_feet == 2 && (i == 0 || i == _n_steps - 1))
+            current_steps[next_foot].state.pose.translation().x() += _step_size / 2;
+        else
+            current_steps[next_foot].state.pose.translation().x() += _step_size;
         current_steps[next_foot].state.pose.linear().setIdentity();
         current_steps[next_foot].state.time += _step_time;
 
         _footstep_sequence.push_back(current_steps[next_foot]);
     }
-
-    // add last step to recover balanced position
-    //if (_footstep_sequence.back().getDistalLink() == "l_sole")
-    //    _footstep_sequence.push_back(right_foot);
-    //else
-    //    _footstep_sequence.push_back(left_foot);
 }
 
 Eigen::Vector3d DCMPlanner::cp_trajectory(double time, Eigen::Vector3d init, Eigen::Vector3d zmp)
