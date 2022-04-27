@@ -165,9 +165,6 @@ void DCMPlanner::solve()
 
     _footstep_sequence[0].state.zmp = (_footstep_sequence[1].state.cp - std::exp(std::sqrt(GRAVITY / _z_com) * _step_time) * _footstep_sequence[0].state.cp) / (1 - std::exp(std::sqrt(GRAVITY / _z_com) * _step_time));
 
-    for (auto c : _footstep_sequence)
-        c.print();
-
     // set the initial com position on the first zmp;
     _com_trj.push_back(Eigen::Vector3d(_footstep_sequence[0].state.cp(0), _footstep_sequence[0].state.cp(1), _z_com));
 
