@@ -1,5 +1,5 @@
 <package format="2">
-  <name>muvt</name>
+  <name>muvt_core</name>
   <version>1.2.4</version>
   <description>
   muvt local planner using g2o package

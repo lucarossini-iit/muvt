@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1.0)
-project(muvt)
+project(muvt_core)
 
 add_compile_options(-std=c++14)
 
