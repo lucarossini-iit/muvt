@@ -3,7 +3,7 @@
 using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeRobotVel::EdgeRobotVel(Muvt::ModelInterface::Ptr model):
+EdgeRobotVel::EdgeRobotVel(XBot::ModelInterface::Ptr model):
 BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos>(),
 _model(model)
 {
@@ -56,7 +56,7 @@ Eigen::VectorXd EdgeRobotVel::getVelocities() const
     return _vel;
 }
 
-EdgeRobotUnaryVel::EdgeRobotUnaryVel(Muvt::ModelInterface::Ptr model):
+EdgeRobotUnaryVel::EdgeRobotUnaryVel(XBot::ModelInterface::Ptr model):
 BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos>(),
 _model(model)
 {}

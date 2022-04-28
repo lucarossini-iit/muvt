@@ -1,13 +1,13 @@
 #ifndef MUVT_CORE_EDGE_TRAJECTORY_VEL_H
 #define MUVT_CORE_EDGE_TRAJECTORY_VEL_H
 
-#include <environment/joint/unary_edge.h>
+#include <muvt_core/environment/joint/unary_edge.h>
 
 namespace Muvt { namespace HyperGraph {
 
 class EdgeTrajectoryVel : public UnaryEdge {
 public:
-    EdgeTrajectoryVel(Muvt::ModelInterface::Ptr model);
+    EdgeTrajectoryVel(XBot::ModelInterface::Ptr model);
 
     bool read(std::istream& is){ return true; }
     bool write(std::ostream &os) const { return true; }

@@ -2,7 +2,7 @@
 
 using namespace Muvt::HyperGraph;
 
-EdgeTrajectoryVel::EdgeTrajectoryVel(Muvt::ModelInterface::Ptr model):
+EdgeTrajectoryVel::EdgeTrajectoryVel(XBot::ModelInterface::Ptr model):
 UnaryEdge(model)
 {}
 

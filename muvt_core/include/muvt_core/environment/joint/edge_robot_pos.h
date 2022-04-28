@@ -3,11 +3,11 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
-#include <environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 
@@ -17,7 +17,7 @@ class EdgeRobotPos : public BaseUnaryEdge<30, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     
-    EdgeRobotPos(Muvt::ModelInterface::Ptr& model,
+    EdgeRobotPos(XBot::ModelInterface::Ptr& model,
                  int max_pair_link);
     
     bool read(std::istream& is)
@@ -45,7 +45,7 @@ public:
     unsigned int ID;
     
 private:
-    Muvt::ModelInterface::Ptr _model;
+    XBot::ModelInterface::Ptr _model;
     int _max_pair_link;
 
 }; } }

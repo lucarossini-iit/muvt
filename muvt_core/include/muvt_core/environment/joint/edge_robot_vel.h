@@ -4,9 +4,9 @@
 #include <g2o/core/base_binary_edge.h>
 #include <g2o/core/base_unary_edge.h>
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 
-#include <environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 
@@ -18,7 +18,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     typedef BaseBinaryEdge<-1, Eigen::VectorXd, VertexRobotPos, VertexRobotPos> BaseEdge;
 
-     EdgeRobotVel(Muvt::ModelInterface::Ptr model);
+     EdgeRobotVel(XBot::ModelInterface::Ptr model);
 
      bool read(std::istream& is)
      {
@@ -45,7 +45,7 @@ public:
      Eigen::VectorXd getVelocities() const;
 
  private:
-     Muvt::ModelInterface::Ptr _model;
+     XBot::ModelInterface::Ptr _model;
 
      Eigen::VectorXd _vel_min, _vel_max, _vel;
 
@@ -57,7 +57,7 @@ public:
  public:
      EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-     EdgeRobotUnaryVel(Muvt::ModelInterface::Ptr model);
+     EdgeRobotUnaryVel(XBot::ModelInterface::Ptr model);
 
 
      bool read(std::istream& is)
@@ -89,7 +89,7 @@ public:
 
 
  private:
-     Muvt::ModelInterface::Ptr _model;
+     XBot::ModelInterface::Ptr _model;
 
      Eigen::VectorXd _ref;
  };

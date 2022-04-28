@@ -3,7 +3,7 @@
 using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeRobotPos::EdgeRobotPos(Muvt::ModelInterface::Ptr& model, int max_pair_link):
+EdgeRobotPos::EdgeRobotPos(XBot::ModelInterface::Ptr& model, int max_pair_link):
 BaseUnaryEdge<int(30), Eigen::VectorXd, VertexRobotPos>(),
 _model(model),
 _max_pair_link(max_pair_link)

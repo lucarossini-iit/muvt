@@ -1,15 +1,15 @@
 #ifndef MUVT_CORE_EDGE_COLLISION_H
 #define MUVT_CORE_EDGE_COLLISION_H
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
 #include <eigen_conversions/eigen_msg.h>
 
-#include <environment/joint/unary_edge.h>
-#include <environment/joint/vertex_robot_pos.h>
-#include <environment/obstacle.h>
+#include <muvt_core/environment/joint/unary_edge.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/obstacle.h>
 #include <octomap_msgs/OctomapWithPose.h>
 
 using namespace g2o;
@@ -22,7 +22,7 @@ public:
 
     typedef std::vector<obstacle> obstacles;
 
-    EdgeCollision(Muvt::ModelInterface::Ptr model,
+    EdgeCollision(XBot::ModelInterface::Ptr model,
                   std::shared_ptr<ComputeLinksDistance> dist,
                   int max_pair_link);
 

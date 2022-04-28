@@ -3,7 +3,7 @@
 using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeKinematic::EdgeKinematic(Muvt::ModelInterface::Ptr model):
+EdgeKinematic::EdgeKinematic(XBot::ModelInterface::Ptr model):
 UnaryEdge(model)
 {
 //    setDimension(3);

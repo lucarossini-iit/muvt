@@ -3,7 +3,7 @@
 using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgePostural::EdgePostural(Muvt::ModelInterface::Ptr model):
+EdgePostural::EdgePostural(XBot::ModelInterface::Ptr model):
 UnaryEdge(model)
 {}
 

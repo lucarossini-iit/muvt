@@ -3,10 +3,10 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 
-#include <environment/joint/unary_edge.h>
-#include <environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/joint/unary_edge.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 
@@ -14,7 +14,7 @@ namespace Muvt { namespace HyperGraph {
 
 class EdgeTask : public UnaryEdge {
 public:
-    EdgeTask(Muvt::ModelInterface::Ptr model);
+    EdgeTask(XBot::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {

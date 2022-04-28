@@ -3,9 +3,9 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 
 using namespace g2o;
 
@@ -13,7 +13,7 @@ namespace Muvt { namespace HyperGraph {
 
 class EdgeJointLimits : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
 public:
-    EdgeJointLimits(Muvt::ModelInterface::Ptr model);
+    EdgeJointLimits(XBot::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {
@@ -39,7 +39,7 @@ public:
     Eigen::VectorXd getError() const;
 
 private:
-    Muvt::ModelInterface::Ptr _model;
+    XBot::ModelInterface::Ptr _model;
 };
 
 } }

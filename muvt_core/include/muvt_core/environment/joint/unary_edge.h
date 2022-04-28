@@ -3,7 +3,7 @@
 
 #include <g2o/core/base_unary_edge.h>
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 
 #include <muvt_core/environment/joint/vertex_robot_pos.h>
 
@@ -15,7 +15,7 @@ class UnaryEdge : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    UnaryEdge(Muvt::ModelInterface::Ptr model);
+    UnaryEdge(XBot::ModelInterface::Ptr model);
 
     virtual bool read(std::istream& is) = 0;
     virtual bool write(std::ostream& os) const = 0;
@@ -23,7 +23,7 @@ public:
     virtual void computeError() = 0;
 
 protected:
-    Muvt::ModelInterface::Ptr _model;
+    XBot::ModelInterface::Ptr _model;
 };
 
 } }

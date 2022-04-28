@@ -1,13 +1,13 @@
 #ifndef MUVT_CORE_EDGE_KINEMATIC_H
 #define MUVT_CORE_EDGE_KINEMATIC_H
 
-#include <MuvtInterface/ModelInterface.h>
+#include <XBotInterface/ModelInterface.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <Eigen/Geometry>
 
-#include <environment/joint/unary_edge.h>
-#include <environment/joint/vertex_robot_pos.h>
-#include <environment/obstacle.h>
+#include <muvt_core/environment/joint/unary_edge.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/obstacle.h>
 
 using namespace g2o;
 
@@ -17,7 +17,7 @@ class EdgeKinematic : public UnaryEdge {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    EdgeKinematic(Muvt::ModelInterface::Ptr model);
+    EdgeKinematic(XBot::ModelInterface::Ptr model);
 
     bool read(std::istream& is)
     {

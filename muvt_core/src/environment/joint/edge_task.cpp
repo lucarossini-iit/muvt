@@ -3,7 +3,7 @@
 using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeTask::EdgeTask(Muvt::ModelInterface::Ptr model):
+EdgeTask::EdgeTask(XBot::ModelInterface::Ptr model):
 UnaryEdge(model)
 {}
 

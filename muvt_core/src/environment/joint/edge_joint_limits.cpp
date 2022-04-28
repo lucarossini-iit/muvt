@@ -3,7 +3,7 @@
 using namespace Muvt::HyperGraph;
 using namespace g2o;
 
-EdgeJointLimits::EdgeJointLimits(Muvt::ModelInterface::Ptr model):
+EdgeJointLimits::EdgeJointLimits(XBot::ModelInterface::Ptr model):
 BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos>(),
 _model(model)
 {}

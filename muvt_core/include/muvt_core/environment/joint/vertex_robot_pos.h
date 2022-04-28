@@ -4,7 +4,7 @@
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/base_dynamic_vertex.h>
 
-#include <environment/joint/robot_pos.h>
+#include <muvt_core/environment/joint/robot_pos.h>
 
 #include <iostream>
 
