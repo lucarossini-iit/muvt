@@ -305,29 +305,26 @@ void PlannerExecutor::plan()
         g2o_edges.push_back(e);
     }
 
-//    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i++)
-//    {
-//        EdgeMultiRelativePoses* edge_succ = new EdgeMultiRelativePoses(_n_contacts);
-//        Eigen::MatrixXd info_succ(_n_contacts*3, _n_contacts*3);
-//        info_succ.setIdentity();  info_succ *= 100;
-//        edge_succ->setInformation(info_succ);
-//        edge_succ->setStepTime(_planner.getStepTime());
-//        edge_succ->setStepSize(_planner.getStepSize());
-//        for(unsigned int j=0; j<_n_contacts; j++)
-//          edge_succ->vertices()[j] = g2o_vertices[i+j];
-//        std::cout << "INIT" << std::endl;
-//        edge_succ->checkVertices();
-//        auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
-//        g2o_edges.push_back(e);
-//    }
+    for (int i = _n_contacts; i < g2o_vertices.size(); i++)
+    {
+        // extract the two sub-vertices containing the previous and successive _n_contacts vertices
+        std::vector<OptimizableGraph::Vertex*> vert_prev(g2o_vertices.begin()+i-_n_contacts, g2o_vertices.begin()+i);
+        std::vector<OptimizableGraph::Vertex*> vert_succ(g2o_vertices.begin()+i, g2o_vertices.begin()+i+_n_contacts);
 
-//    for (unsigned int i = 0; i < g2o_vertices.size() - 1; i += _n_contacts)
-//    {
-//        for (int j = 0; j < _n_contacts; j++)
-//        {
-//            EdgeMultiRelativePoses* edge = new EdgeMultiRelativePoses(_n_contacts);
-//        }
-//    }
+        // first vertex to be added is the one related to the current contact
+        std::vector<OptimizableGraph::Vertex*> vert_edge;
+        auto current_vertex = dynamic_cast<VertexContact*>(g2o_vertices[i]);
+        vert_edge.push_back(current_vertex);
+
+        // then add the one with the same distal link of contact i, but at the previous time
+        for (auto v : vert_prev)
+        {
+            auto vertex = dynamic_cast<VertexContact*>(v);
+            if (vertex->estimate().getDistalLink() == current_vertex->estimate().getDistalLink())
+                vert_edge.push_back(v);
+        }
+
+    }
 
     for (unsigned int i = 2; i < g2o_vertices.size(); i++)
     {
