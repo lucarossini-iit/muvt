@@ -1,5 +1,5 @@
-#ifndef VERTEX_CONTACT_H
-#define VERTEX_CONTACT_H
+#ifndef MUVT_CORE_VERTEX_CONTACT_H
+#define MUVT_CORE_VERTEX_CONTACT_H
 
 #include <g2o/core/base_vertex.h>
 
@@ -39,4 +39,4 @@ void minimalVectorToContact(const double* v, Contact& c);
 void contactToMinimalVector(const Contact c, double* v);
 }
 } }
-#endif // VERTEX_CONTACT_H
+#endif // MUVT_CORE_VERTEX_CONTACT_H

@@ -1,5 +1,5 @@
-#ifndef EDGE_RELATIVE_POSE_H
-#define EDGE_RELATIVE_POSE_H
+#ifndef MUVT_CORE_EDGE_RELATIVE_POSE_H
+#define MUVT_CORE_EDGE_RELATIVE_POSE_H
 
 #include <g2o/core/base_binary_edge.h>
 
@@ -43,4 +43,4 @@ private:
 };
 } }
 
-#endif // EDGE_RELATIVE_POSE_H
+#endif // MUVT_CORE_EDGE_RELATIVE_POSE_H

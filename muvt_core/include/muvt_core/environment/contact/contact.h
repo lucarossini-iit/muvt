@@ -1,5 +1,5 @@
-#ifndef CONTACT_H
-#define CONTACT_H
+#ifndef MUVT_CORE_CONTACT_H
+#define MUVT_CORE_CONTACT_H
 
 #include <iostream>
 
@@ -103,4 +103,4 @@ inline Eigen::Vector3d compute3dError(const Eigen::Vector3d& v1, const Eigen::Ve
 
 } }
 
-#endif // CONTACT_H
+#endif // MUVT_CORE_CONTACT_H

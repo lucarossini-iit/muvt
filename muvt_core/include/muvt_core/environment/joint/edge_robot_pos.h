@@ -1,5 +1,5 @@
-#ifndef EDGE_ROBOT_POS_H
-#define EDGE_ROBOT_POS_H
+#ifndef MUVT_CORE_EDGE_ROBOT_POS_H
+#define MUVT_CORE_EDGE_ROBOT_POS_H
 
 #include <g2o/core/base_unary_edge.h>
 

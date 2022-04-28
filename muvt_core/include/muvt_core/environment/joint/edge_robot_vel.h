@@ -1,5 +1,5 @@
-#ifndef EDGE_ROBOT_VEL_H
-#define EDGE_ROBOT_VEL_H
+#ifndef MUVT_CORE_EDGE_ROBOT_VEL_H
+#define MUVT_CORE_EDGE_ROBOT_VEL_H
 
 #include <g2o/core/base_binary_edge.h>
 #include <g2o/core/base_unary_edge.h>

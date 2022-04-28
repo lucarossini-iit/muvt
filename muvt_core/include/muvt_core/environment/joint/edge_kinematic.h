@@ -1,5 +1,5 @@
-#ifndef EDGE_KINEMATIC_H
-#define EDGE_KINEMATIC_H
+#ifndef MUVT_CORE_EDGE_KINEMATIC_H
+#define MUVT_CORE_EDGE_KINEMATIC_H
 
 #include <MuvtInterface/ModelInterface.h>
 #include <eigen_conversions/eigen_msg.h>
@@ -52,4 +52,4 @@ private:
 } }
 
 
-#endif // EDGE_KINEMATIC_H
+#endif // MUVT_CORE_EDGE_KINEMATIC_H

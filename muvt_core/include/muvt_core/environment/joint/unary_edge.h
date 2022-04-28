@@ -1,11 +1,11 @@
-#ifndef UNARY_EDGE_H
-#define UNARY_EDGE_H
+#ifndef MUVT_CORE_UNARY_EDGE_H
+#define MUVT_CORE_UNARY_EDGE_H
 
 #include <g2o/core/base_unary_edge.h>
 
 #include <MuvtInterface/ModelInterface.h>
 
-#include <environment/joint/vertex_robot_pos.h>
+#include <muvt_core/environment/joint/vertex_robot_pos.h>
 
 using namespace g2o;
 

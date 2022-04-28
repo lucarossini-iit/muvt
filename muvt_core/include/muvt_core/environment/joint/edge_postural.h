@@ -1,5 +1,5 @@
-#ifndef EDGE_POSTURAL_H
-#define EDGE_POSTURAL_H
+#ifndef MUVT_CORE_EDGE_POSTURAL_H
+#define MUVT_CORE_EDGE_POSTURAL_H
 
 #include <g2o/core/base_unary_edge.h>
 
@@ -42,4 +42,4 @@ private:
 
 } }
 
-#endif // EDGE_POSTURAL_H
+#endif // MUVT_CORE_EDGE_POSTURAL_H

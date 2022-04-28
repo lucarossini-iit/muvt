@@ -1,5 +1,5 @@
-#ifndef EDGE_TASK_H
-#define EDGE_TASK_H
+#ifndef MUVT_CORE_EDGE_TASK_H
+#define MUVT_CORE_EDGE_TASK_H
 
 #include <g2o/core/base_unary_edge.h>
 
@@ -44,4 +44,4 @@ private:
 };
 
 } }
-#endif // EDGE_TASK_H
+#endif // MUVT_CORE_EDGE_TASK_H

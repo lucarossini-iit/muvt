@@ -1,5 +1,5 @@
-#ifndef EDGE_STEERING_H
-#define EDGE_STEERING_H
+#ifndef MUVT_CORE_EDGE_STEERING_H
+#define MUVT_CORE_EDGE_STEERING_H
 
 #include <g2o/core/base_unary_edge.h>
 #include <g2o/core/optimizable_graph.h>
@@ -33,4 +33,4 @@ private:
 };
 } }
 
-#endif // EDGE_STEERING_H
+#endif // MUVT_CORE_EDGE_STEERING_H

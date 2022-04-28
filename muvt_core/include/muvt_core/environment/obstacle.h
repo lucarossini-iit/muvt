@@ -1,5 +1,5 @@
-#ifndef OBSTACLE_H
-#define OBSTACLE_H
+#ifndef MUVT_CORE_OBSTACLE_H
+#define MUVT_CORE_OBSTACLE_H
 
 #include <visualization_msgs/Marker.h>
 

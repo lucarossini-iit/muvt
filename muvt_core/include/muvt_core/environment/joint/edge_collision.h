@@ -1,5 +1,5 @@
-#ifndef EDGE_COLLISION_H
-#define EDGE_COLLISION_H
+#ifndef MUVT_CORE_EDGE_COLLISION_H
+#define MUVT_CORE_EDGE_COLLISION_H
 
 #include <MuvtInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
@@ -57,4 +57,4 @@ private:
 
 }; } }
 
-#endif // EDGE_COLLISION_H
+#endif // MUVT_CORE_EDGE_COLLISION_H

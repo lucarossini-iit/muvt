@@ -1,5 +1,5 @@
-#ifndef VERTEX_ROBOT_POS_H
-#define VERTEX_ROBOT_POS_H
+#ifndef MUVT_CORE_VERTEX_ROBOT_POS_H
+#define MUVT_CORE_VERTEX_ROBOT_POS_H
 
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/base_dynamic_vertex.h>

@@ -1,0 +1,10 @@
+<launch>
+
+    <node pkg="muvt_ros" type="test_node" name="test_node" output="screen">
+        <param name="dcm_config" textfile="$(find muvt_ros)/config/params/dcm_config.yaml"/>
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" output="screen"
+        args="-d $(find muvt_ros)/config/rviz/muvt_test.rviz"/>
+
+</launch>

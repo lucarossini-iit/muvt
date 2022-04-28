@@ -1,4 +1,5 @@
 #include <muvt_core/optimizer/optimizer.h>
+#include <g2o/solvers/csparse/linear_solver_csparse.h>
 
 using namespace g2o;
 using namespace Muvt::HyperGraph;

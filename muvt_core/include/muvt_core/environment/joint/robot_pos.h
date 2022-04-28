@@ -1,5 +1,5 @@
-#ifndef ROBOT_POS_H
-#define ROBOT_POS_H
+#ifndef MUVT_CORE_ROBOT_POS_H
+#define MUVT_CORE_ROBOT_POS_H
 
 #include <Eigen/Core>
 #include <Eigen/Dense>

@@ -1,5 +1,5 @@
-#ifndef PLANNER_EXECUTOR_H
-#define PLANNER_EXECUTOR_H
+#ifndef MUVT_ROS_PLANNER_EXECUTOR_H
+#define MUVT_ROS_PLANNER_EXECUTOR_H
 
 // ros and stdlib
 #include <algorithm>
@@ -117,4 +117,4 @@ inline std::ostream& operator<<(std::ostream& os, std::list<std::string> v)
 }
 }
 
-#endif // PLANNER_EXECUTOR_H
+#endif // MUVT_ROS_PLANNER_EXECUTOR_H

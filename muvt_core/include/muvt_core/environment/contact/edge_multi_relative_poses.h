@@ -1,5 +1,5 @@
-#ifndef EDGE_MULTI_RELATIVE_POSES_H
-#define EDGE_MULTI_RELATIVE_POSES_H
+#ifndef MUVT_CORE_EDGE_MULTI_RELATIVE_POSES_H
+#define MUVT_CORE_EDGE_MULTI_RELATIVE_POSES_H
 
 #include <g2o/core/base_multi_edge.h>
 
@@ -53,4 +53,4 @@ private:
 };
 } }
 
-#endif // EDGE_MULTI_RELATIVE_POSES_H
+#endif // MUVT_CORE_EDGE_MULTI_RELATIVE_POSES_H

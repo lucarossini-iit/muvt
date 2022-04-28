@@ -1,5 +1,5 @@
-#ifndef DCM_PLANNER_H
-#define DCM_PLANNER_H
+#ifndef MUVT_CORE_DCM_PLANNER_H
+#define MUVT_CORE_DCM_PLANNER_H
 
 // ROS and stdlib
 #include <algorithm>
@@ -67,4 +67,4 @@ private:
 };
 } } }
 
-#endif // DCM_PLANNER_H
+#endif // MUVT_CORE_DCM_PLANNER_H

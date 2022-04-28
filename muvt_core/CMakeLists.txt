@@ -5,32 +5,29 @@ add_compile_options(-std=c++14)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    rosconsole
-    std_msgs
-    interactive_markers
-    visualization_msgs
-    geometry_msgs
-    eigen_conversions
-    )
-
 find_package(G2O REQUIRED)
-
 find_package(CSparse REQUIRED)
+find_package(catkin REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+# Export G2O and CSPARSE dependencies
+set(EXTERNAL_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS} ${CSPARSE_INCLUDE_DIR} ${G2O_INCLUDE_DIR})
+set(EXTERNAL_LIBS ${CSPARSE_LIBRARY} ${G2O_CORE_LIBRARY})
 
 catkin_package(
-    INCLUDE_DIRS include
-    CATKIN_DEPENDS roscpp
+    INCLUDE_DIRS include ${EXTERNAL_INCLUDE_DIRS}
+    LIBRARIES optimizer planner contact ${EXTERNAL_LIBS}
+    DEPENDS cxsparse G2O
     )
     
 include_directories(
     include
-    ${G2O_INCLUDE_DIR}
     ${catkin_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    ${G2O_INCLUDE_DIR}
     ${CSPARSE_INCLUDE_DIR})
 
-find_path(COMPILE_JOINT_LIBRARY base_dynamic_vertex.h PATHS ${g2o_INCLUDE_DIRS}/g2o/core/)
+find_path(COMPILE_JOINT_LIBRARY base_dynamic_vertex.h PATHS ${G2O_INCLUDE_DIR}/g2o/core/)
 if(COMPILE_JOINT_LIBRARY)
     find_package(fcl 0.6.1 REQUIRED)
     find_package(OpenSoT REQUIRED)
@@ -47,7 +44,7 @@ if(COMPILE_JOINT_LIBRARY)
                 src/environment/joint/edge_trajectory_vel.cpp
                 src/environment/joint/edge_kinematic.cpp
                 src/environment/joint/edge_postural.cpp)
-    target_link_libraries(joint ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} OpenSoT::OpenSoT fcl ${G2O_TYPES_SLAM3D})
+    target_link_libraries(joint ${catkin_LIBRARIES} OpenSoT::OpenSoT fcl ${G2O_TYPES_SLAM3D})
 
     install(TARGETS joint
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -64,28 +61,18 @@ add_library(contact SHARED
             src/environment/contact/edge_multi_relative_poses.cpp
             src/environment/contact/edge_collision.cpp
             src/environment/contact/edge_steering.cpp)
-target_link_libraries(contact ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${G2O_CORE_LIBRARY})
+target_link_libraries(contact PUBLIC ${G2O_CORE_LIBRARY})
 
-add_library(planner SHARED
-            src/planner/dcm_planner.cpp)
-target_link_libraries(planner ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} contact)
+add_library(planner SHARED src/planner/dcm_planner.cpp)
+target_link_libraries(planner PUBLIC contact)
 
-add_library(optimizer src/optimizer/optimizer.cpp)
-target_link_libraries(optimizer ${catkin_LIBRARIES} ${G2O_CORE_LIBRARY} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_SOLVER_CSPARSE})
+add_library(optimizer SHARED src/optimizer/optimizer.cpp)
+target_link_libraries(optimizer PUBLIC ${G2O_CORE_LIBRARY} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_SOLVER_CSPARSE})
 
-add_executable(test_node src/nodes/planner_executor_node.cpp src/nodes/planner_executor.cpp)
-target_link_libraries(test_node ${catkin_LIBRARIES} yaml-cpp optimizer planner contact)
-
-install(TARGETS contact optimizer planner test_node
+install(TARGETS contact optimizer planner
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        FILES_MATCHING PATTERN "*.launch"
-        PATTERN ".svn" EXCLUDE
-        )
 
 install(DIRECTORY include/${PROJECT_NAME}/
     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -93,5 +80,4 @@ install(DIRECTORY include/${PROJECT_NAME}/
     PATTERN ".svn" EXCLUDE
     )
 
-install(DIRECTORY config/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
+

@@ -1,5 +1,5 @@
-#ifndef EDGE_TRAJECTORY_VEL_H
-#define EDGE_TRAJECTORY_VEL_H
+#ifndef MUVT_CORE_EDGE_TRAJECTORY_VEL_H
+#define MUVT_CORE_EDGE_TRAJECTORY_VEL_H
 
 #include <environment/joint/unary_edge.h>
 
@@ -24,4 +24,4 @@ private:
 };
 } }
 
-#endif // EDGE_TRAJECTORY_VEL_H
+#endif // MUVT_CORE_EDGE_TRAJECTORY_VEL_H

@@ -1,5 +1,5 @@
-#ifndef JOINT_LIMITS_H
-#define JOINT_LIMITS_H
+#ifndef MUVT_CORE_JOINT_LIMITS_H
+#define MUVT_CORE_JOINT_LIMITS_H
 
 #include <g2o/core/base_unary_edge.h>
 
