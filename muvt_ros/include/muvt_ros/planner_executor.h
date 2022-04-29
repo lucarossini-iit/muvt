@@ -45,6 +45,8 @@ private:
     void interactive_markers_feedback (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
     void init_load_cartesian_interface();
 
+    void generate_footsteps();
+
     // solve IK and execute the trajectory
     void plan();
 
@@ -74,13 +76,17 @@ private:
     DCMPlanner _planner;
 
     std::string _home_position_name;
-    std::string _base_link_frame;
+    std::string _world_frame_name;
+    std::string _base_frame_name;
     std::vector<std::string> _contact_names;
+    std::vector<int> _contact_sequence;
     unsigned int _n_contacts;
 
     OptimizerContact _g2o_optimizer;
 
     bool _execute;
+
+    Eigen::Affine3d _tmp_affine3d;
 };
 } } }
 

@@ -7,16 +7,19 @@ PlannerExecutor::PlannerExecutor():
   _nh(""),
   _nhpr("~"),
   _planner(),
-  _home_position_name("standup"), // FIXME hardcoded
-  _base_link_frame("ci/world"), // FIXME hardcoded
+  _home_position_name("home"),
+  _world_frame_name("ci/world"),
+  _base_frame_name("base_link"),
   _g2o_optimizer(),
   _execute(false)
 {
 
-  init_load_model();
   init_load_config();
+  init_load_model();
   init_interactive_marker();
   init_load_cartesian_interface();
+
+  generate_footsteps();
 
   // advertise topics
   _zmp_pub = _nh.advertise<visualization_msgs::MarkerArray>("zmp", 1, true);
@@ -32,6 +35,20 @@ PlannerExecutor::PlannerExecutor():
   publish_markers();
 }
 
+void PlannerExecutor::generate_footsteps()
+{
+  std::vector<Contact> contacts;
+  for(unsigned int i = 0; i < _contact_names.size(); i++)
+  {
+    Contact c(_contact_names[i]);
+    _model->getPose(_contact_names[i],_tmp_affine3d);
+    c.state.pose = _tmp_affine3d;
+    c.setContactSequence(_contact_sequence[i]);
+    contacts.push_back(c);
+  }
+  _planner.generateSteps(contacts);
+}
+
 void PlannerExecutor::init_load_model()
 {
   // ModelInterface
@@ -39,36 +56,25 @@ void PlannerExecutor::init_load_model()
   _model = XBot::ModelInterface::getModel(cfg);
 
   Eigen::VectorXd qhome;
+  _nhpr.getParam("home_position_name", _home_position_name);
   _model->getRobotState(_home_position_name, qhome);
   _model->setJointPosition(qhome);
   _model->update();
 
-  std::string world_frame_link;
-  if(_nhpr.hasParam("world_frame_link"))
+  // Calculate the initial height
+  _tmp_affine3d.setIdentity();
+  double avg_z = 0.0;
+  for(unsigned int i = 0; i<_n_contacts; i++)
   {
-    _nhpr.getParam("world_frame_link", world_frame_link);
-    Eigen::Affine3d T;
-    if(_model->getPose(world_frame_link,T))
-    {
-      ROS_INFO("Setting planner world frame in %s", world_frame_link.c_str());
-
-      _model->setFloatingBasePose(T.inverse());
-      _model->update();
-    }
+    if(_model->getPose(_contact_names[i],_base_frame_name,_tmp_affine3d))
+      avg_z = avg_z + _tmp_affine3d.translation().z();
     else
-      ROS_ERROR("world_frame_link %s does not exists, keeping original world!", world_frame_link.c_str());
+      throw std::runtime_error("Can not parse the contact names while calculating the initial robot's height! Check that the contact names are also in the SRDF/URDF file.");
   }
-
-  // RobotInterface
-  //try
-  //{
-  //    _robot = RobotInterface::getRobot(cfg);
-  //    _robot->setControlMode(ControlMode::Position());
-  //}
-  //catch(std::runtime_error& e)
-  //{
-  //    std::cout << "\033[1;31m[planner_executor] \033[0m" << "\033[31mRobotInterface not constructed!\033[0m" << std::endl;
-  //}
+  _tmp_affine3d.setIdentity();
+  _tmp_affine3d.translation().z() = -avg_z/_n_contacts;
+  _model->setFloatingBasePose(_tmp_affine3d);
+  _model->update();
 
   // RobotStatePublisher
   _rspub = std::make_shared<Cartesian::Utils::RobotStatePublisher>(_model);
@@ -106,30 +112,12 @@ void PlannerExecutor::init_load_config()
   _planner.setdT(dt);
 
   std::vector<std::string> contact_names;
-  std::vector<Contact> contacts;
   std::vector<int> contact_sequence;
-  std::vector<double> init_pose(7); // x y z qx qy qz qw
   YAML_PARSE(config["dcm_planner"], contact_names, std::vector<std::string>);
   YAML_PARSE(config["dcm_planner"], contact_sequence, std::vector<int>)
-      _contact_names = contact_names;
-  _n_contacts = contact_names.size();
-  for(unsigned int i = 0; i < contact_names.size(); i++)
-  {
-    YAML_PARSE(config["dcm_planner"][_contact_names[i]], init_pose, std::vector<double>);
-    Contact c(contact_names[i]);
-    c.state.pose.translation() << init_pose[0], init_pose[1], init_pose[2];
-    Eigen::Quaterniond q;
-    q.x() = init_pose[3];
-    q.y() = init_pose[4];
-    q.z() = init_pose[5];
-    q.w() = init_pose[6];
-    c.state.pose.linear() << q.toRotationMatrix();
-    c.setContactSequence(contact_sequence[i]);
-
-    contacts.push_back(c);
-  }
-
-  _planner.generateSteps(contacts);
+  _contact_names = contact_names;
+  _contact_sequence = contact_sequence;
+  _n_contacts = _contact_names.size();
 
   std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32mconfigs loaded! \033[0m" << std::endl;
 }
@@ -139,7 +127,7 @@ void PlannerExecutor::init_interactive_marker()
   _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("planner_executor");
 
   visualization_msgs::InteractiveMarker int_marker;
-  int_marker.header.frame_id = _base_link_frame;
+  int_marker.header.frame_id = _world_frame_name;
   int_marker.header.stamp = ros::Time::now();
   int_marker.name = "obstacle";
   int_marker.description = "obstacle";
@@ -229,34 +217,34 @@ bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::E
   _execute = !_execute;
 
   // reset
-  Eigen::Affine3d T_left, T_right, T_com;
-  T_left.translation().x() = 0.0;
-  T_left.translation().y() = 0.1;
-  T_left.translation().z() = 0.0;
-  T_left.linear().setIdentity();
-
-  T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
-  T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
-  T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
-  T_right.linear().setIdentity();
-
-  auto task = _ci->getTask("l_sole");
-  auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  task_l_foot->setPoseReference(T_left);
-
-  task = _ci->getTask("r_sole");
-  auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  task_r_foot->setPoseReference(T_right);
-
-  _ci->setComPositionReference(_com_trj[0]);
-  _ci->update(0, _planner.getdT());
-  Eigen::VectorXd q, dq;
-  _model->getJointPosition(q);
-  _model->getJointVelocity(dq);
-  q += dq * _planner.getdT();
-  _model->setJointPosition(q);
-  _model->update();
-  _rspub->publishTransforms(ros::Time::now(), "");
+  //Eigen::Affine3d T_left, T_right, T_com;
+  //T_left.translation().x() = 0.0;
+  //T_left.translation().y() = 0.1;
+  //T_left.translation().z() = 0.0;
+  //T_left.linear().setIdentity();
+  //
+  //T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
+  //T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
+  //T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
+  //T_right.linear().setIdentity();
+  //
+  //auto task = _ci->getTask("l_sole");
+  //auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+  //task_l_foot->setPoseReference(T_left);
+  //
+  //task = _ci->getTask("r_sole");
+  //auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+  //task_r_foot->setPoseReference(T_right);
+  //
+  //_ci->setComPositionReference(_com_trj[0]);
+  //_ci->update(0, _planner.getdT());
+  //Eigen::VectorXd q, dq;
+  //_model->getJointPosition(q);
+  //_model->getJointVelocity(dq);
+  //q += dq * _planner.getdT();
+  //_model->setJointPosition(q);
+  //_model->update();
+  //_rspub->publishTransforms(ros::Time::now(), "");
 
   std::cout << "\033[1m[planner_executor] \033[0m" << "starting execution!" << std::endl;
   return true;
@@ -270,7 +258,7 @@ void PlannerExecutor::publish_markers()
   {
     // publish zmp
     visualization_msgs::Marker m_zmp;
-    m_zmp.header.frame_id = _base_link_frame;
+    m_zmp.header.frame_id = _world_frame_name;
     m_zmp.header.stamp = ros::Time::now();
     m_zmp.id = i;
     m_zmp.action = visualization_msgs::Marker::MODIFY;
@@ -284,7 +272,7 @@ void PlannerExecutor::publish_markers()
 
     // publish footsteps
     visualization_msgs::Marker m_footstep, m_footstep_name;
-    m_footstep.header.frame_id = m_footstep_name.header.frame_id = _base_link_frame;
+    m_footstep.header.frame_id = m_footstep_name.header.frame_id = _world_frame_name;
     m_footstep.header.stamp = m_footstep_name.header.stamp = ros::Time::now();
     m_footstep.id = m_footstep_name.id = i;
     m_footstep.action = visualization_msgs::Marker::MODIFY;
@@ -318,7 +306,7 @@ void PlannerExecutor::publish_markers()
   for (int i = 0; i < _cp_trj.size(); i += 10)
   {
     visualization_msgs::Marker m_cp;
-    m_cp.header.frame_id = _base_link_frame;
+    m_cp.header.frame_id = _world_frame_name;
     m_cp.header.stamp = ros::Time::now();
     m_cp.id = i;
     m_cp.action = visualization_msgs::Marker::MODIFY;
@@ -335,7 +323,7 @@ void PlannerExecutor::publish_markers()
   for (int i = 0; i < _com_trj.size(); i += 10)
   {
     visualization_msgs::Marker m_com;
-    m_com.header.frame_id = _base_link_frame;
+    m_com.header.frame_id = _world_frame_name;
     m_com.header.stamp = ros::Time::now();
     m_com.id = i;
     m_com.action = visualization_msgs::Marker::MODIFY;
@@ -425,30 +413,6 @@ void PlannerExecutor::plan()
   }
   _g2o_optimizer.setEdges(g2o_edges);
   _g2o_optimizer.update();
-
-  // IK
-  // first trial: let's fix the left foot in the homing position and the right foot on the first position of the footstep sequence
-  //Eigen::Affine3d T_left, T_right, T_com;
-  //T_left.translation().x() = 0.0;
-  //T_left.translation().y() = 0.1;
-  //T_left.translation().z() = 0.0;
-  //T_left.linear().setIdentity();
-  //
-  //T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
-  //T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
-  //T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
-  //T_right.linear().setIdentity();
-  //
-  //auto task = _ci->getTask("l_sole");
-  //auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  //task_l_foot->setPoseReference(T_left);
-  //
-  //task = _ci->getTask("r_sole");
-  //auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  //task_r_foot->setPoseReference(T_right);
-  //
-  //_ci->setComPositionReference(_com_trj[0]);
-
 }
 
 bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose)
@@ -539,57 +503,57 @@ void PlannerExecutor::run()
     }
 
     // double stance walk: the swing trajectory starts when the CP lays on the support polygon drawn by the single stance foot
-    for (int i = 1; i < _footstep_seq.size(); i++)
-    {
-      double time = 0;
-      Eigen::Affine3d x_fin = _footstep_seq[i+1].state.pose;
-      Eigen::Affine3d x_init;
-      _model->getPose(_footstep_seq[i+1].getDistalLink(), x_init);
-      double t_init = 0.0;
-      bool start_step = false;
-
-      while(time <= _planner.getStepTime())
-      {
-        // skip first step: only the com must move!
-        if (check_cp_inside_support_polygon(_cp_trj[index], _footstep_seq[i].state.pose) && start_step == false)
-        {
-          std::cout << "cp in support polygon, start stepping..." << std::endl;
-          start_step = true;
-          t_init = time;
-        }
-        if(start_step && time < t_init + 0.15)
-        {
-          auto task = _ci->getTask(_footstep_seq[i+1].getDistalLink());
-          auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-          Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, t_init, t_init + 0.15);
-          c_task->setPoseReference(x_ref);
-        }
-
-        _ci->setComPositionReference(_com_trj[index]);
-        _ci->update(time, _planner.getdT());
-        Eigen::VectorXd q, dq;
-        _model->getJointPosition(q);
-        _model->getJointVelocity(dq);
-        q += dq * _planner.getdT();
-        _model->setJointPosition(q);
-        _model->update();
-        _rspub->publishTransforms(ros::Time::now(), "ci");
-
-        //if (_robot)
-        //{
-        //  XBot::JointNameMap jmap;
-        //  _model->eigenToMap(q, jmap);
-        //  _robot->setPositionReference(jmap);
-        //  _robot->move();
-        //}
-
-        time += _planner.getdT();
-        index++;
-        r.sleep();
-      }
-      if (i == _footstep_seq.size() - 1)
-        _execute = false;
-    }
+    //for (int i = 1; i < _footstep_seq.size(); i++)
+    //{
+    //  double time = 0;
+    //  Eigen::Affine3d x_fin = _footstep_seq[i+1].state.pose;
+    //  Eigen::Affine3d x_init;
+    //  _model->getPose(_footstep_seq[i+1].getDistalLink(), x_init);
+    //  double t_init = 0.0;
+    //  bool start_step = false;
+    //
+    //  while(time <= _planner.getStepTime())
+    //  {
+    //    // skip first step: only the com must move!
+    //    if (check_cp_inside_support_polygon(_cp_trj[index], _footstep_seq[i].state.pose) && start_step == false)
+    //    {
+    //      std::cout << "cp in support polygon, start stepping..." << std::endl;
+    //      start_step = true;
+    //      t_init = time;
+    //    }
+    //    if(start_step && time < t_init + 0.15)
+    //    {
+    //      auto task = _ci->getTask(_footstep_seq[i+1].getDistalLink());
+    //      auto c_task = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+    //      Eigen::Affine3d x_ref = swing_trajectory(time, x_init, x_fin, t_init, t_init + 0.15);
+    //      c_task->setPoseReference(x_ref);
+    //    }
+    //
+    //    _ci->setComPositionReference(_com_trj[index]);
+    //    _ci->update(time, _planner.getdT());
+    //    Eigen::VectorXd q, dq;
+    //    _model->getJointPosition(q);
+    //    _model->getJointVelocity(dq);
+    //    q += dq * _planner.getdT();
+    //    _model->setJointPosition(q);
+    //    _model->update();
+    //    //_rspub->publishTransforms(ros::Time::now(), "ci");
+    //
+    //    //if (_robot)
+    //    //{
+    //    //  XBot::JointNameMap jmap;
+    //    //  _model->eigenToMap(q, jmap);
+    //    //  _robot->setPositionReference(jmap);
+    //    //  _robot->move();
+    //    //}
+    //
+    //    time += _planner.getdT();
+    //    index++;
+    //    r.sleep();
+    //  }
+    //  if (i == _footstep_seq.size() - 1)
+    //    _execute = false;
+    //}
   }
   else
   {
@@ -602,6 +566,7 @@ void PlannerExecutor::run()
     _model->update();
     _rspub->publishTransforms(ros::Time::now(), "ci");
   }
+
   publish_markers();
 }
 
