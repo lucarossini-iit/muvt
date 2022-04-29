@@ -1,11 +1,17 @@
 #ifndef MUVT_ROS_PLANNER_EXECUTOR_H
 #define MUVT_ROS_PLANNER_EXECUTOR_H
 
-// ros and stdlib
-#include <algorithm>
+// ros
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
 #include <eigen_conversions/eigen_msg.h>
+
+// XBot and CartesI/O
+#include <XBotInterface/ModelInterface.h>
+#include <XBotInterface/RobotInterface.h>
+#include <cartesian_interface/utils/RobotStatePublisher.h>
+#include <RobotInterfaceROS/ConfigFromParam.h>
+#include <cartesian_interface/CartesianInterfaceImpl.h>
 
 // muvt
 #include <muvt_core/planner/dcm_planner.h>
@@ -20,6 +26,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <interactive_markers/interactive_marker_server.h>
+#include <std_srvs/Empty.h>
 
 namespace Muvt { namespace HyperGraph { namespace Planner {
 
@@ -32,9 +39,11 @@ public:
 
 private:
     // init functions
+    void init_load_model();
     void init_load_config();
     void init_interactive_marker();
     void interactive_markers_feedback (const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+    void init_load_cartesian_interface();
 
     // solve IK and execute the trajectory
     void plan();
@@ -48,19 +57,30 @@ private:
     // swing foot trajectories
     Eigen::Affine3d swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time);
 
+    // ROS service definitions
+    bool execute_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+
     ros::NodeHandle _nh, _nhpr;
-    ros::Publisher _zmp_pub, _cp_pub, _footstep_pub, _footstep_name_pub, _com_pub;
+    ros::ServiceServer _exec_srv;
+    ros::Publisher _zmp_pub, _cp_pub, _footstep_name_pub, _footstep_pub, _com_pub;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
+
+    XBot::ModelInterface::Ptr _model;
+    std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
+    XBot::Cartesian::CartesianInterfaceImpl::Ptr _ci;
 
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;
 
+    std::string _home_position_name;
     std::string _base_link_frame;
     std::vector<std::string> _contact_names;
     unsigned int _n_contacts;
 
     OptimizerContact _g2o_optimizer;
+
+    bool _execute;
 };
 } } }
 
@@ -76,7 +96,6 @@ private:
     else { \
     std::cout << "No option '" #name "' specified, using default" << std::endl; \
     } \
-    /* End macro for option parsing */
 
 #define YAML_PARSE(yaml, name, type) \
     if(yaml[#name]) \
@@ -88,7 +107,7 @@ private:
     else { \
     throw std::runtime_error("No option '" #name "' specified, abort"); \
     } \
-    /* End macro for option parsing */
+/* End macro for option parsing */
 
 namespace std
 {

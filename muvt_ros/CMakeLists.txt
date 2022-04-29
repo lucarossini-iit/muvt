@@ -22,16 +22,7 @@ include_directories(
     ${cartesian_interface_INCLUDE_DIRS})
 
 add_executable(test_node src/planner_executor.cpp src/planner_executor_node.cpp)
-target_link_libraries(test_node ${catkin_LIBRARIES} yaml-cpp)
-
-install(DIRECTORY config/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config)
-
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        FILES_MATCHING PATTERN "*.launch"
-        PATTERN ".svn" EXCLUDE
-        )
+target_link_libraries(test_node ${cartesian_interface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
 install(TARGETS test_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
