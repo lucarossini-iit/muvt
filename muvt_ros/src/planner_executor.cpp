@@ -57,7 +57,8 @@ void PlannerExecutor::init_load_model()
 
   Eigen::VectorXd qhome;
   _nhpr.getParam("home_position_name", _home_position_name);
-  _model->getRobotState(_home_position_name, qhome);
+  if(!_model->getRobotState(_home_position_name, qhome))
+    throw std::runtime_error(std::string("Check that the home_position_name %s is correctly defined in the SRDF/URDF file.",_home_position_name.c_str()));
   _model->setJointPosition(qhome);
   _model->update();
 
