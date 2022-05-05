@@ -23,6 +23,8 @@ bool EdgeMultiRelativePoses::setLimits(const std::string distal_link, const Eige
     limits.upper_limits = upper;
 
     _limits[distal_link] = limits;
+
+    return true;
 }
 
 void EdgeMultiRelativePoses::computeError()
