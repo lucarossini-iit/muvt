@@ -387,7 +387,7 @@ void PlannerExecutor::plan()
     VertexContact* vertex = new VertexContact();
     vertex->setId(i);
     vertex->setEstimate(_footstep_seq[i]);
-    if (0 == i || 1 == i ||  (_footstep_seq.size() - 1) == i || (_footstep_seq.size() - 2) == i)
+    if(i < _n_contacts || i >= _footstep_seq.size() - _n_contacts) // Fix the first and last n contacts
       vertex->setFixed(true);
     auto v = dynamic_cast<OptimizableGraph::Vertex*>(vertex);
     g2o_vertices.push_back(v);
