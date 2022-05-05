@@ -114,10 +114,20 @@ void PlannerExecutor::init_load_config()
 
   std::vector<std::string> contact_names;
   std::vector<int> contact_sequence;
+  std::vector<double> contact_dimensions;
   YAML_PARSE(config["dcm_planner"], contact_names, std::vector<std::string>);
   YAML_PARSE(config["dcm_planner"], contact_sequence, std::vector<int>)
+  YAML_PARSE(config["dcm_planner"], contact_dimensions, std::vector<double>)
   _contact_names = contact_names;
   _contact_sequence = contact_sequence;
+  _contact_dimensions = contact_dimensions;
+  if(_contact_dimensions.size() == 3)
+    _contact_model = SURFACE_CONTACT;
+  else if (_contact_dimensions.size() == 1)
+    _contact_model = POINT_CONTACT;
+  else
+    throw std::runtime_error("wrong contact dimension!");
+
   _n_contacts = _contact_names.size();
 
   std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32mconfigs loaded! \033[0m" << std::endl;
@@ -277,11 +287,23 @@ void PlannerExecutor::publish_markers()
     m_footstep.header.stamp = m_footstep_name.header.stamp = ros::Time::now();
     m_footstep.id = m_footstep_name.id = i;
     m_footstep.action = visualization_msgs::Marker::MODIFY;
-    m_footstep.type = visualization_msgs::Marker::CUBE;
+
+    if(_contact_model == SURFACE_CONTACT)
+    {
+      m_footstep.type = visualization_msgs::Marker::CUBE;
+      m_footstep.scale.x = _contact_dimensions[0]; m_footstep.scale.y = _contact_dimensions[1]; m_footstep.scale.z = _contact_dimensions[2];
+    }
+    else
+    {
+      m_footstep.type = visualization_msgs::Marker::SPHERE;
+      m_footstep.scale.x = m_footstep.scale.y = m_footstep.scale.z = _contact_dimensions[0];
+    }
+
     m_footstep_name.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     m_footstep_name.action = visualization_msgs::Marker::ADD;
+
     m_footstep_name.text = _footstep_seq[i].getDistalLink() + std::to_string(i);
-    m_footstep.scale.x = 0.2; m_footstep.scale.y = 0.1; m_footstep.scale.z = 0.01;
+
     m_footstep_name.scale.x = 0.1; m_footstep_name.scale.y = 0.1; m_footstep_name.scale.z = 0.1;
     m_footstep_name.color.r = 1; m_footstep_name.color.g = 1; m_footstep_name.color.b = 1; m_footstep_name.color.a = 1.0;
     if((i+1)%_n_contacts == 0)
@@ -386,20 +408,21 @@ void PlannerExecutor::plan()
     g2o_edges.push_back(e);
   }
 
-  for (int i = 0; i < g2o_vertices.size() - 1; i++)
-  {
-    EdgeRelativePose* edge_succ = new EdgeRelativePose();
-    Eigen::MatrixXd info_succ(3, 3);
-    info_succ.setIdentity();  info_succ *= 100;
-    edge_succ->setInformation(info_succ);
-    edge_succ->setStepTime(_planner.getStepTime());
-    edge_succ->setStepSize(_planner.getStepSize());
-    edge_succ->vertices()[0] = g2o_vertices[i];
-    edge_succ->vertices()[1] = g2o_vertices[i+1];
-    edge_succ->checkVertices();
-    auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
-    g2o_edges.push_back(e);
-  }
+  if(_n_contacts == 2) // FIXME hacky solution to separate the biped and quadruped case
+    for (int i = 0; i < g2o_vertices.size() - 1; i++)
+    {
+      EdgeRelativePose* edge_succ = new EdgeRelativePose();
+      Eigen::MatrixXd info_succ(3, 3);
+      info_succ.setIdentity();  info_succ *= 100;
+      edge_succ->setInformation(info_succ);
+      edge_succ->setStepTime(_planner.getStepTime());
+      edge_succ->setStepSize(_planner.getStepSize());
+      edge_succ->vertices()[0] = g2o_vertices[i];
+      edge_succ->vertices()[1] = g2o_vertices[i+1];
+      edge_succ->checkVertices();
+      auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
+      g2o_edges.push_back(e);
+    }
 
   for (int i = _n_contacts; i < g2o_vertices.size(); i++)
   {
@@ -438,12 +461,20 @@ void PlannerExecutor::plan()
 
 bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose)
 {
-  // TODO: remove hardcoded foot size
   // foot limits in foot frame
-  double x_max = 0.1;
-  double x_min = -0.1;
-  double y_max = 0.05;
-  double y_min = -0.05;
+
+  double x_max = 0.0;
+  double x_min = 0.0;
+  double y_max = 0.0;
+  double y_min = 0.0;
+
+  if(_contact_model == SURFACE_CONTACT)
+  {
+    x_max =   _contact_dimensions[0]/2.0;
+    x_min = - _contact_dimensions[0]/2.0;
+    y_max =   _contact_dimensions[1]/2.0;
+    y_min = - _contact_dimensions[1]/2.0;
+  }
 
   // foot limits in world frame
   double foot_x_max = foot_pose.translation().x() + (foot_pose.linear() * Eigen::Vector3d(x_max, 0, 0))(0);

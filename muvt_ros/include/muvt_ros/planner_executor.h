@@ -33,6 +33,9 @@ namespace Muvt { namespace HyperGraph { namespace Planner {
 class PlannerExecutor {
 
 public:
+
+    enum CONTACT_MODEL {POINT_CONTACT,SURFACE_CONTACT};
+
     PlannerExecutor();
 
     void run();
@@ -81,7 +84,9 @@ private:
     std::string _base_frame_name;
     std::vector<std::string> _contact_names;
     std::vector<int> _contact_sequence;
+    std::vector<double> _contact_dimensions;
     unsigned int _n_contacts;
+    CONTACT_MODEL _contact_model;
 
     OptimizerContact _g2o_optimizer;
 
