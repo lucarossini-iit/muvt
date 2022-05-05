@@ -41,7 +41,7 @@ void EdgeRelativePose::computeError()
     double S = 2, Sc = 100;
 
     _error[0] = 1/exp(Sc*diff(0) - Sc*0.1) + exp(Sc*diff(0) - Sc*0.3);
-    if (v1->estimate().getDistalLink() == "l_sole") // FIXME hardcoded
+    if (diff(1) < 0) // FIXME hardcoded
         _error[1] = 1/exp(Sc*diff(1) + Sc*0.3) + exp(Sc*diff(1) + Sc*0.15);
     else
         _error[1] = 1/exp(Sc*diff(1) - Sc*0.15) + exp(Sc*diff(1) - Sc*0.3);
