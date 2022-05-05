@@ -71,6 +71,7 @@ private:
     std::shared_ptr<XBot::Cartesian::Utils::RobotStatePublisher> _rspub;
     XBot::Cartesian::CartesianInterfaceImpl::Ptr _ci;
 
+    Eigen::Vector3d _initial_com_pos;
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
     std::vector<Contact> _footstep_seq;
     DCMPlanner _planner;

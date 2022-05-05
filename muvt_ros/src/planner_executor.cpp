@@ -62,7 +62,7 @@ void PlannerExecutor::init_load_model()
   _model->setJointPosition(qhome);
   _model->update();
 
-  // Calculate the initial height
+  // Calculate the initial base height wrt world frame
   _tmp_affine3d.setIdentity();
   double avg_z = 0.0;
   for(unsigned int i = 0; i<_n_contacts; i++)
@@ -76,6 +76,11 @@ void PlannerExecutor::init_load_model()
   _tmp_affine3d.translation().z() = -avg_z/_n_contacts;
   _model->setFloatingBasePose(_tmp_affine3d);
   _model->update();
+
+  // Calculate the initial com position wrt world frame
+  _model->getCOM(_initial_com_pos);
+
+  _planner.setZCoM(_initial_com_pos.z());
 
   // RobotStatePublisher
   _rspub = std::make_shared<Cartesian::Utils::RobotStatePublisher>(_model);
@@ -92,11 +97,6 @@ void PlannerExecutor::init_load_config()
   _nhpr.getParam("dcm_config", optimizer_config_string);
 
   auto config = YAML::Load(optimizer_config_string);
-
-  YAML_PARSE_OPTION(config["dcm_planner"], z_com, double, 0.0);
-  if (z_com == 0)
-    throw std::runtime_error("missing mandatory argument 'z_com'!");
-  _planner.setZCoM(z_com);
 
   YAML_PARSE_OPTION(config["dcm_planner"], step_time, double, 0.0);
   if (step_time == 0)
