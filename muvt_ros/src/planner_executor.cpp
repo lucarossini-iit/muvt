@@ -400,16 +400,36 @@ void PlannerExecutor::plan()
     g2o_edges.push_back(e);
   }
 
-  for (int i = 2; i < g2o_vertices.size(); i++)
+  for (int i = _n_contacts; i < g2o_vertices.size(); i++)
   {
-    EdgeSteering* edge = new EdgeSteering();
-    Eigen::MatrixXd info(3, 3);
-    info.setIdentity();
-    edge->setInformation(info);
-    edge->setPreviousContact(g2o_vertices[i-2]);
-    edge->vertices()[0] = g2o_vertices[i];
-    auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
-    g2o_edges.push_back(e);
+      // extract the two sub-vertices containing the previous and successive _n_contacts vertices
+      std::vector<OptimizableGraph::Vertex*> vert_prev(g2o_vertices.begin()+i-_n_contacts, g2o_vertices.begin()+i);
+      std::vector<OptimizableGraph::Vertex*> vert_succ(g2o_vertices.begin()+i, g2o_vertices.begin()+i+_n_contacts);
+
+      // first vertex to be added is the one related to the current contact
+      std::vector<OptimizableGraph::Vertex*> vert_edge;
+      auto current_vertex = dynamic_cast<VertexContact*>(g2o_vertices[i]);
+      vert_edge.push_back(current_vertex);
+
+      // then add the one with the same distal link of contact i, but at the previous time
+      for (auto v : vert_prev)
+      {
+          auto vertex = dynamic_cast<VertexContact*>(v);
+          if (vertex->estimate().getDistalLink() == current_vertex->estimate().getDistalLink())
+              vert_edge.push_back(v);
+     }
+  }
+
+  for (unsigned int i = 2; i < g2o_vertices.size(); i++)
+  {
+      EdgeSteering* edge = new EdgeSteering();
+      Eigen::MatrixXd info(3, 3);
+      info.setIdentity();
+      edge->setInformation(info);
+      edge->setPreviousContact(g2o_vertices[i-2]);
+      edge->vertices()[0] = g2o_vertices[i];
+      auto e = dynamic_cast<OptimizableGraph::Edge*>(edge);
+      g2o_edges.push_back(e);
   }
   _g2o_optimizer.setEdges(g2o_edges);
   _g2o_optimizer.update();

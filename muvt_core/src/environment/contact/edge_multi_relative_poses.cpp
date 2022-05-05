@@ -7,44 +7,53 @@ EdgeMultiRelativePoses::EdgeMultiRelativePoses(unsigned int n_contacts):
 BaseMultiEdge<-1, Eigen::VectorXd>(),
 _n_contacts(n_contacts)
 {
-  _vertices.resize(_n_contacts);
-  _error.resize(3 * (_n_contacts - 1));
-  _l_limits.resize(3 * (_n_contacts - 1));
-  _u_limits.resize(3 * (_n_contacts - 1));
+  _vertices.resize(_n_contacts + 1);
+  //setDimension(3 * _n_contacts);
+
+  _dimension = 3 * _n_contacts;
+  _information.resize(_dimension, _dimension);
+  _error.resize(_dimension, 1);
+  _measurement.resize(_dimension, 1);
 }
 
-bool EdgeMultiRelativePoses::setLimits(const Eigen::VectorXd l_limits, const Eigen::VectorXd u_limits)
+bool EdgeMultiRelativePoses::setLimits(const std::string distal_link, const Eigen::Vector3d lower, const Eigen::Vector3d upper)
 {
-    if (l_limits.size() != _l_limits.size())
-    {
-        throw std::runtime_error("Error while initializing EdgeMultiRelativePoses: lower limits vector size is wrong!");
-        return false;
-    }
-    if (u_limits.size() != _u_limits.size())
-    {
-        throw std::runtime_error("Error while initializing EdgeMultiRelativePoses: upper limits vector size is wrong!");
-        return false;
-    }
+    DistanceLimits limits;
+    limits.lower_limits = lower;
+    limits.upper_limits = upper;
 
-    _l_limits = l_limits;
-    _u_limits = u_limits;
-    return true;
+    _limits[distal_link] = limits;
 }
 
 void EdgeMultiRelativePoses::computeError()
 {
-    for(unsigned int i = 0; i < _n_contacts - 1; i++)
-    {
-      auto v1 = dynamic_cast<VertexContact*>(_vertices[i]);
-      auto v2 = dynamic_cast<VertexContact*>(_vertices[i+1]);
-      std::cout << "ComputeError" << std::endl;
-      auto error3d = compute3dError(v1->estimate().state.pose.translation(),v2->estimate().state.pose.translation());
-      std::cout << "ComputeError" << std::endl;
-      _error(i*3) = error3d(0);
-      _error((i+1)*3) = error3d(1);
-      _error((i+2)*3) = error3d(2);
-      std::cout << "ComputeError" << std::endl;
-    }
+    double Sc = 100;
 
-    std::cout << "ComputeError" << std::endl;
+    VertexContact* current_vertex = dynamic_cast<VertexContact*>(_vertices[0]);
+    for (int i = 0; i < _n_contacts; i++)
+    {
+        VertexContact* v = dynamic_cast<VertexContact*>(_vertices[i+1]);
+        Eigen::Vector3d current_p = current_vertex->estimate().state.pose.translation();
+        Eigen::Vector3d p = v->estimate().state.pose.translation();
+        Eigen::Vector3d diff = current_p - p;
+
+        Eigen::Vector3d lower_limits = _limits[v->estimate().getDistalLink()].lower_limits;
+        Eigen::Vector3d upper_limits = _limits[v->estimate().getDistalLink()].upper_limits;
+
+        // error along x direction
+        if (current_p(0) > p(0))
+            _error(i*3 + 0) = 1/exp(Sc*diff(0) - Sc*lower_limits(0)) + exp(Sc*diff(0) - Sc*upper_limits(0));
+        else
+            _error(i*3 + 0) = 1/exp(Sc*diff(0) + Sc*upper_limits(0)) + exp(Sc*diff(0) - Sc*lower_limits(0));
+
+        if (current_p(1) > p(1))
+            _error(i*3 + 1) = 1/exp(Sc*diff(1) - Sc*lower_limits(1)) + exp(Sc*diff(1) - Sc*upper_limits(1));
+        else
+            _error(i*3 + 1) = 1/exp(Sc*diff(1) + Sc*upper_limits(1)) + exp(Sc*diff(1) - Sc*lower_limits(1));
+
+        if (current_p(2) > p(2))
+            _error(i*3 + 2) = 1/exp(Sc*diff(2) - Sc*lower_limits(2)) + exp(Sc*diff(2) - Sc*upper_limits(2));
+        else
+            _error(i*3 + 2) = 1/exp(Sc*diff(2) + Sc*upper_limits(2)) + exp(Sc*diff(2) - Sc*lower_limits(2));
+    }
 }

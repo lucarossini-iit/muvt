@@ -5,9 +5,18 @@
 
 #include <muvt_core/environment/contact/vertex_contact.h>
 
+#include <utility>
+#include <map>
+
 using namespace g2o;
 
 namespace Muvt { namespace HyperGraph {
+
+struct DistanceLimits {
+    Eigen::Vector3d lower_limits;
+    Eigen::Vector3d upper_limits;
+};
+
 
 // At the moment, we consider the bipedal case. An extension to a multi-contact case can be done using
 // a BaseMultiEdge
@@ -32,14 +41,7 @@ public:
     void setStepSize(const double step_size) { _step_size = step_size; }
     double getStepSize() const { return _step_size; }
 
-    /**
-    * @brief Set the position lower and upper limits for the relative distance of each contact.
-    * The limits follows the contact sequence. For example, if we have 4 contacts and _vertices[0] is the
-    * second one, the limits should follow the order contact 1-3-4
-    * @param the lower and upper limit vectors
-    * @return true if success
-    **/
-    bool setLimits(const Eigen::VectorXd l_limits, const Eigen::VectorXd u_limits);
+    bool setLimits(const std::string distal_link, const Eigen::Vector3d lower, const Eigen::Vector3d upper);
 
     virtual void computeError();
 //    void linearizeOplus() { _jacobianOplusXi = Eigen::MatrixXd::Identity(3,3); _jacobianOplusXj = Eigen::MatrixXd::Identity(3,3); }
@@ -47,8 +49,7 @@ public:
 private:
     double _step_time;
     double _step_size;
-    Eigen::VectorXd _l_limits;
-    Eigen::VectorXd _u_limits;
+    std::map<std::string, DistanceLimits> _limits;
     unsigned int _n_contacts;
 };
 } }
