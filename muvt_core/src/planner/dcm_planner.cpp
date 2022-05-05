@@ -4,9 +4,7 @@
 
 using namespace Muvt::HyperGraph::Planner;
 
-DCMPlanner::DCMPlanner():
-_nh(""),
-_nhpr("~")
+DCMPlanner::DCMPlanner()
 {}
 
 void DCMPlanner::setNumSteps(const unsigned int& n_steps)

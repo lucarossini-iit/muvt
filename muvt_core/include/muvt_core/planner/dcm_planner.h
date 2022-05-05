@@ -3,7 +3,6 @@
 
 // ROS and stdlib
 #include <algorithm>
-#include <ros/ros.h>
 #include <yaml-cpp/yaml.h>
 
 // Eigen
@@ -12,10 +11,6 @@
 
 // muvt
 #include <muvt_core/environment/contact/contact.h>
-
-// msg and srv
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
 
 
 namespace Muvt { namespace HyperGraph { namespace Planner {
@@ -60,9 +55,6 @@ private:
     std::vector<Contact> _footstep_sequence;
     std::vector<std::vector<Eigen::Vector3d>> _cp_trj;
     std::vector<Eigen::Vector3d> _com_trj;
-
-    ros::NodeHandle _nh, _nhpr;
-    ros::Publisher _zmp_pub, _cp_pub, _com_pub, _footstep_pub;
 
 };
 } } }
