@@ -129,6 +129,9 @@ void DCMPlanner::solve()
     _cp_trj.clear();
     _com_trj.clear();
 
+    // check if the footstep sequence has to be increased or decreased in size
+    check_footstep_sequence();
+
     // initialize first zmp in the middle of the starting feet position
     double avg_x = 0.0;
     double avg_y = 0.0;
@@ -216,3 +219,114 @@ void DCMPlanner::getSolution(std::vector<Contact>& footsteps, std::vector<Eigen:
 
     com_trj = _com_trj;
 }
+
+void DCMPlanner::check_footstep_sequence()
+{
+    for (int i = _n_feet + 1; i < _footstep_sequence.size() - _n_feet - 1; i++)
+    {
+        std::vector<Contact> contact_succ, contact_prev;
+//        if (i < _footstep_sequence.size() - _n_feet && i >_n_feet)
+//        {
+            std::vector<Contact> c_succ(_footstep_sequence.begin() + i + 1, _footstep_sequence.begin() + i + 1 + _n_feet);
+            std::vector<Contact> c_prev(_footstep_sequence.begin() + i - 1 -_n_feet, _footstep_sequence.begin() + i - 1);
+            contact_succ = c_succ;
+            contact_prev = c_prev;
+//        }
+//        else if (i >= _footstep_sequence.size() - _n_feet)
+//        {
+//            std::vector<Contact> c_succ(_footstep_sequence.begin() + i + 1, _footstep_sequence.end());
+//            std::vector<Contact> c_prev(_footstep_sequence.begin() + i - 1 -_n_feet, _footstep_sequence.begin() + i - 1);
+//            contact_succ = c_succ;
+//            contact_prev = c_prev;
+
+//        }
+//        else if (i <= _n_feet)
+//        {
+//            std::vector<Contact> c_succ(_footstep_sequence.begin() + i + 1, _footstep_sequence.begin() + i + 1 + _n_feet);
+//            std::vector<Contact> c_prev(_footstep_sequence.begin(), _footstep_sequence.begin() + i);
+//            contact_succ = c_succ;
+//            contact_prev = c_prev;
+
+//        }
+
+
+        Contact next_contact;
+        for(auto c : contact_succ)
+        {
+            if(c.getDistalLink() == _footstep_sequence[i].getDistalLink())
+            {
+                next_contact = c;
+                auto it = std::find(contact_succ.begin(), contact_succ.end(), c);
+                contact_succ.erase(it);
+                break;
+            }
+        }
+
+        double distance = (_footstep_sequence[i].state.pose.translation() - next_contact.state.pose.translation()).norm();
+//        std::cout << distance << std::endl;
+        int index = 1;
+
+        // add footsteps whenever required
+        if (distance > _step_size * 2)
+        {
+            for (auto c : contact_succ)
+            {
+//                std::cout << "OLD OTHER CONTACT: " << std::endl;
+//                c.print();
+
+                auto is_same_distal_link = [c](Contact contact)
+                {
+                    return contact.getDistalLink() == c.getDistalLink();
+                };
+                auto it_prev = std::find_if(contact_prev.begin(), contact_prev.end(), is_same_distal_link);
+                if (it_prev == contact_prev.end())
+                    throw std::runtime_error("error");
+
+//                std::cout << "PREVIOUS POSE:" << std::endl;
+//                it_prev->print();
+
+                Contact new_contact = *(it_prev);
+                new_contact.state.pose.translation().x() = (c.state.pose.translation().x() + new_contact.state.pose.translation().x())/2;
+                new_contact.state.pose.translation().y() = (c.state.pose.translation().y() + new_contact.state.pose.translation().y())/2;
+
+//                std::cout << "NEW_CONTACT:" << std::endl;
+//                new_contact.print();
+//                std::cout << "inserting in position " << i+index << std::endl;
+
+                _footstep_sequence.insert(_footstep_sequence.begin() + i + index, new_contact);
+                index++;
+            }
+
+//            std::cout << "ADDING index " << i << std::endl;
+//            std::cout << "distance: " << distance << std::endl;
+//            std::cout << "FOOTSTEP_SEQUENCE AT ITERATION " << i << std::endl;
+//            _footstep_sequence[i].print();
+//            std::cout << "NEXT_CONTACT: " << std::endl;
+//            next_contact.print();
+
+            Contact new_contact;
+            new_contact = _footstep_sequence[i];
+            new_contact.state.pose.translation().x() = (next_contact.state.pose.translation().x() + _footstep_sequence[i].state.pose.translation().x())/2;
+            new_contact.state.pose.translation().y() = (next_contact.state.pose.translation().y() + _footstep_sequence[i].state.pose.translation().y())/2;
+            new_contact.state.pose.linear().setIdentity();
+
+//            std::cout << "NEW_CONTACT:" << std::endl;
+//            new_contact.print();
+//            std::cout << "inserting in position " << i+index << std::endl;
+
+            _footstep_sequence.insert(_footstep_sequence.begin() + i + index, new_contact);
+
+        }
+
+        // remove footsteps when adjacent are below a threshold
+//        if (distance < _step_size / 2)
+//        {
+//            std::cout << "REMOVING index " << i << std::endl;
+//            std::cout << "distance: " << distance << std::endl;
+//            _footstep_sequence[i].print();
+//            next_contact.print();
+//            _footstep_sequence.erase(_footstep_sequence.begin() + i, _footstep_sequence.begin() + i + _n_feet - 1);
+//        }
+    }
+}
+

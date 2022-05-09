@@ -51,7 +51,7 @@ private:
     void generate_footsteps();
 
     // solve IK and execute the trajectory
-    void plan();
+    void update_vertices_and_edges();
 
     // publish ROS Markers for footsteps, CP, ZMP and CoM trajectories
     void publish_markers();

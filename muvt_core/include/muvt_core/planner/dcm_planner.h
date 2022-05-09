@@ -44,6 +44,7 @@ private:
     Eigen::Vector3d cp_trajectory(double time, Eigen::Vector3d init, Eigen::Vector3d zmp);
     Eigen::Vector3d com_trajectory(double time, Eigen::Vector3d cp, Eigen::Vector3d init);
     Eigen::Vector3d com_trajectory_from_vel(Eigen::Vector3d cp, Eigen::Vector3d init);
+    void check_footstep_sequence();
 
     unsigned int _n_steps;
     unsigned int _n_feet;

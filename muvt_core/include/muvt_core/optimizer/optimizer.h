@@ -28,6 +28,11 @@ public:
 
     void update();
 
+    /**
+     * @brief remove all the vertices and edges
+     */
+    void clear();
+
     void solve();
 
 private:

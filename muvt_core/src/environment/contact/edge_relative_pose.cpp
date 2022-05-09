@@ -40,10 +40,11 @@ void EdgeRelativePose::computeError()
 
     double S = 2, Sc = 100;
 
-    _error[0] = 1/exp(Sc*diff(0) - Sc*0.1) + exp(Sc*diff(0) - Sc*0.3);
-    if (diff(1) < 0) // FIXME hardcoded
-        _error[1] = 1/exp(Sc*diff(1) + Sc*0.3) + exp(Sc*diff(1) + Sc*0.15);
+    _error[0] = 1/exp(Sc*diff(0) - Sc*0.05) + exp(Sc*diff(0) - Sc*_step_size/2);
+//    if (diff(1) < 0) // FIXME hardcoded
+    if (v1->estimate().getDistalLink() == "l_foot_contact")
+        _error[1] = 1/exp(Sc*diff(1) + Sc*0.3) + exp(Sc*diff(1) + Sc*0.2);
     else
-        _error[1] = 1/exp(Sc*diff(1) - Sc*0.15) + exp(Sc*diff(1) - Sc*0.3);
+        _error[1] = 1/exp(Sc*diff(1) - Sc*0.2) + exp(Sc*diff(1) - Sc*0.3);
     _error[2] = diff(2) * diff(2);
 }

@@ -99,6 +99,8 @@ inline Eigen::Vector3d compute3dError(const Eigen::Vector3d& v1, const Eigen::Ve
   //else
       error[1] = 1/exp(Sc*diff(1) - Sc*0.15) + exp(Sc*diff(1) - Sc*0.3);
   error[2] = diff(2) * diff(2);
+
+  return error;
 }
 
 } }

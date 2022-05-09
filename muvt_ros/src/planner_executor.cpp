@@ -13,7 +13,6 @@ PlannerExecutor::PlannerExecutor():
   _g2o_optimizer(),
   _execute(false)
 {
-
   init_load_config();
   init_load_model();
   init_interactive_marker();
@@ -31,22 +30,35 @@ PlannerExecutor::PlannerExecutor():
   // advertise services
   _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);
 
-  plan();
+  // clear vectors
+  if(!_footstep_seq.empty())
+    _footstep_seq.clear();
+  if(!_com_trj.empty())
+    _com_trj.clear();
+  if(!_cp_trj.empty())
+    _cp_trj.clear();
+
+  // solve and publish the solution
+  _planner.solve();
+  _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
+
+  update_vertices_and_edges();
+
   publish_markers();
 }
 
 void PlannerExecutor::generate_footsteps()
 {
-  std::vector<Contact> contacts;
-  for(unsigned int i = 0; i < _contact_names.size(); i++)
-  {
-    Contact c(_contact_names[i]);
-    _model->getPose(_contact_names[i],_tmp_affine3d);
-    c.state.pose = _tmp_affine3d;
-    c.setContactSequence(_contact_sequence[i]);
-    contacts.push_back(c);
-  }
-  _planner.generateSteps(contacts);
+    std::vector<Contact> contacts;
+    for(unsigned int i = 0; i < _contact_names.size(); i++)
+    {
+        Contact c(_contact_names[i]);
+        _model->getPose(_contact_names[i],_tmp_affine3d);
+        c.state.pose = _tmp_affine3d;
+        c.setContactSequence(_contact_sequence[i]);
+        contacts.push_back(c);
+    }
+    _planner.generateSteps(contacts);
 }
 
 void PlannerExecutor::init_load_model()
@@ -228,34 +240,34 @@ bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::E
   _execute = !_execute;
 
   // reset
-  //Eigen::Affine3d T_left, T_right, T_com;
-  //T_left.translation().x() = 0.0;
-  //T_left.translation().y() = 0.1;
-  //T_left.translation().z() = 0.0;
-  //T_left.linear().setIdentity();
-  //
-  //T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
-  //T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
-  //T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
-  //T_right.linear().setIdentity();
-  //
-  //auto task = _ci->getTask("l_sole");
-  //auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  //task_l_foot->setPoseReference(T_left);
-  //
-  //task = _ci->getTask("r_sole");
-  //auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  //task_r_foot->setPoseReference(T_right);
-  //
-  //_ci->setComPositionReference(_com_trj[0]);
-  //_ci->update(0, _planner.getdT());
-  //Eigen::VectorXd q, dq;
-  //_model->getJointPosition(q);
-  //_model->getJointVelocity(dq);
-  //q += dq * _planner.getdT();
-  //_model->setJointPosition(q);
-  //_model->update();
-  //_rspub->publishTransforms(ros::Time::now(), "");
+  Eigen::Affine3d T_left, T_right, T_com;
+  T_left.translation().x() = 0.0;
+  T_left.translation().y() = 0.1;
+  T_left.translation().z() = 0.0;
+  T_left.linear().setIdentity();
+
+  T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
+  T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
+  T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
+  T_right.linear().setIdentity();
+
+  auto task = _ci->getTask("l_sole");
+  auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+  task_l_foot->setPoseReference(T_left);
+
+  task = _ci->getTask("r_sole");
+  auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+  task_r_foot->setPoseReference(T_right);
+
+  _ci->setComPositionReference(_com_trj[0]);
+  _ci->update(0, _planner.getdT());
+  Eigen::VectorXd q, dq;
+  _model->getJointPosition(q);
+  _model->getJointVelocity(dq);
+  q += dq * _planner.getdT();
+  _model->setJointPosition(q);
+  _model->update();
+  _rspub->publishTransforms(ros::Time::now(), "");
 
   std::cout << "\033[1m[planner_executor] \033[0m" << "starting execution!" << std::endl;
   return true;
@@ -366,20 +378,8 @@ void PlannerExecutor::publish_markers()
   _footstep_name_pub.publish(ma_footstep_name);
 }
 
-void PlannerExecutor::plan()
+void PlannerExecutor::update_vertices_and_edges()
 {
-  // clear vectors
-  if(!_footstep_seq.empty())
-    _footstep_seq.clear();
-  if(!_com_trj.empty())
-    _com_trj.clear();
-  if(!_cp_trj.empty())
-    _cp_trj.clear();
-
-  // solve and publish the solution
-  _planner.solve();
-  _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
-
   // create g2o vertices
   std::vector<OptimizableGraph::Vertex*> g2o_vertices;
   for (int i = 0; i < _footstep_seq.size(); i++)
@@ -414,13 +414,13 @@ void PlannerExecutor::plan()
     {
       EdgeRelativePose* edge_succ = new EdgeRelativePose();
       Eigen::MatrixXd info_succ(3, 3);
-      info_succ.setIdentity();  info_succ *= 100;
+      info_succ.setIdentity(); // info_succ *= 100;
       edge_succ->setInformation(info_succ);
       edge_succ->setStepTime(_planner.getStepTime());
       edge_succ->setStepSize(_planner.getStepSize());
       edge_succ->vertices()[0] = g2o_vertices[i];
       edge_succ->vertices()[1] = g2o_vertices[i+1];
-      edge_succ->checkVertices();
+//      edge_succ->checkVertices();
       auto e = dynamic_cast<OptimizableGraph::Edge*>(edge_succ);
       g2o_edges.push_back(e);
     }
@@ -493,12 +493,23 @@ bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen:
 
 void PlannerExecutor::run()
 {
-  // g2o local refinement
-  _g2o_optimizer.solve();
-  _g2o_optimizer.getFootsteps(_footstep_seq);
-  _planner.setFootsteps(_footstep_seq);
-  _planner.solve();
-  _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
+    // checker for _footstep_seq size
+    unsigned int old_size, new_size;
+
+    // g2o local refinement
+    _g2o_optimizer.solve();
+    _g2o_optimizer.getFootsteps(_footstep_seq);
+    old_size = _footstep_seq.size();
+    _planner.setFootsteps(_footstep_seq);
+    _planner.solve();
+    _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
+    new_size = _footstep_seq.size();
+
+    if (new_size != old_size)
+    {
+        _g2o_optimizer.clear();
+        update_vertices_and_edges();
+    }
 
   if (_execute)
   {

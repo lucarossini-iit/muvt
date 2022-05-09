@@ -30,8 +30,17 @@ void OptimizerContact::setVertices(const std::vector<OptimizableGraph::Vertex*> 
 
 void OptimizerContact::setEdges(const std::vector<OptimizableGraph::Edge*> edges)
 {
+    if (!_edges.empty())
+        _edges.clear();
+
     for (auto edge : edges)
         _edges.push_back(edge);
+}
+
+void OptimizerContact::clear()
+{
+    _optimizer.clear();
+    _optimizer.clearParameters();
 }
 
 void OptimizerContact::update()
