@@ -33,8 +33,10 @@ public:
     double getStepSize() const;
     double getdT() const;
 
+    void setWalkingDirection(Eigen::Vector2d xy);
     void generateSteps(const std::vector<Contact>& initial_footsteps);
     void solve();
+    void clear();
 
     void getSolution(std::vector<Contact>& footsteps,
                      std::vector<Eigen::Vector3d>& cp_trj,
@@ -53,6 +55,8 @@ private:
     double _step_size;
     double _dt;
 
+    // Rotation matrix that moves from world to sagittal plane orientaion
+    Eigen::Matrix3d _w_R_l;
     std::vector<Contact> _footstep_sequence;
     std::vector<std::vector<Eigen::Vector3d>> _cp_trj;
     std::vector<Eigen::Vector3d> _com_trj;

@@ -8,7 +8,7 @@ BaseMultiEdge<-1, Eigen::VectorXd>(),
 _n_contacts(n_contacts)
 {
   _vertices.resize(_n_contacts + 1);
-  //setDimension(3 * _n_contacts);
+//  setDimension(3 * _n_contacts);
 
   _dimension = 3 * _n_contacts;
   _information.resize(_dimension, _dimension);

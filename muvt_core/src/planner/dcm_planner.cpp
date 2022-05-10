@@ -4,7 +4,8 @@
 
 using namespace Muvt::HyperGraph::Planner;
 
-DCMPlanner::DCMPlanner()
+DCMPlanner::DCMPlanner():
+_w_R_l(Eigen::Matrix3d::Identity())
 {}
 
 void DCMPlanner::setNumSteps(const unsigned int& n_steps)
@@ -63,8 +64,20 @@ double DCMPlanner::getdT() const
     return _dt;
 }
 
+void DCMPlanner::setWalkingDirection(Eigen::Vector2d xy)
+{
+    xy.normalize();
+    double yaw = std::atan2(xy(1), xy(0));
+    Eigen::Quaternion<double> q(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
+    _w_R_l = q.toRotationMatrix();
+}
+
 void DCMPlanner::generateSteps(const std::vector<Contact>& initial_footsteps)
 {
+    clear();
+
+    // move to sagittal plane
+    Eigen::Vector3d step = _w_R_l * Eigen::Vector3d(_step_size, 0, 0);
 
     _n_feet = initial_footsteps.size();
     std::vector<Contact> current_steps = initial_footsteps;
@@ -85,10 +98,16 @@ void DCMPlanner::generateSteps(const std::vector<Contact>& initial_footsteps)
     {
         unsigned int next_foot = i % _n_feet;
         if (_n_feet == 2 && (i == 0 || i == _n_steps - 1))
-            current_steps[next_foot].state.pose.translation().x() += _step_size / 2;
+        {
+            current_steps[next_foot].state.pose.translation().x() += step(0) / 2;
+            current_steps[next_foot].state.pose.translation().y() += step(1) /2;
+        }
         else
-            current_steps[next_foot].state.pose.translation().x() += _step_size;
-        current_steps[next_foot].state.pose.linear().setIdentity();
+        {
+            current_steps[next_foot].state.pose.translation().x() += step(0);
+            current_steps[next_foot].state.pose.translation().y() += step(1);
+        }
+        current_steps[next_foot].state.pose.linear() = _w_R_l;
         current_steps[next_foot].state.time += _step_time;
 
         _footstep_sequence.push_back(current_steps[next_foot]);
@@ -328,5 +347,12 @@ void DCMPlanner::check_footstep_sequence()
 //            _footstep_sequence.erase(_footstep_sequence.begin() + i, _footstep_sequence.begin() + i + _n_feet - 1);
 //        }
     }
+}
+
+void DCMPlanner::clear()
+{
+    _footstep_sequence.clear();
+    _cp_trj.clear();
+    _com_trj.clear();
 }
 
