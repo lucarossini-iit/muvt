@@ -29,6 +29,7 @@ PlannerExecutor::PlannerExecutor():
 
   // advertise services
   _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);
+  _set_walking_direction_srv = _nh.advertiseService("set_walking_direction", &PlannerExecutor::set_walking_direction_service, this);
 
   // clear vectors
   if(!_footstep_seq.empty())
@@ -58,6 +59,7 @@ void PlannerExecutor::generate_footsteps()
         c.setContactSequence(_contact_sequence[i]);
         contacts.push_back(c);
     }
+//    _planner.setWalkingDirection(Eigen::Vector2d(1.0, 1.0));
     _planner.generateSteps(contacts);
 }
 
@@ -240,37 +242,49 @@ bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::E
   _execute = !_execute;
 
   // reset
-  Eigen::Affine3d T_left, T_right, T_com;
-  T_left.translation().x() = 0.0;
-  T_left.translation().y() = 0.1;
-  T_left.translation().z() = 0.0;
-  T_left.linear().setIdentity();
+//  Eigen::Affine3d T_left, T_right, T_com;
+//  T_left.translation().x() = 0.0;
+//  T_left.translation().y() = 0.1;
+//  T_left.translation().z() = 0.0;
+//  T_left.linear().setIdentity();
 
-  T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
-  T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
-  T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
-  T_right.linear().setIdentity();
+//  T_right.translation().x() = _footstep_seq[0].state.pose.translation().x();
+//  T_right.translation().y() = _footstep_seq[0].state.pose.translation().y();
+//  T_right.translation().z() = _footstep_seq[0].state.pose.translation().z();
+//  T_right.linear().setIdentity();
 
-  auto task = _ci->getTask("l_sole");
-  auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  task_l_foot->setPoseReference(T_left);
+//  auto task = _ci->getTask("l_sole");
+//  auto task_l_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+//  task_l_foot->setPoseReference(T_left);
 
-  task = _ci->getTask("r_sole");
-  auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
-  task_r_foot->setPoseReference(T_right);
+//  task = _ci->getTask("r_sole");
+//  auto task_r_foot = std::dynamic_pointer_cast<Cartesian::CartesianTask>(task);
+//  task_r_foot->setPoseReference(T_right);
 
-  _ci->setComPositionReference(_com_trj[0]);
-  _ci->update(0, _planner.getdT());
-  Eigen::VectorXd q, dq;
-  _model->getJointPosition(q);
-  _model->getJointVelocity(dq);
-  q += dq * _planner.getdT();
-  _model->setJointPosition(q);
-  _model->update();
-  _rspub->publishTransforms(ros::Time::now(), "");
+//  _ci->setComPositionReference(_com_trj[0]);
+//  _ci->update(0, _planner.getdT());
+//  Eigen::VectorXd q, dq;
+//  _model->getJointPosition(q);
+//  _model->getJointVelocity(dq);
+//  q += dq * _planner.getdT();
+//  _model->setJointPosition(q);
+//  _model->update();
+//  _rspub->publishTransforms(ros::Time::now(), "");
 
   std::cout << "\033[1m[planner_executor] \033[0m" << "starting execution!" << std::endl;
   return true;
+}
+
+bool PlannerExecutor::set_walking_direction_service(muvt_ros::SetWalkingDirection::Request& req, muvt_ros::SetWalkingDirection::Response& res)
+{
+    Eigen::Vector2d step_direction(req.x, req.y);
+    _planner.setWalkingDirection(step_direction);
+    generate_footsteps();
+    _planner.getSolution(_footstep_seq, _cp_trj, _com_trj);
+    _g2o_optimizer.clear();
+    update_vertices_and_edges();
+
+    return true;
 }
 
 void PlannerExecutor::publish_markers()

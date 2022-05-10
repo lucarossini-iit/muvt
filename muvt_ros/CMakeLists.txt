@@ -5,6 +5,8 @@ add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
+    std_msgs
+    message_generation
     tf
     tf_conversions
     eigen_conversions
@@ -13,6 +15,14 @@ find_package(catkin REQUIRED COMPONENTS
     muvt_core
     )
 find_package(cartesian_interface REQUIRED)
+add_service_files(
+    FILES
+    SetWalkingDirection.srv)
+
+generate_messages(
+    DEPENDENCIES
+    std_msgs
+)
 
 catkin_package()
 

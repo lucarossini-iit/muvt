@@ -27,6 +27,7 @@
 #include <visualization_msgs/InteractiveMarker.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <std_srvs/Empty.h>
+#include <muvt_ros/SetWalkingDirection.h>
 
 namespace Muvt { namespace HyperGraph { namespace Planner {
 
@@ -64,9 +65,10 @@ private:
 
     // ROS service definitions
     bool execute_service(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+    bool set_walking_direction_service(muvt_ros::SetWalkingDirection::Request& req, muvt_ros::SetWalkingDirection::Response& res);
 
     ros::NodeHandle _nh, _nhpr;
-    ros::ServiceServer _exec_srv;
+    ros::ServiceServer _exec_srv, _set_walking_direction_srv;
     ros::Publisher _zmp_pub, _cp_pub, _footstep_name_pub, _footstep_pub, _com_pub;
     std::shared_ptr<interactive_markers::InteractiveMarkerServer> _server;
 
