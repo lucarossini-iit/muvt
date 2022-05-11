@@ -1,0 +1,20 @@
+<package format="2">
+  <name>muvt_ros</name>
+  <version>1.2.4</version>
+  <description>
+  muvt_ros local planner
+  </description>
+  <maintainer email="luca.rossini@iit.it">luca</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+
+  <build_depend>muvt_core</build_depend>
+  <build_export_depend>muvt_core</build_export_depend>
+  <exec_depend>muvt_core</exec_depend>
+
+</package>

@@ -1,6 +1,0 @@
-geometry_msgs/Pose pose
-geometry_msgs/Vector3 size
-string type
-bool add
----
-bool status
