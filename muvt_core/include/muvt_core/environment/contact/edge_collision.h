@@ -26,6 +26,8 @@ public:
 
     void setObstacles(const Eigen::Vector3d obs);
 
+    Eigen::Vector3d getObstacle() const { return _obstacle; }
+
     void computeError();
 
 private:
