@@ -60,7 +60,8 @@ add_library(contact SHARED
             src/environment/contact/edge_relative_pose.cpp
             src/environment/contact/edge_multi_relative_poses.cpp
             src/environment/contact/edge_collision.cpp
-            src/environment/contact/edge_steering.cpp)
+            src/environment/contact/edge_steering.cpp
+            src/environment/contact/edge_task.cpp)
 target_link_libraries(contact PUBLIC ${G2O_CORE_LIBRARY})
 
 add_library(planner SHARED src/planner/dcm_planner.cpp)
