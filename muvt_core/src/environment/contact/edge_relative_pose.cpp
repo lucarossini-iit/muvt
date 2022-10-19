@@ -39,16 +39,17 @@ void EdgeRelativePose::computeError()
     auto v2 = dynamic_cast<VertexContact*>(_vertices[1]);
 
     auto diff = v2->estimate().state.pose.translation() - v1->estimate().state.pose.translation();
-
+//    auto diff_local = v1->estimate().state.pose.linear().transpose() * diff;
+    auto diff_local = diff;
 
     double S = 2, Sc = 100;
 
-    _error[0] = 1/exp(Sc*diff(0) - Sc*0.0) + exp(Sc*diff(0) - Sc*_step_size);
+    _error[0] = 1/exp(Sc*diff_local(0) - Sc*0.0) + exp(Sc*diff_local(0) - Sc*_step_size*1.5);
 
 //    std::cout << "v2 " << v2->id() << "  v1 " << v1->id() << ":     " << diff.transpose() << "     error: " << _error[0] <<  std::endl;
     if (v1->estimate().getDistalLink() == "l_foot")
-        _error[1] = 1/exp(Sc*diff(1) + Sc*0.35) + exp(Sc*diff(1) + Sc*0.1);
+        _error[1] = 1/exp(Sc*diff_local(1) + Sc*0.35) + exp(Sc*diff_local(1) + Sc*0.1);
     else
-        _error[1] = 1/exp(Sc*diff(1) - Sc*0.1) + exp(Sc*diff(1) - Sc*0.35);
-    _error[2] = diff(2)*diff(2);
+        _error[1] = 1/exp(Sc*diff_local(1) - Sc*0.1) + exp(Sc*diff_local(1) - Sc*0.35);
+    _error[2] = diff_local(2)*diff_local(2);
 }
