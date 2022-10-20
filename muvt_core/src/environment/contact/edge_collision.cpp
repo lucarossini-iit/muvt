@@ -19,8 +19,8 @@ void EdgeCollision::computeError()
     Eigen::Vector3d diff = v->estimate().state.pose.translation() - _obstacle;
     double diff_norm = diff.norm();
 
-    double r = 0.3;
-    double eps = 0.1;
+    double r = 0.2;
+    double eps = 0.2;
     double S = 0.01;
     int n = 2;
     bool res = false;

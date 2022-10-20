@@ -5,7 +5,16 @@ add_compile_options(-std=c++14)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-find_package(G2O REQUIRED)
+find_package(G2O QUIET)
+if(NOT ${G2O_CORE_LIBRARY})
+    message("G2O NOT found, trying to find g2o instead")
+    find_package(g2o REQUIRED)
+    set(G2O_CORE_LIBRARY g2o::core)
+    set(G2O_TYPES_SLAM3D g2o::types_slam3d)
+    set(G2O_SOLVER_CSPARSE g2o::solver_csparse)
+    set(G2O_SOLVER_CSPARSE_EXTENSION g2o::csparse_extension)
+endif(NOT ${G2O_CORE_LIBRARY})
+    
 find_package(CSparse REQUIRED)
 find_package(catkin REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -44,7 +53,7 @@ if(COMPILE_JOINT_LIBRARY)
                 src/environment/joint/edge_trajectory_vel.cpp
                 src/environment/joint/edge_kinematic.cpp
                 src/environment/joint/edge_postural.cpp)
-    target_link_libraries(joint ${catkin_LIBRARIES} OpenSoT::OpenSoT fcl ${G2O_TYPES_SLAM3D})
+    target_link_libraries(joint ${catkin_LIBRARIES} OpenSoT::OpenSoT fcl ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY})
 
     install(TARGETS joint
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -61,7 +70,8 @@ add_library(contact SHARED
             src/environment/contact/edge_multi_relative_poses.cpp
             src/environment/contact/edge_collision.cpp
             src/environment/contact/edge_steering.cpp
-            src/environment/contact/edge_task.cpp)
+            src/environment/contact/edge_task.cpp
+            src/environment/contact/edge_z_axis.cpp)
 target_link_libraries(contact PUBLIC ${G2O_CORE_LIBRARY})
 
 add_library(planner SHARED src/planner/dcm_planner.cpp)
