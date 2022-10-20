@@ -48,9 +48,9 @@ void EdgeRelativePose::computeError()
 
 //    std::cout << "v2 " << v2->id() << "  v1 " << v1->id() << ":     " << diff.transpose() << "     error: " << _error[0] <<  std::endl;
     if (v1->estimate().getDistalLink() == "l_foot")
-        _error[1] = 1/exp(Sc*diff_local(1) + Sc*0.25) + exp(Sc*diff_local(1) + Sc*0.1);
+        _error[1] = 1/exp(Sc*diff_local(1) + Sc*0.25) + exp(Sc*diff_local(1) + Sc*0.15);
     else
-        _error[1] = 1/exp(Sc*diff_local(1) - Sc*0.1) + exp(Sc*diff_local(1) - Sc*0.25);
+        _error[1] = 1/exp(Sc*diff_local(1) - Sc*0.15) + exp(Sc*diff_local(1) - Sc*0.25);
 //    _error[2] = std::pow(v1->estimate().state.pose.translation()(2) + v2->estimate().state.pose.translation()(2), 4);
     _error[2] = 0;
 }
