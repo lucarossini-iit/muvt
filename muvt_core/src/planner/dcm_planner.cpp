@@ -2,7 +2,7 @@
 
 #define GRAVITY 9.81
 
-using namespace Muvt::HyperGraph::Planner;
+using namespace Muvt::Planner;
 
 DCMPlanner::DCMPlanner()
 {}
@@ -32,7 +32,7 @@ void DCMPlanner::setdT(const double& dt)
     _dt = dt;
 }
 
-void DCMPlanner::setFootsteps(const std::vector<Contact>& footsteps)
+void DCMPlanner::setFootsteps(const std::vector<HyperGraph::Contact>& footsteps)
 {
     _footstep_sequence.clear();
     _footstep_sequence = footsteps;
@@ -63,16 +63,16 @@ double DCMPlanner::getdT() const
     return _dt;
 }
 
-void DCMPlanner::generateSteps(const std::vector<Contact>& initial_footsteps)
+void DCMPlanner::generateSteps(const std::vector<HyperGraph::Contact>& initial_footsteps)
 {
 
     _n_feet = initial_footsteps.size();
-    std::vector<Contact> current_steps = initial_footsteps;
+    std::vector<HyperGraph::Contact> current_steps = initial_footsteps;
 
 //    _footstep_sequence = current_steps;
     for (int i = 0; i < _n_feet; i++)
     {
-        std::vector<Contact>::iterator it = std::min_element(current_steps.begin(), current_steps.end());
+        std::vector<HyperGraph::Contact>::iterator it = std::min_element(current_steps.begin(), current_steps.end());
         int index = it - current_steps.begin();
         _footstep_sequence.push_back(current_steps[index]);
         current_steps.erase(it);
@@ -201,7 +201,7 @@ void DCMPlanner::solve()
 }
 
 
-void DCMPlanner::getSolution(std::vector<Contact>& footsteps, std::vector<Eigen::Vector3d>& cp_trj, std::vector<Eigen::Vector3d>& com_trj) const
+void DCMPlanner::getSolution(std::vector<HyperGraph::Contact>& footsteps, std::vector<Eigen::Vector3d>& cp_trj, std::vector<Eigen::Vector3d>& com_trj) const
 {
     footsteps.clear();
     cp_trj.clear();
@@ -224,11 +224,11 @@ void DCMPlanner::check_footstep_sequence()
 {
     for (int i = _n_feet + 1; i < _footstep_sequence.size() - _n_feet - 1; i++)
     {
-        std::vector<Contact> contact_succ, contact_prev;
+        std::vector<HyperGraph::Contact> contact_succ, contact_prev;
 //        if (i < _footstep_sequence.size() - _n_feet && i >_n_feet)
 //        {
-            std::vector<Contact> c_succ(_footstep_sequence.begin() + i + 1, _footstep_sequence.begin() + i + 1 + _n_feet);
-            std::vector<Contact> c_prev(_footstep_sequence.begin() + i - 1 -_n_feet, _footstep_sequence.begin() + i - 1);
+            std::vector<HyperGraph::Contact> c_succ(_footstep_sequence.begin() + i + 1, _footstep_sequence.begin() + i + 1 + _n_feet);
+            std::vector<HyperGraph::Contact> c_prev(_footstep_sequence.begin() + i - 1 -_n_feet, _footstep_sequence.begin() + i - 1);
             contact_succ = c_succ;
             contact_prev = c_prev;
 //        }
@@ -250,7 +250,7 @@ void DCMPlanner::check_footstep_sequence()
 //        }
 
 
-        Contact next_contact;
+        HyperGraph::Contact next_contact;
         for(auto c : contact_succ)
         {
             if(c.getDistalLink() == _footstep_sequence[i].getDistalLink())
@@ -274,7 +274,7 @@ void DCMPlanner::check_footstep_sequence()
 //                std::cout << "OLD OTHER CONTACT: " << std::endl;
 //                c.print();
 
-                auto is_same_distal_link = [c](Contact contact)
+                auto is_same_distal_link = [c](HyperGraph::Contact contact)
                 {
                     return contact.getDistalLink() == c.getDistalLink();
                 };
@@ -285,7 +285,7 @@ void DCMPlanner::check_footstep_sequence()
 //                std::cout << "PREVIOUS POSE:" << std::endl;
 //                it_prev->print();
 
-                Contact new_contact = *(it_prev);
+                HyperGraph::Contact new_contact = *(it_prev);
                 new_contact.state.pose.translation().x() = (c.state.pose.translation().x() + new_contact.state.pose.translation().x())/2;
                 new_contact.state.pose.translation().y() = (c.state.pose.translation().y() + new_contact.state.pose.translation().y())/2;
 
@@ -304,7 +304,7 @@ void DCMPlanner::check_footstep_sequence()
 //            std::cout << "NEXT_CONTACT: " << std::endl;
 //            next_contact.print();
 
-            Contact new_contact;
+            HyperGraph::Contact new_contact;
             new_contact = _footstep_sequence[i];
             new_contact.state.pose.translation().x() = (next_contact.state.pose.translation().x() + _footstep_sequence[i].state.pose.translation().x())/2;
             new_contact.state.pose.translation().y() = (next_contact.state.pose.translation().y() + _footstep_sequence[i].state.pose.translation().y())/2;

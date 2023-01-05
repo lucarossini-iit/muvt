@@ -28,15 +28,15 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <std_srvs/Empty.h>
 
-namespace Muvt { namespace HyperGraph { namespace Planner {
+namespace Muvt { namespace Planner {
 
-class PlannerExecutor {
+class ContactPlannerExecutor {
 
 public:
 
     enum CONTACT_MODEL {POINT_CONTACT,SURFACE_CONTACT};
 
-    PlannerExecutor();
+    ContactPlannerExecutor();
 
     void run();
 
@@ -76,8 +76,8 @@ private:
 
     Eigen::Vector3d _initial_com_pos;
     std::vector<Eigen::Vector3d> _com_trj, _cp_trj;
-    std::vector<Contact> _footstep_seq;
-    DCMPlanner _planner;
+    std::vector<Muvt::HyperGraph::Contact> _footstep_seq;
+    Muvt::Planner::DCMPlanner _planner;
 
     std::string _home_position_name;
     std::string _world_frame_name;
@@ -88,13 +88,13 @@ private:
     unsigned int _n_contacts;
     CONTACT_MODEL _contact_model;
 
-    OptimizerContact _g2o_optimizer;
+    Muvt::HyperGraph::OptimizerContact _g2o_optimizer;
 
     bool _execute;
 
     Eigen::Affine3d _tmp_affine3d;
 };
-} } }
+} }
 
 /* Macro for option parsing */
 #define YAML_PARSE_OPTION(yaml, name, type, default_value) \

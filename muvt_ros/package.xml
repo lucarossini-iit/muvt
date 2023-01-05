@@ -4,7 +4,7 @@
   <description>
   muvt_ros local planner
   </description>
-  <maintainer email="luca.rossini@iit.it">luca</maintainer>
+  <maintainer email="luca.rossini@iit.it">Luca Rossini</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>

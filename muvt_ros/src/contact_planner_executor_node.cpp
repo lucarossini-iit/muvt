@@ -1,6 +1,6 @@
-#include "muvt_ros/planner_executor.h"
+#include "muvt_ros/contact_planner_executor.h"
 
-using namespace Muvt::HyperGraph::Planner;
+using namespace Muvt::Planner;
 
 int main(int argc, char** argv)
 {
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 
   YAML_PARSE_OPTION(config["dcm_planner"], dt, double, 0.01);
 
-  PlannerExecutor executor;
+  ContactPlannerExecutor executor;
 
   ros::Rate r(1.0/dt);
   while (ros::ok())

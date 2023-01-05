@@ -1,9 +1,9 @@
-#include "muvt_ros/planner_executor.h"
+#include "muvt_ros/contact_planner_executor.h"
 
-using namespace Muvt::HyperGraph::Planner;
+using namespace Muvt::Planner;
 using namespace XBot;
 
-PlannerExecutor::PlannerExecutor():
+ContactPlannerExecutor::ContactPlannerExecutor():
   _nh(""),
   _nhpr("~"),
   _planner(),
@@ -28,7 +28,7 @@ PlannerExecutor::PlannerExecutor():
   _footstep_name_pub = _nh.advertise<visualization_msgs::MarkerArray>("footstep_names", 1, true);
 
   // advertise services
-  _exec_srv = _nh.advertiseService("execute_trajectory", &PlannerExecutor::execute_service, this);
+  _exec_srv = _nh.advertiseService("execute_trajectory", &ContactPlannerExecutor::execute_service, this);
 
   // clear vectors
   if(!_footstep_seq.empty())
@@ -47,12 +47,12 @@ PlannerExecutor::PlannerExecutor():
   publish_markers();
 }
 
-void PlannerExecutor::generate_footsteps()
+void ContactPlannerExecutor::generate_footsteps()
 {
-    std::vector<Contact> contacts;
+    std::vector<HyperGraph::Contact> contacts;
     for(unsigned int i = 0; i < _contact_names.size(); i++)
     {
-        Contact c(_contact_names[i]);
+        HyperGraph::Contact c(_contact_names[i]);
         _model->getPose(_contact_names[i],_tmp_affine3d);
         c.state.pose = _tmp_affine3d;
         c.setContactSequence(_contact_sequence[i]);
@@ -61,7 +61,7 @@ void PlannerExecutor::generate_footsteps()
     _planner.generateSteps(contacts);
 }
 
-void PlannerExecutor::init_load_model()
+void ContactPlannerExecutor::init_load_model()
 {
   // ModelInterface
   auto cfg = XBot::ConfigOptionsFromParamServer();
@@ -98,7 +98,7 @@ void PlannerExecutor::init_load_model()
   _rspub = std::make_shared<Cartesian::Utils::RobotStatePublisher>(_model);
 }
 
-void PlannerExecutor::init_load_config()
+void ContactPlannerExecutor::init_load_config()
 {
   if(!_nhpr.hasParam("dcm_config"))
   {
@@ -145,7 +145,7 @@ void PlannerExecutor::init_load_config()
   std::cout << "\033[1;32m[planner_executor] \033[0m" << "\033[32mconfigs loaded! \033[0m" << std::endl;
 }
 
-void PlannerExecutor::init_interactive_marker()
+void ContactPlannerExecutor::init_interactive_marker()
 {
   _server = std::make_shared<interactive_markers::InteractiveMarkerServer>("planner_executor");
 
@@ -198,11 +198,11 @@ void PlannerExecutor::init_interactive_marker()
   int_marker.controls.push_back(move_control_z);
 
   _server->insert(int_marker);
-  _server->setCallback(int_marker.name, boost::bind(&PlannerExecutor::interactive_markers_feedback, this, _1));
+  _server->setCallback(int_marker.name, boost::bind(&ContactPlannerExecutor::interactive_markers_feedback, this, _1));
   _server->applyChanges();
 }
 
-void PlannerExecutor::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+void ContactPlannerExecutor::interactive_markers_feedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 {
   auto c = feedback->marker_name.back();
   Eigen::Vector3d obs(feedback->pose.position.x, feedback->pose.position.y, feedback->pose.position.z);
@@ -210,14 +210,14 @@ void PlannerExecutor::interactive_markers_feedback(const visualization_msgs::Int
   auto edges = _g2o_optimizer.getEdges();
   for(auto edge : edges)
   {
-    if(EdgeCollision* e = dynamic_cast<EdgeCollision*>(edge))
+    if(HyperGraph::EdgeCollision* e = dynamic_cast<HyperGraph::EdgeCollision*>(edge))
     {
       e->setObstacles(obs);
     }
   }
 }
 
-void PlannerExecutor::init_load_cartesian_interface()
+void ContactPlannerExecutor::init_load_cartesian_interface()
 {
   std::string cartesian_stack;
   if(!_nhpr.getParam("cartesio_stack", cartesian_stack))
@@ -235,7 +235,7 @@ void PlannerExecutor::init_load_cartesian_interface()
                                                               ik_prob, ci_ctx);
 }
 
-bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+bool ContactPlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
   _execute = !_execute;
 
@@ -273,7 +273,7 @@ bool PlannerExecutor::execute_service(std_srvs::Empty::Request &req, std_srvs::E
   return true;
 }
 
-void PlannerExecutor::publish_markers()
+void ContactPlannerExecutor::publish_markers()
 {
   visualization_msgs::MarkerArray ma_zmp, ma_cp, ma_footstep, ma_footstep_name, ma_com;
   double color_scale = 0.0;
@@ -378,13 +378,13 @@ void PlannerExecutor::publish_markers()
   _footstep_name_pub.publish(ma_footstep_name);
 }
 
-void PlannerExecutor::update_vertices_and_edges()
+void ContactPlannerExecutor::update_vertices_and_edges()
 {
   // create g2o vertices
   std::vector<OptimizableGraph::Vertex*> g2o_vertices;
   for (int i = 0; i < _footstep_seq.size(); i++)
   {
-    VertexContact* vertex = new VertexContact();
+    HyperGraph::VertexContact* vertex = new HyperGraph::VertexContact();
     vertex->setId(i);
     vertex->setEstimate(_footstep_seq[i]);
     if(i < _n_contacts || i >= _footstep_seq.size() - _n_contacts) // Fix the first and last n contacts
@@ -398,7 +398,7 @@ void PlannerExecutor::update_vertices_and_edges()
   std::vector<OptimizableGraph::Edge*> g2o_edges;
   for (int i = 0; i < g2o_vertices.size(); i++)
   {
-    EdgeCollision* edge = new EdgeCollision();
+    HyperGraph::EdgeCollision* edge = new HyperGraph::EdgeCollision();
     Eigen::MatrixXd info(1, 1);
     info.setIdentity();  info *= 100;
     edge->setInformation(info);
@@ -412,7 +412,7 @@ void PlannerExecutor::update_vertices_and_edges()
   {
     for (int i = 0; i < g2o_vertices.size() - 1; i++)
     {
-      EdgeRelativePose* edge_succ = new EdgeRelativePose();
+      HyperGraph::EdgeRelativePose* edge_succ = new HyperGraph::EdgeRelativePose();
       Eigen::MatrixXd info_succ(3, 3);
       info_succ.setIdentity(); // info_succ *= 100;
       edge_succ->setInformation(info_succ);
@@ -434,13 +434,13 @@ void PlannerExecutor::update_vertices_and_edges()
 
       // first vertex to be added is the one related to the current contact
       std::vector<OptimizableGraph::Vertex*> vert_edge;
-      auto current_vertex = dynamic_cast<VertexContact*>(g2o_vertices[i]);
+      auto current_vertex = dynamic_cast<HyperGraph::VertexContact*>(g2o_vertices[i]);
       vert_edge.push_back(current_vertex);
 
       // then add the one with the same distal link of contact i, but at the previous time
       for (auto v : vert_prev)
       {
-          auto vertex = dynamic_cast<VertexContact*>(v);
+          auto vertex = dynamic_cast<HyperGraph::VertexContact*>(v);
           if (vertex->estimate().getDistalLink() == current_vertex->estimate().getDistalLink())
               vert_edge.push_back(v);
      }
@@ -448,7 +448,7 @@ void PlannerExecutor::update_vertices_and_edges()
 
   for (unsigned int i = 2; i < g2o_vertices.size(); i++)
   {
-      EdgeSteering* edge = new EdgeSteering();
+      HyperGraph::EdgeSteering* edge = new HyperGraph::EdgeSteering();
       Eigen::MatrixXd info(3, 3);
       info.setIdentity();
       edge->setInformation(info);
@@ -462,7 +462,7 @@ void PlannerExecutor::update_vertices_and_edges()
   _g2o_optimizer.update();
 }
 
-bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose)
+bool ContactPlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen::Affine3d foot_pose)
 {
   // foot limits in foot frame
 
@@ -491,7 +491,7 @@ bool PlannerExecutor::check_cp_inside_support_polygon(Eigen::Vector3d cp, Eigen:
     return false;
 }
 
-void PlannerExecutor::run()
+void ContactPlannerExecutor::run()
 {
     // checker for _footstep_seq size
     unsigned int old_size, new_size;
@@ -644,7 +644,7 @@ double linear_interpolation(double init, double fin, double tf, double ti, doubl
   return res;
 }
 
-Eigen::Affine3d PlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time)
+Eigen::Affine3d ContactPlannerExecutor::swing_trajectory(double time, Eigen::Affine3d x_init, Eigen::Affine3d x_fin, double t_init, double step_time)
 {
   double h = 0.05;
 

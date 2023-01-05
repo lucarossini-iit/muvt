@@ -26,7 +26,7 @@ set(EXTERNAL_LIBS ${CSPARSE_LIBRARY} ${G2O_CORE_LIBRARY})
 catkin_package(
     INCLUDE_DIRS include ${EXTERNAL_INCLUDE_DIRS}
     LIBRARIES optimizer planner contact ${EXTERNAL_LIBS}
-    DEPENDS cxsparse G2O
+    DEPENDS cxsparse g2o
     )
     
 include_directories(
@@ -77,8 +77,9 @@ target_link_libraries(contact PUBLIC ${G2O_CORE_LIBRARY})
 add_library(planner SHARED src/planner/dcm_planner.cpp)
 target_link_libraries(planner PUBLIC contact)
 
-add_library(optimizer SHARED src/optimizer/optimizer.cpp)
+add_library(optimizer SHARED src/optimizer/optimizer_contact.cpp src/optimizer/optimizer_joint.cpp)
 target_link_libraries(optimizer PUBLIC ${G2O_CORE_LIBRARY} ${CSPARSE_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_SOLVER_CSPARSE})
+
 
 install(TARGETS contact optimizer planner
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

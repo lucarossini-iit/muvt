@@ -13,7 +13,7 @@
 #include <muvt_core/environment/contact/contact.h>
 
 
-namespace Muvt { namespace HyperGraph { namespace Planner {
+namespace Muvt { namespace Planner {
 
 class DCMPlanner {
 
@@ -25,7 +25,7 @@ public:
     void setStepTime(const double& step_time);
     void setStepSize(const double& step_size);
     void setdT(const double& dt);
-    void setFootsteps(const std::vector<Contact>& footsteps);
+    void setFootsteps(const std::vector<HyperGraph::Contact>& footsteps);
 
     unsigned int getNumSteps() const;
     double getZCoM() const;
@@ -33,10 +33,10 @@ public:
     double getStepSize() const;
     double getdT() const;
 
-    void generateSteps(const std::vector<Contact>& initial_footsteps);
+    void generateSteps(const std::vector<HyperGraph::Contact>& initial_footsteps);
     void solve();
 
-    void getSolution(std::vector<Contact>& footsteps,
+    void getSolution(std::vector<HyperGraph::Contact>& footsteps,
                      std::vector<Eigen::Vector3d>& cp_trj,
                      std::vector<Eigen::Vector3d>& com_trj) const;
 
@@ -53,11 +53,11 @@ private:
     double _step_size;
     double _dt;
 
-    std::vector<Contact> _footstep_sequence;
+    std::vector<HyperGraph::Contact> _footstep_sequence;
     std::vector<std::vector<Eigen::Vector3d>> _cp_trj;
     std::vector<Eigen::Vector3d> _com_trj;
 
 };
-} } }
+} }
 
 #endif // MUVT_CORE_DCM_PLANNER_H
