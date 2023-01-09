@@ -210,7 +210,7 @@ void ContactPlannerExecutor::interactive_markers_feedback(const visualization_ms
   auto edges = _g2o_optimizer.getEdges();
   for(auto edge : edges)
   {
-    if(HyperGraph::EdgeCollision* e = dynamic_cast<HyperGraph::EdgeCollision*>(edge))
+    if(HyperGraph::ContactSpace::EdgeCollision* e = dynamic_cast<HyperGraph::ContactSpace::EdgeCollision*>(edge))
     {
       e->setObstacles(obs);
     }
@@ -398,7 +398,7 @@ void ContactPlannerExecutor::update_vertices_and_edges()
   std::vector<OptimizableGraph::Edge*> g2o_edges;
   for (int i = 0; i < g2o_vertices.size(); i++)
   {
-    HyperGraph::EdgeCollision* edge = new HyperGraph::EdgeCollision();
+    HyperGraph::ContactSpace::EdgeCollision* edge = new HyperGraph::ContactSpace::EdgeCollision();
     Eigen::MatrixXd info(1, 1);
     info.setIdentity();  info *= 100;
     edge->setInformation(info);
