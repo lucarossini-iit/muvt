@@ -8,7 +8,7 @@
 
 #include <muvt_core/environment/contact/vertex_contact.h>
 
-namespace Muvt { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph { namespace ContactSpace {
 
 class EdgeCollision : public BaseUnaryEdge<1, double, VertexContact> {
 public:
@@ -34,6 +34,6 @@ private:
     Eigen::Vector3d _obstacle;
 
 };
-} }
+} } }
 
 #endif // MUVT_CORE_EDGE_COLLISION_H

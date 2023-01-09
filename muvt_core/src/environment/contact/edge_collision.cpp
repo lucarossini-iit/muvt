@@ -1,7 +1,7 @@
 #include <muvt_core/environment/contact/edge_collision.h>
 
 using namespace g2o;
-using namespace Muvt::HyperGraph;
+using namespace Muvt::HyperGraph::ContactSpace;
 
 EdgeCollision::EdgeCollision():
 BaseUnaryEdge<1, double, VertexContact>()

@@ -25,7 +25,7 @@ set(EXTERNAL_LIBS ${CSPARSE_LIBRARY} ${G2O_CORE_LIBRARY})
 
 catkin_package(
     INCLUDE_DIRS include ${EXTERNAL_INCLUDE_DIRS}
-    LIBRARIES optimizer planner contact ${EXTERNAL_LIBS}
+    LIBRARIES optimizer planner contact joint ${EXTERNAL_LIBS}
     DEPENDS cxsparse g2o
     )
     
@@ -45,7 +45,6 @@ if(COMPILE_JOINT_LIBRARY)
                 src/environment/joint/unary_edge.cpp
                 src/environment/joint/robot_pos.cpp
                 src/environment/joint/vertex_robot_pos.cpp
-                src/environment/joint/edge_robot_pos.cpp
                 src/environment/joint/edge_collision.cpp
                 src/environment/joint/edge_robot_vel.cpp
                 src/environment/joint/edge_joint_limits.cpp

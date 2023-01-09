@@ -1,60 +1,54 @@
 #ifndef MUVT_CORE_EDGE_COLLISION_H
 #define MUVT_CORE_EDGE_COLLISION_H
 
+#include <g2o/core/base_unary_edge.h>
+
 #include <XBotInterface/ModelInterface.h>
 #include <OpenSoT/utils/collision_utils.h>
 #include <OpenSoT/constraints/velocity/CollisionAvoidance.h>
 
-#include <eigen_conversions/eigen_msg.h>
-
-#include <muvt_core/environment/joint/unary_edge.h>
 #include <muvt_core/environment/joint/vertex_robot_pos.h>
-#include <muvt_core/environment/obstacle.h>
-#include <octomap_msgs/OctomapWithPose.h>
 
 using namespace g2o;
 
-namespace Muvt { namespace HyperGraph {
-
-class EdgeCollision : public UnaryEdge {
+namespace Muvt { namespace HyperGraph { namespace JointSpace {
+    
+class EdgeCollision : public BaseUnaryEdge<30, Eigen::VectorXd, VertexRobotPos> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-
-    typedef std::vector<obstacle> obstacles;
-
-    EdgeCollision(XBot::ModelInterface::Ptr model,
-                  std::shared_ptr<ComputeLinksDistance> dist,
-                  int max_pair_link);
-
+    
+    EdgeCollision(XBot::ModelInterface::Ptr& model,
+                 int max_pair_link);
+    
     bool read(std::istream& is)
     {
         return true;
     }
-
+    
     bool write(std::ostream& os) const
     {
-        auto v = dynamic_cast<VertexRobotPos*>(_vertices[0]);
-        os << "vertex: " << v->estimate().transpose() << std::endl;
-        os << "error: " << _error.transpose() << std::endl;
+        Eigen::VectorXd p = measurement();
+        os << p;
 
         return os.good();
     }
-
-    void setObstacles(const obstacles obs);
-    void resize(int size);
-    void clear();
+        
+    void addObstacle(Eigen::Vector3d ob, Eigen::Vector3d size, int id);
+    void updateObstacle(Eigen::Vector3d ob, int ind);
+    
     void computeError();
-    void advertise();
-
+    
     Eigen::VectorXd getError() const;
 
+    std::shared_ptr<ComputeLinksDistance> _dist;
+
     unsigned int ID;
-
+    
 private:
-    std::shared_ptr<ComputeLinksDistance> _cld;
-    ros::Publisher _points_pub;
-    ros::NodeHandle _nh;
+    XBot::ModelInterface::Ptr _model;
+    int _max_pair_link;
 
-}; } }
+};
+} } }
 
-#endif // MUVT_CORE_EDGE_COLLISION_H
+#endif

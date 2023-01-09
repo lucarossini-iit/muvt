@@ -9,7 +9,7 @@
 
 using namespace g2o;
 
-namespace Muvt { namespace HyperGraph {
+namespace Muvt { namespace HyperGraph { namespace JointSpace {
 
 class EdgeJointLimits : public BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos> {
 public:
@@ -42,6 +42,6 @@ private:
     XBot::ModelInterface::Ptr _model;
 };
 
-} }
+} } }
 
 #endif

@@ -1,18 +1,18 @@
 #include <muvt_core/environment/joint/edge_joint_limits.h>
 
-using namespace Muvt::HyperGraph;
+using namespace Muvt::HyperGraph::JointSpace;
 using namespace g2o;
 
 EdgeJointLimits::EdgeJointLimits(XBot::ModelInterface::Ptr model):
 BaseUnaryEdge<-1, Eigen::VectorXd, VertexRobotPos>(),
 _model(model)
-{}
+{
+    resize();
+}
 
 void EdgeJointLimits::resize()
 {
-    auto v1 = dynamic_cast<const VertexRobotPos*>(_vertices[0]);
-
-    setDimension(v1->estimateDimension());
+    setDimension(_model->getJointNum());
 }
 
 void EdgeJointLimits::computeError()
@@ -25,7 +25,7 @@ void EdgeJointLimits::computeError()
 
     double eps = 0.1;
     double S = 6;
-    int n = 0.0000000001;
+    double n = 0.001;
 
     for (int i = 0; i < v1->estimateDimension(); i++)
     {
